@@ -24,7 +24,7 @@ const allowedOrigins = [
   'http://127.0.0.1:5500',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  'http://192.168.254.145:3000'
+  'https://anak-requests-api.onrender.com'
 ];
 
 const corsOptions = {
