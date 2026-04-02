@@ -1,0 +1,2209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anak Requests – Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+
+/* =========================
+   ACTION PANELS
+========================= */
+
+/* Base */
+.action-panel {
+  display: block;
+}
+
+/* Desktop : panels scrollables */
+@media (min-width: 768px) {
+  .action-panel {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+}
+
+/* Mobile : panels = contenu principal, pas de scroll interne */
+@media (max-width: 768px) {
+  .action-panel {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* =========================
+   PAYMENT BUTTONS
+========================= */
+
+.payment-btn {
+  min-height: 48px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(209, 213, 219, 0.8);
+  color: #374151;
+
+  backdrop-filter: blur(8px) saturate(160%);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 120ms ease;
+}
+
+/* Hover (desktop surtout) */
+.payment-btn:hover {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: #6366f1;
+  color: #4338ca;
+  box-shadow:
+    0 6px 14px -6px rgba(99, 102, 241, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Active (tap mobile) */
+.payment-btn:active {
+  transform: scale(0.96);
+}
+
+/* État actif */
+.payment-active {
+  background: linear-gradient(
+    180deg,
+    rgba(99, 102, 241, 0.18),
+    rgba(99, 102, 241, 0.28)
+  );
+  border-color: #4f46e5;
+  color: #1e1b4b;
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.35),
+    0 6px 14px -6px rgba(99, 102, 241, 0.45);
+}
+
+/* =========================
+   CARDS DESKTOP
+========================= */
+
+.card-desktop {
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* =========================
+   MODAL + GRID LAYOUT
+========================= */
+
+/* Mobile : modal plein écran fiable */
+@media (max-width: 768px) {
+  #modal {
+    align-items: stretch !important;
+  }
+
+  #modal > div {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .md\:col-span-7 {
+    grid-column: span 12 / span 12;
+    overflow: visible;
+  }
+
+  #modal > div {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+
+/* Action cards — feedback visuel */
+.action-card {
+  border-radius: 12px;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease,
+    border-color 120ms ease;
+}
+
+/* Tap immédiat (mobile) */
+.action-card:active {
+  background-color: rgba(99, 102, 241, 0.06);
+}
+
+/* État sélectionné (comme Cash / Chèque / CB) */
+.action-card.is-active {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: #6366f1; /* indigo-500 */
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.35),
+    0 6px 14px -8px rgba(99, 102, 241, 0.35);
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+</style>
+
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col overscroll-none md:pb-24">
+
+
+<header class="sticky top-0 z-40 bg-gray-100/90 backdrop-blur border-b px-4 py-3 md:px-8 md:py-5">
+  <div class="flex items-center justify-between max-w-6xl mx-auto">
+
+    <!-- Left: titre -->
+    <div class="flex items-center gap-4">
+      <div class="w-9 h-9 flex items-center justify-center bg-indigo-600 text-white font-bold rounded-xl shadow">
+        AR
+      </div>
+      <div>
+        <h1 class="text-base font-semibold text-gray-800">Anak Requests</h1>
+        <p class="text-xs text-gray-500">Dashboard</p>
+      </div>
+    </div>
+
+    <!-- Right: MOBILE -->
+    <div class="flex items-center gap-2 md:hidden">
+      <button
+        id="logoutBtnMobile"
+        class="w-9 h-9 flex items-center justify-center rounded-xl bg-red-100 text-red-600 active:scale-95 transition"
+        aria-label="Log out">
+        ✕
+      </button>
+    </div>
+
+    <!-- Right: DESKTOP -->
+    <div class="hidden md:flex items-center gap-3">
+      <div class="px-4 py-2 rounded-lg bg-gray-100 border shadow-sm leading-tight text-right">
+        <div id="userCenter" class="text-sm text-gray-800 font-semibold"></div>
+        <div id="userEmail" class="text-xs text-gray-500"></div>
+      </div>
+
+      <button id="logoutBtnDesktop"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 shadow-md">
+        <span>Log out</span>
+      </button>
+    </div>
+
+
+  </div>
+</header>
+
+
+  <!-- Email mobile discret -->
+<div id="mobileEmail"
+     class="md:hidden text-center text-xs text-gray-500 mt-1 hidden">
+</div>
+
+ <!-- Formulaire de demande -->
+    <div class="
+      bg-white
+      w-full
+      rounded-t-2xl
+      p-4
+      md:rounded-2xl
+      md:p-8
+      md:max-w-6xl
+      md:mx-auto
+      md:mt-8
+      card-desktop
+    ">
+
+    <h1 class="text-xl font-bold text-indigo-700 mb-4">Submit a request</h1>
+
+    <form id="requestForm" class="space-y-4">
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Requested by</label>
+        <input type="text" id="requestor_name" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Center</label>
+        <select id="center_name" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="">Select a center</option>
+        </select>
+
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Requested amount</label>
+        <input type="number" id="amount_requested"
+               inputmode="decimal"
+               required
+               class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <!-- REQUEST TYPE -->
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">Request type</label>
+
+        <div id="requestTypeButtons" class="flex flex-col sm:flex-row gap-3">
+
+          <button type="button" data-value="CashAdvance" class="payment-btn">
+            Cash Advance (liquidation required)
+          </button>
+
+          <button type="button" data-value="FundTransfer" class="payment-btn">
+            Fund Transfer (no liquidation)
+          </button>
+
+        </div>
+        <input type="hidden" id="request_type">
+      </div>
+
+        <!-- METHODE DE PAIEMENT -->
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">Requested payment method</label>
+
+        <div id="paymentMethodButtons" class="flex flex-col sm:flex-row gap-3">
+
+          <button type="button" data-value="cash" class="payment-btn">
+            💵 Cash
+          </button>
+
+          <button type="button" data-value="cheque" class="payment-btn">
+            🧾 Check
+          </button>
+
+          <button type="button" data-value="card" class="payment-btn">
+            💳 Card
+          </button>
+
+        </div>
+
+        <!-- 🔴 LIGNE MANQUANTE AVANT -->
+        <input type="hidden" id="payment_method">
+
+      </div>
+
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Description</label>
+        <textarea id="description" rows="3" required
+         class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+      </div>
+        <button
+          id="submitRequestBtn"
+          type="submit"
+          class="w-full bg-indigo-600 text-white font-bold py-3 md:py-2 text-base md:text-sm rounded-lg hover:bg-indigo-700 transition-colors">
+          Submit request
+        </button>
+     </form>
+
+    <p id="status" class="mt-4 text-center font-semibold"></p>
+    <p id="generatedId" class="mt-2 text-center text-sm text-gray-600"></p>
+  </div>
+
+<!-- Tableau des demandes amélioré -->
+<div class="bg-white rounded-2xl p-4 md:p-6 w-full max-w-6xl mx-auto mt-10 card-desktop">
+  <h2 class="text-xl font-bold text-indigo-700 mb-4">My Requests</h2>
+
+<!-- 📱 MOBILE : filtre montant -->
+<div class="mb-3 md:hidden">
+  <input
+    type="number"
+    inputmode="decimal"
+    id="mobileAmountSearch"
+    placeholder="Filtrer par montant"
+    class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+  >
+</div>
+
+<!-- 📱 MOBILE : cartes -->
+<div id="mobileRequests" class="space-y-3 md:hidden"></div>
+
+<!-- 📱 MOBILE : pagination -->
+<div id="mobilePagination"
+     class="flex justify-center items-center gap-2 mt-4 md:hidden"></div>
+
+
+
+  <!-- 💻 DESKTOP : tableau -->
+  <div class="hidden md:block">
+
+  <div class="mb-4">
+    <label for="amountSearch" class="block font-semibold text-sm">Search for an amount:</label>
+    <input type="number" id="amountSearch" class="border p-2 rounded w-50" placeholder="0">
+  </div>
+
+  <div class="overflow-x-auto">
+  <table class="min-w-[900px] w-full text-left border-collapse text-sm">
+    <thead>
+      <tr class="bg-indigo-100">
+        <th class="px-3 py-0.5 border cursor-pointer" data-column="request_id">ID</th>
+        <th class="px-3 py-0.5 border cursor-pointer" data-column="timestamp">Date</th>
+        <th class="px-3 py-0.5 border cursor-pointer" data-column="amount_requested">Amount requested</th>
+        <th class="px-3 py-0.5 border cursor-pointer" data-column="payment_method">Payment</th>
+        <th class="px-3 py-0.5 border cursor-pointer" data-column="status">Status</th>
+        <th class="px-3 py-0.5 border cursor-pointer" data-column="approved_amount">Amount approved</th>
+        <th class="px-3 py-0.5 border cursor-pointer" data-column="returned_amount">Amount returned</th>
+        <th class="px-3 py-0.5 border">Action</th>
+      </tr>
+    </thead>
+    <tbody id="myRequestsTable" class="divide-y divide-gray-200"></tbody>
+  </table>
+  </div>
+
+  <!-- Conteneur pagination -->
+  <div class="flex justify-center mt-3 space-x-2" id="pagination"></div>
+</div>
+
+  </div> <!-- fin desktop -->
+</div> <!-- fin container -->
+
+
+  <!-- Modal actions -->
+
+  <div id="modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center">
+    <div id="modalOverlay" class="absolute inset-0 bg-black/40"></div>
+
+      <div class="
+        relative w-full
+        max-w-3xl
+        bg-white
+        rounded-t-2xl md:rounded-2xl
+        shadow-2xl
+        grid grid-cols-1 md:grid-cols-12
+        h-full md:h-auto">
+  
+      <div class="col-span-1 md:col-span-5 border-r md:border-r p-4 space-y-3">
+        <div class="flex items-start justify-between">
+          <div>
+            <h3 id="modalTitle" class="text-lg font-bold text-gray-800">Request details</h3>
+
+            <p id="modalSubtitle" class="text-sm text-gray-500">
+              ID: <span id="modalRequestId"></span> — <span id="modalCenter"></span>
+            </p>
+
+            <div class="mb-3">
+              <p id="modalDescription" class="mt-1 text-gray-600 max-h-40 overflow-y-auto pr-1"></p>
+            </div>
+
+            <p id="modalPaymentMethod" class="text-sm text-gray-500"></p>
+          </div>
+
+          <button type="button" id="closeModalBtn"
+            class="sticky top-0 z-10 bg-white text-gray-500 hover:text-gray-700 px-2">
+            ✕
+          </button>
+        </div>
+
+        <div id="actionList" class="space-y-2 mt-2">
+
+          <button type="button" data-action="received"
+            class="action-card touch-manipulation w-full text-left p-3 rounded-lg border hover:shadow-sm transition flex items-start gap-3">
+            <div class="flex-1">
+              <div class="flex justify-between items-center">
+                <strong id="receivedActionTitle">💵 Money received</strong>
+              </div>
+            </div>
+          </button>
+
+          <button type="button" data-action="liquidate"
+            class="action-card w-full text-left p-3 rounded-lg border hover:shadow-sm transition flex items-start gap-3">
+            <div class="flex-1">
+              <div class="flex justify-between items-center">
+                <strong>📤 Submit liquidation</strong>
+              </div>
+            </div>
+          </button>
+
+
+          <button type="button" data-action="cancel"
+            class="action-card w-full text-left p-3 rounded-lg border hover:shadow-sm transition flex items-start gap-3">
+            <div class="flex-1">
+              <strong class="text-red-600">✖ Cancel / Reject</strong>
+            </div>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- ✅ COLONNE DROITE -->
+<div id="modalRightCol" class="col-span-1 md:col-span-7 p-4">
+
+        <!-- Panel Received -->
+        <div id="panel-received" class="action-panel hidden">
+          <h4 class="font-semibold mb-2">Confirm receipt</h4>
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-sm text-gray-700">Amount received</label>
+              <input id="receivedAmount" type="number"
+                     inputmode="decimal"
+                     class="mt-1 w-full border rounded px-3 py-2">
+            </div>
+            <div>
+              <label class="block text-sm text-gray-700">Date</label>
+              <input id="receivedDate" type="date" class="mt-1 w-full border rounded px-3 py-2">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm text-gray-700">First name, last name</label>
+            <input id="receivedName" type="text" class="mt-1 w-full border rounded px-3 py-2">
+          </div>
+          <label class="flex items-center gap-2 text-sm mb-4">
+            <input id="receivedCheck" type="checkbox" class="w-4 h-4">
+            <span>I certify on my honor that I have received the money.</span>
+          </label>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button type="button" id="confirmReceivedBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Confirm</button>
+            <button type="button" id="receivedBack" class="bg-gray-100 px-4 py-2 rounded">Back</button>
+          </div>
+        </div>
+
+        <!-- Panel Liquidate -->
+        <div id="panel-liquidate" class="action-panel hidden mt-2">
+          <h4 class="font-semibold mb-2">Liquidation</h4>
+          <div class="mb-3">
+            <label class="block text-sm text-gray-700">Amount spent</label>
+            <input id="liqSpent" type="number"
+                   inputmode="decimal"
+                   class="mt-1 w-full border rounded px-3 py-2">
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm text-gray-700">Amount returned</label>
+            <input id="liqAmount" type="number"
+                   inputmode="decimal"
+                   class="mt-1 w-full border rounded px-3 py-2">
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm text-gray-700 mb-2">Receipts</label>
+
+            <div class="flex gap-2">
+              
+              <!-- Galerie -->
+              <button
+                type="button"
+                id="galleryBtn"
+                class="flex-1 bg-gray-100 py-2 rounded-lg text-sm active:scale-95">
+                🖼️ Gallery
+              </button>
+
+              <!-- Camera -->
+              <button
+                type="button"
+                id="cameraBtn"
+                class="flex-1 bg-indigo-100 text-indigo-700 py-2 rounded-lg text-sm active:scale-95">
+                📸 Photo
+              </button>
+
+            </div>
+
+            <!-- inputs cachés -->
+            <input id="liqReceipts" type="file" accept="image/*" multiple hidden>
+            <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+
+            <!-- compteur -->
+            <div id="receiptsInfo" class="text-sm text-gray-600 mt-2">
+              No receipts
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm text-gray-700">Note</label>
+            <textarea id="liqNote" rows="3" class="w-full border rounded px-3 py-2"></textarea>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3">
+          <button type="button" id="liqSubmitBtn"
+                  class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center justify-center gap-2">
+            
+            <span id="liqBtnText">📤 Submit liquidation</span>
+            <span id="liqLoader"
+                  class="hidden w-5 h-5 border-[3px] border-white/40 border-t-white rounded-full animate-spin">
+            </span>
+          </button>
+            <button type="button" id="liqCancel" class="bg-gray-100 px-4 py-2 rounded">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Panel Cancel -->
+        <div id="panel-cancel" class="action-panel hidden mt-2">
+          <h4 class="font-semibold text-red-600 mb-3">Cancel / Decline</h4>
+          <input type="text" id="cancelRequestorNamePanel" class="w-full border rounded px-3 py-2 mb-2" readonly>
+          <textarea id="cancelReason" rows="3" class="w-full border rounded px-3 py-2 mb-4"></textarea>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button type="button" id="cancelSubmitBtn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">✖ Cancel</button>
+            <button type="button" id="cancelBack" class="bg-gray-100 px-4 py-2 rounded">Back</button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+
+  const API_URL = 'http://192.168.254.145:3000';
+  let requestorInput, form, status, generatedIdEl, myTableBody, amountSearchInput;
+
+  function handleAuthError(res) {
+  if (res.status === 401) {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    window.location.replace('login.html');
+    return true;
+  }
+  return false;
+}
+
+  let isSwitchingPanel = false;
+  let activeActionCard = null;
+  let capturedPhotos = [];
+
+  function isMobileView() {
+  return window.innerWidth < 768;
+}
+
+
+// =============================
+// Affichage du nom et centre de l'utilisateur
+// =============================
+async function displayUserProfile() {
+  const token = localStorage.getItem('access_token');
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/profile`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (handleAuthError(res)) return null;
+
+    const profile = await res.json();
+
+    const userCenterEl = document.getElementById('userCenter');
+    const userEmailEl = document.getElementById('userEmail');
+
+    if (userCenterEl) {
+      userCenterEl.textContent = profile.center_name
+        ? `Center - ${profile.center_name}`
+        : 'Center - —';
+    }
+
+    if (userEmailEl) {
+      userEmailEl.textContent = profile.email || '';
+    }
+
+    const userDisplay = document.getElementById('userDisplay');
+    if (userDisplay) userDisplay.classList.remove('hidden');
+
+    return profile; // ← retourne le profil pour l’utiliser
+  } catch (err) {
+    console.error('Erreur displayUserProfile:', err);
+    return null;
+  }
+}
+
+
+// ---------------------------
+// Références DOM et variables
+// ---------------------------
+function debounce(fn, delay = 300) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+
+
+
+
+
+const requestsMap = new Map();
+let currentRequestId = null;
+
+let mobilePage = 1;
+const mobilePerPage = 20;
+let mobileAmountFilter = '';
+
+
+// ==============================
+// Initialisation après DOM loaded
+// ==============================
+
+  const CENTERS = [
+    "ADM","DIB","DIG","NURB","NURG", "RB1","RB2",
+    "RB3","RB4","RB5","RB6","RB7","RB8","RB9","CARP","SJE","BH","CFH","RG3",
+    "RG4","RG5","RG6","JLH","OLG","SAH","SJB","OLMC","SSK","SMG","NBBS","MOB","CLINIC","SEDS","CYDW","ELD"
+  ];
+
+  function populateCenters(selectedCenter = "") {
+    const select = document.getElementById("center_name");
+    if (!select) return;
+
+    select.innerHTML = `<option value="">Select a center</option>`;
+
+    CENTERS.forEach(center => {
+      const opt = document.createElement("option");
+      opt.value = center;
+      opt.textContent = center;
+
+      if (selectedCenter && center === selectedCenter) {
+        opt.selected = true;
+      }
+
+      select.appendChild(opt);
+    });
+  }
+
+    let isSubmittingRequest = false;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      requestorInput = document.getElementById('requestor_name');
+      form = document.getElementById('requestForm');
+      status = document.getElementById('status');
+      generatedIdEl = document.getElementById('generatedId');
+      myTableBody = document.getElementById('myRequestsTable');
+      amountSearchInput = document.getElementById('amountSearch');
+      document.getElementById('liqReceipts').addEventListener('change', updateReceiptsUI);
+
+      
+    // ==============================
+    // Payment method buttons
+    // ==============================
+      const paymentButtons = document.querySelectorAll('#paymentMethodButtons button');
+      const paymentInput = document.getElementById('payment_method');
+
+      paymentButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          paymentButtons.forEach(b => b.classList.remove('payment-active'));
+          btn.classList.add('payment-active');
+          paymentInput.value = btn.dataset.value;
+        });
+      });
+
+    // ==============================
+    // Request type buttons
+    // ==============================
+      const requestTypeButtons = document.querySelectorAll('#requestTypeButtons button');
+      const requestTypeInput = document.getElementById('request_type');
+
+      requestTypeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          requestTypeButtons.forEach(b => b.classList.remove('payment-active'));
+          btn.classList.add('payment-active');
+          requestTypeInput.value = btn.dataset.value;
+        });
+      });
+
+
+    console.log("DOM ready, script chargé");
+    const token = localStorage.getItem('access_token');
+    console.log("Token:", token);
+    if (!token) return window.location.replace('login.html');
+    
+  const mobileAmountInput = document.getElementById('mobileAmountSearch');
+  if (mobileAmountInput) {
+    mobileAmountInput.addEventListener('input', () => {
+      mobileAmountFilter = mobileAmountInput.value.trim();
+      mobilePage = 1; // reset pagination
+      renderMobileCards();
+    });
+  }
+
+  // Vérifie expiration du token
+  function isTokenExpired(token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return Date.now() >= payload.exp * 1000;
+    } catch {
+      return true;
+    }
+  }
+  if (isTokenExpired(token)) {
+    localStorage.removeItem('access_token');
+    window.location.replace('login.html');
+    return;
+  }
+
+  // Attendre le profil avant tout
+  const profile = await displayUserProfile();
+  if (!profile) return;
+
+  populateCenters((profile.center_name || "").trim().toUpperCase());
+  console.log("Centers populated, select options =", document.getElementById("center_name")?.options?.length);
+  console.log("Selected center =", document.getElementById("center_name")?.value);
+
+
+  // Stocker localement
+  localStorage.setItem('user', JSON.stringify(profile));
+
+  // Auto-fill si ChefCentre
+  if (profile.role === 'ChefCentre') {
+    requestorInput.value = profile.email;
+    requestorInput.readOnly = true;
+    requestorInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+  }
+
+  // Charger uniquement les demandes du centre connecté
+  await fetchMyRequests();
+
+/* ==============================
+   Soumettre une nouvelle demande
+============================== */
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  // Reset UI
+  status.textContent = '';
+  generatedIdEl.textContent = '';
+
+  // ------------------------------
+  // Récupération des champs
+  // ------------------------------
+  const requestor_name = requestorInput.value.trim();
+  const center_name = document.getElementById('center_name').value.trim();
+  const amount_requested = Number(document.getElementById('amount_requested').value);
+  const description = document.getElementById('description').value.trim();
+  const payment_method = document.getElementById('payment_method').value;
+  const request_type = document.getElementById('request_type').value;
+
+  // ------------------------------
+  // Validations
+  // ------------------------------
+  if (!Number.isFinite(amount_requested) || amount_requested <= 0) {
+    alert("Please enter a valid amount.");
+    return;
+  }
+
+  if (!payment_method) {
+    alert("Please select a payment method.");
+    return;
+  }
+
+  if (!request_type) {
+    alert("Please select a request type.");
+    return;
+  }
+
+  if (!description) {
+    alert("Please fill in the description (required).");
+    return;
+  }
+
+  // ------------------------------
+  // Anti double submit
+  // ------------------------------
+  if (isSubmittingRequest) return;
+  isSubmittingRequest = true;
+
+  const submitBtn = document.getElementById('submitRequestBtn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+  }
+
+  // ------------------------------
+  // Payload
+  // ------------------------------
+  const payload = {
+    requestor_name,
+    center_name,
+    amount_requested,
+    description,
+    payment_method,
+    request_type
+  };
+
+  console.log('POST /requests payload =>', payload);
+
+  try {
+    const token = localStorage.getItem('access_token');
+
+    const res = await fetch(`${API_URL}/requests`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify(payload)
+    });
+
+    // 🔒 token invalide/expiré → redirect login
+    if (handleAuthError(res)) {
+      return; // ok : finally va quand même se déclencher
+    }
+
+    // ------------------------------
+    // Parse réponse
+    // ------------------------------
+    let result = null;
+
+    try {
+      result = await res.json();
+    } catch {
+      const text = await res.text();
+      console.warn('Réponse non-JSON du serveur:', text);
+      result = { error: 'Réponse non JSON', raw: text };
+    }
+
+    console.log('POST /requests response status:', res.status, 'body:', result);
+
+    // ------------------------------
+    // Succès
+    // ------------------------------
+    if (res.ok) {
+      status.textContent = '✅ Request submitted!';
+      status.className = 'mt-4 text-center font-semibold text-green-600';
+
+      if (result?.data?.request_id) {
+        generatedIdEl.textContent = `ID created: ${result.data.request_id}`;
+        upsertRow(result.data);
+      }
+
+      // Reset form
+      form.reset();
+
+      // Reset boutons UI
+      paymentButtons.forEach(b => b.classList.remove('payment-active'));
+      paymentInput.value = '';
+
+      requestTypeButtons.forEach(b => b.classList.remove('payment-active'));
+      requestTypeInput.value = '';
+
+      // Refresh liste
+      await fetchMyRequests();
+
+      return;
+    }
+
+    // ------------------------------
+    // Erreur serveur
+    // ------------------------------
+    status.textContent = '❌ ' + (result?.error || 'Erreur serveur');
+    status.className = 'mt-4 text-center font-semibold text-red-600';
+
+  } catch (err) {
+    console.error(err);
+
+    status.textContent = '❌ Impossible de contacter le serveur.';
+    status.className = 'mt-4 text-center font-semibold text-red-600';
+
+  } finally {
+    // ------------------------------
+    // Toujours unlock
+    // ------------------------------
+    isSubmittingRequest = false;
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit request';
+      submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+    }
+  }
+});
+
+
+// ==============================
+// SSE : mises à jour en temps réel
+// ==============================
+
+let sse = null;
+
+function setupSSE() {
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+
+  // 🔁 Ferme l’ancienne connexion si elle existe (évite doublons)
+  if (sse) {
+    try { sse.close(); } catch {}
+  }
+
+  sse = new EventSource(
+    `${API_URL}/requests/stream?token=${encodeURIComponent(token)}`
+  );
+
+  sse.onmessage = (event) => {
+    try {
+      const payload = JSON.parse(event.data);
+
+      const requests = Array.isArray(payload) ? payload : [payload];
+      requests.forEach(upsertRow);
+
+      renderTable();
+      if (window.innerWidth < 768) renderMobileCards();
+    } catch (err) {
+      console.error('SSE parsing error', err, event.data);
+    }
+  };
+
+  sse.onerror = (err) => {
+    console.warn('SSE error:', err);
+
+    try { sse.close(); } catch {}
+    sse = null;
+
+    // 🔁 Reconnexion automatique
+    setTimeout(setupSSE, 5000);
+  };
+}
+
+// Lance SSE
+setupSSE();
+
+// ==============================
+// 📸 CAMERA MULTI PHOTOS
+// ==============================
+
+    document.getElementById('galleryBtn').addEventListener('click', () => {
+    document.getElementById('liqReceipts').click();
+    });
+
+    document.getElementById('cameraBtn').addEventListener('click', () => {
+      document.getElementById('cameraInput').click();
+    });
+
+    document.getElementById('liqReceipts').addEventListener('change', updateReceiptsUI);
+
+    document.getElementById('cameraInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        capturedPhotos.push(file);
+      }
+      e.target.value = '';
+      updateReceiptsUI();
+    });
+
+
+//========================
+  // Filtre montant
+//========================
+if (amountSearchInput) {
+  amountSearchInput.addEventListener('input', debounce(() => {
+    currentPage = 1;
+    renderTable();
+  }, 300));
+}
+
+  // Auto-refresh toutes les 60s
+  setInterval(fetchMyRequests, 60000);
+});
+
+
+function formatAmount(amount) {
+  if (amount == null || isNaN(amount)) return '';
+  return parseFloat(amount).toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
+}
+
+// Fonction pour compresser les images upload lors de la liquidation
+  async function compressImage(file, {
+    maxWidth = 1600,
+    maxHeight = 1600,
+    quality = 0.72,
+    mimeType = 'image/jpeg'
+  } = {}) {
+    if (!file || !file.type || !file.type.startsWith('image/')) return file;
+
+
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = objectUrl;
+    });
+
+    let { width, height } = img;
+
+    const ratio = Math.min(1, maxWidth / width, maxHeight / height);
+    const newW = Math.round(width * ratio);
+    const newH = Math.round(height * ratio);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = newW;
+    canvas.height = newH;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, newW, newH);
+
+    const blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve, mimeType, quality);
+    });
+
+    URL.revokeObjectURL(objectUrl);
+
+    if (!blob) return file;
+
+    const ext = mimeType === 'image/png' ? 'png' : 'jpg';
+    const newName = file.name.replace(/\.[^.]+$/, '') + `_compressed.${ext}`;
+
+    return new File([blob], newName, { type: mimeType });
+  }
+
+    function getAllPhotos() {
+      const input = document.getElementById('liqReceipts');
+      const galleryFiles = input.files ? Array.from(input.files) : [];
+      return [...galleryFiles, ...capturedPhotos];
+    }
+
+    function updateReceiptsUI() {
+      const info = document.getElementById('receiptsInfo');
+      const total = getAllPhotos().length;
+
+      if (total === 0) {
+        info.textContent = "No receipts";
+      } else if (total === 1) {
+        info.textContent = "📎 1 receipt";
+      } else {
+        info.textContent = `📎 ${total} receipts`;
+      }
+    }
+
+  // ✅ AJOUT ICI (juste après compressImage)
+    async function imagesToSinglePDF(files) {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF();
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        const compressed = await compressImage(file);
+
+        const imgData = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = e => resolve(e.target.result);
+          reader.readAsDataURL(compressed);
+        });
+
+        const img = new Image();
+        await new Promise((res) => {
+          img.onload = res;
+          img.src = imgData;
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const ratio = Math.min(pageWidth / img.width, pageHeight / img.height);
+        const width = img.width * ratio;
+        const height = img.height * ratio;
+
+        if (i !== 0) pdf.addPage();
+
+        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
+      }
+
+      return pdf.output('blob');
+    }
+
+
+  function getMobileRequestsFiltered() {
+    let requests = Array.from(requestsMap.values());
+
+    if (mobileAmountFilter) {
+      const target = parseFloat(mobileAmountFilter);
+
+      if (!isNaN(target)) {
+        requests = requests.filter(r => {
+          const approved = Number(r.approved_amount || 0);
+          const requested = Number(r.amount_requested || 0);
+
+          const amount = approved > 0 ? approved : requested;
+          return amount === target;
+        });
+      }
+    }
+
+    return requests;
+  }
+
+
+/* ==============================
+   RENDER MOBILE CARDS 📱
+============================== */
+function renderMobileCards() {
+  const container = document.getElementById('mobileRequests');
+  if (!container) return;
+
+  const requests = getMobileRequestsFiltered();
+  container.innerHTML = '';
+
+  const start = (mobilePage - 1) * mobilePerPage;
+  const paginated = requests.slice(start, start + mobilePerPage);
+
+  paginated.forEach(req => {
+    const statusColor =
+      req.status === 'Pending' ? 'bg-yellow-400' :
+      req.status === 'Approved' ? 'bg-blue-500' :
+      req.status === 'ToLiquidate' ? 'bg-purple-500' :
+      req.status === 'PendingValidation' ? 'bg-orange-500' :
+      req.status === 'Closed' ? 'bg-green-600' :
+      req.status === 'Rejected' || req.status === 'Cancelled' ? 'bg-red-600' :
+      'bg-gray-400';
+
+    const card = document.createElement('div');
+    card.className = `
+      bg-white rounded-lg border px-3 py-2 shadow-sm
+      cursor-pointer active:scale-[0.98] transition
+    `;
+
+    card.innerHTML = `
+      <div class="flex justify-between items-center">
+        <div class="min-w-0">
+          <p class="text-sm font-medium text-gray-800 truncate">
+            ${req.requestor_name}
+          </p>
+          <p class="text-xs text-gray-500">
+            ${req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : ''}
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="text-sm font-semibold text-gray-700">
+            ${formatAmount(req.amount_requested)} ₱
+          </span>
+
+          <span class="text-xs text-white px-2 py-0.5 rounded-full ${statusColor}">
+            ${req.status}
+          </span>
+
+          ${
+            req.request_type === 'FundTransfer'
+              ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                  FT
+                </span>`
+              : ''
+          }
+        </div>
+      </div>
+    `;
+
+
+    card.addEventListener('click', () => openModalFor(req.request_id));
+    container.appendChild(card);
+  });
+
+  renderMobilePagination(requests.length);
+}
+
+
+function renderMobilePagination(totalItems) {
+  const container = document.getElementById('mobilePagination');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const totalPages = Math.ceil(totalItems / mobilePerPage);
+  if (totalPages <= 1) return;
+
+  // ⬅️ Précédent
+  const prev = document.createElement('button');
+  prev.textContent = '‹';
+  prev.className = 'px-3 py-1 rounded bg-gray-200';
+  prev.disabled = mobilePage === 1;
+  prev.onclick = () => {
+    if (mobilePage > 1) {
+      mobilePage--;
+      renderMobileCards();
+    }
+  };
+  container.appendChild(prev);
+
+  // 🔢 Pages
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.className = `
+      px-3 py-1 rounded
+      ${i === mobilePage ? 'bg-indigo-600 text-white' : 'bg-gray-200'}
+    `;
+    btn.onclick = () => {
+      mobilePage = i;
+      renderMobileCards();
+    };
+    container.appendChild(btn);
+  }
+
+  // ➡️ Suivant
+  const next = document.createElement('button');
+  next.textContent = '›';
+  next.className = 'px-3 py-1 rounded bg-gray-200';
+  next.disabled = mobilePage === totalPages;
+  next.onclick = () => {
+    if (mobilePage < totalPages) {
+      mobilePage++;
+      renderMobileCards();
+    }
+  };
+  container.appendChild(next);
+}
+
+
+/* ==============================
+   Rafraîchir une seule demande depuis le serveur
+============================== */
+async function refreshRequest(request_id) {
+  try {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch(`${API_URL}/requests/${request_id}`, {
+    headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    if (handleAuthError(res)) return;
+
+    if (!res.ok) throw new Error('Erreur serveur');
+    const data = await res.json();
+    upsertRow(data); // Met à jour seulement cette ligne
+  } catch (err) {
+    console.error('Impossible de rafraîchir la demande :', err);
+  }
+}
+
+/* ==============================
+   Créer / mettre à jour une ligne
+============================== */
+  function upsertRow(req) {
+    if (!req || !req.request_id) return;
+
+    // Stockage mémoire (Map)
+    requestsMap.set(req.request_id, req);
+
+    // ⚠️ si table desktop pas montée (sécurité)
+    if (!myTableBody) return;
+
+    // Cherche si la ligne existe déjà
+    let row = myTableBody.querySelector(`tr[data-id="${req.request_id}"]`);
+
+
+    // Statut → badge + FT or L
+      const typeChip = req.request_type === 'FundTransfer'
+        ? `<span class="ml-2 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+            FT
+          </span>`
+        : '';
+
+    const statusHtml = `
+      <div class="flex items-center gap-1">
+        <span class="px-2 py-1 rounded-full text-white text-sm ${
+          req.status === 'Pending' ? 'bg-yellow-400' :
+          req.status === 'Approved' ? 'bg-blue-500' :
+          req.status === 'Rejected' ? 'bg-red-600' :
+          req.status === 'ToLiquidate' ? 'bg-purple-500' :
+          req.status === 'PendingValidation' ? 'bg-orange-500' :
+          req.status === 'Closed' ? 'bg-green-600' :
+          'bg-gray-400'
+        }">
+          ${req.status || ''}
+        </span>
+        ${typeChip}
+      </div>
+    `;
+
+
+  // Paiement → texte
+  const paymentText =
+    req.payment_method === 'cash' ? '💵 Cash' :
+    req.payment_method === 'cheque' ? '🧾 Check' :
+    req.payment_method === 'card' ? '💳 Card' :
+    '—';
+
+  // Si la ligne n'existe pas : création
+  if (!row) {
+    row = document.createElement('tr');
+    row.dataset.id = req.request_id;
+    row.dataset.center = req.center_name || '';
+    row.classList.add('hover:bg-gray-100', 'align-top');
+
+    row.innerHTML = `
+      <td class="p-2 py-1 border align-top">${req.request_id}</td>
+      <td class="p-2 py-1 border align-top">
+        ${req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : ''}
+      </td>
+      <td class="p-2 border align-top amount_requested">
+        ${formatAmount(req.amount_requested)}
+      </td>
+      <td class="p-2 border align-top payment_method">${paymentText}</td>
+      <td class="p-2 border align-top status">${statusHtml}</td>
+      <td class="p-2 border align-top approved_amount">
+        ${formatAmount(req.approved_amount)}
+      </td>
+      <td class="p-2 border align-top returned_amount">
+        ${formatAmount(req.returned_amount)}
+      </td>
+      <td class="p-2 border align-top text-right">
+        <button class="voirBtn
+          bg-white
+          border border-indigo-600
+          text-indigo-600
+          px-4 py-2
+          rounded-lg
+          text-sm
+          hover:bg-indigo-50
+          transition">View</button>
+      </td>
+    `;
+
+    myTableBody.appendChild(row);
+
+    const voirBtn = row.querySelector('.voirBtn');
+    if (voirBtn) {
+      voirBtn.addEventListener('click', () => openModalFor(req.request_id));
+    }
+
+    return;
+  }
+
+  // Sinon : update (ligne existante)
+  row.dataset.center = req.center_name || '';
+
+  const statusCell = row.querySelector('.status');
+  if (statusCell) statusCell.innerHTML = statusHtml;
+
+  const approvedCell = row.querySelector('.approved_amount');
+  if (approvedCell) approvedCell.textContent = formatAmount(req.approved_amount);
+
+  const returnedCell = row.querySelector('.returned_amount');
+  if (returnedCell) returnedCell.textContent = formatAmount(req.returned_amount);
+
+  const amountCell = row.querySelector('.amount_requested');
+  if (amountCell) amountCell.textContent = formatAmount(req.amount_requested);
+
+  // ✅ correction : mettre à jour le paiement aussi
+  const paymentCell = row.querySelector('.payment_method');
+  if (paymentCell) paymentCell.textContent = paymentText;
+}
+
+
+
+/* ==============================
+   Récupérer mes demandes (centre connecté)
+============================== */
+async function fetchMyRequests() {
+  try {
+    const token = localStorage.getItem('access_token');
+
+    const limit = 200;
+    let offset = 0;
+    let all = [];
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = await fetch(`${API_URL}/requests?limit=${limit}&offset=${offset}`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+
+      if (handleAuthError(res)) return;
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result?.error || 'Erreur serveur');
+
+      const batch = result.data || [];
+      all = all.concat(batch);
+
+      hasMore = result.pagination?.hasMore === true;
+      offset += limit;
+
+      // sécurité anti boucle infinie
+      if (batch.length === 0) break;
+    }
+
+    // Reset DOM + mémoire
+    requestsMap.clear();
+    myTableBody.innerHTML = '';
+
+    all.forEach(req => upsertRow(req));
+
+    renderTable();
+
+    if (window.innerWidth < 768) {
+      mobilePage = 1;
+      renderMobileCards();
+    }
+
+  } catch (err) {
+    console.error('Erreur fetchMyRequests:', err);
+  }
+}
+
+
+/* ==============================
+   Modal actions — CLEAN VERSION
+============================== */
+
+/**
+ * Table de décision : statut → action
+ */
+const ACTION_BY_STATUS = {
+  Approved: 'received',
+  ToLiquidate: 'liquidate',
+  Pending: 'cancel',
+};
+
+/**
+ * Cache tous les panels et reset l’état desktop
+ */
+function hideAllPanels() {
+  // Cacher tous les panels UNIQUEMENT
+  document.querySelectorAll('.action-panel')
+    .forEach(p => p.classList.add('hidden'));
+}
+
+/**
+ * Affiche un panel donné
+ * - Mobile : affichage direct
+ * - Desktop : affichage + highlight bouton
+ */
+
+function showPanel(action) {
+  if (isSwitchingPanel) return;
+  isSwitchingPanel = true;
+
+  hideAllPanels();
+
+  const panel = document.getElementById('panel-' + action);
+  if (panel) panel.classList.remove('hidden');
+
+  requestAnimationFrame(() => {
+    const rightCol = document.getElementById('panel-liquidate');
+    if (rightCol) rightCol.scrollTop = 0;
+
+    isSwitchingPanel = false;
+  });
+}
+
+
+/**
+ * Sélection automatique du panel selon le statut
+ */
+function autoSelectMobileAction(req) {
+  if (!req) return;
+
+  const action = ACTION_BY_STATUS[req.status];
+  if (!action) return;
+
+  // afficher le panel
+  showPanel(action);
+
+  // sélectionner visuellement la carte
+  const card = document.querySelector(`#actionList [data-action="${action}"]`);
+  if (card) {
+    if (activeActionCard) {
+      activeActionCard.classList.remove('is-active');
+    }
+    card.classList.add('is-active');
+    activeActionCard = card;
+  }
+}
+
+
+/**
+ * Ouvre le modal et prépare les données
+ */
+function openModalFor(request_id) {
+  console.log("Opening modal for request_id:", request_id);
+
+  const req = requestsMap.get(request_id);
+  if (!req) {
+    alert("Request not found.");
+    return;
+  }
+
+  // Gestion affichage bouton validate
+const validateCard = document.querySelector('[data-action="validate"]');
+const liquidateCard = document.querySelector('[data-action="liquidate"]');
+
+// RESET
+validateCard?.classList.add('hidden');
+liquidateCard?.classList.add('hidden');
+
+// AFFICHAGE PROPRE
+if (req.status === 'ToLiquidate') {
+  liquidateCard?.classList.remove('hidden');
+}
+
+if (req.status === 'PendingValidation') {
+  // rien pour CC
+}
+
+  currentRequestId = request_id;
+  capturedPhotos = [];
+  updateReceiptsUI();
+
+  // ---------- Infos générales ----------
+
+    const modalRequestId = document.getElementById('modalRequestId');
+    const modalCenter = document.getElementById('modalCenter');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDescription = document.getElementById('modalDescription');
+    const modalPaymentMethod = document.getElementById('modalPaymentMethod');
+
+    modalRequestId.textContent = request_id;
+    modalCenter.textContent = req.center_name || '';
+
+    const displayAmount = (req.approved_amount ?? req.amount_requested) ?? 0;
+    modalTitle.textContent = `${req.requestor_name} — ${formatAmount(displayAmount)} PHP`;
+
+    modalDescription.textContent = req.description || '';
+
+    const paymentLabel =
+      req.payment_method === 'cash'   ? '(💵 Cash)' :
+      req.payment_method === 'cheque' ? '(🧾 Check)' :
+      req.payment_method === 'card'   ? '(💳 Card)' :
+      '—';
+
+    modalPaymentMethod.textContent = paymentLabel;
+
+    // -------------------------
+    // Texte du bouton "received" selon payment method
+    // -------------------------
+    const receivedTitle = document.getElementById('receivedActionTitle');
+
+    if (receivedTitle) {
+      if (req.payment_method === 'cheque') {
+        receivedTitle.textContent = '🧾 Check received';
+      } else {
+        receivedTitle.textContent = '💵 Cash received';
+      }
+    }
+
+
+  // ---------- Panel Annuler ----------
+  document.getElementById('cancelRequestorNamePanel').value = req.requestor_name;
+  document.getElementById('cancelReason').value = '';
+
+  // ---------- Panel Argent reçu ----------
+  const receivedPanel = document.getElementById('panel-received');
+  const receivedInputs = [
+    document.getElementById('receivedAmount'),
+    document.getElementById('receivedDate'),
+    document.getElementById('receivedName'),
+    document.getElementById('receivedCheck'),
+    document.getElementById('confirmReceivedBtn')
+  ];
+
+      receivedInputs[0].value = req.amount_received ?? '';
+      receivedInputs[1].value = req.received_at
+        ? req.received_at.slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+
+      receivedInputs[2].value = req.received_name ?? '';
+      receivedInputs[3].checked = !!req.received_confirmed;
+
+
+  if (req.received_confirmed || req.status !== 'Approved') {
+    receivedInputs.forEach(el => el.disabled = true);
+    receivedPanel.classList.add('opacity-50');
+  } else {
+    receivedInputs.forEach(el => el.disabled = false);
+    receivedPanel.classList.remove('opacity-50');
+  }
+
+// ---------- Panel Liquidation ----------
+      const liqPanel = document.getElementById('panel-liquidate');
+
+      const liqSpentInput = document.getElementById('liqSpent');
+      const liqReturnedInput = document.getElementById('liqAmount');
+      const liqReceiptsInput = document.getElementById('liqReceipts');
+      const liqNoteInput = document.getElementById('liqNote');
+      const liqSubmitBtn = document.getElementById('liqSubmitBtn');
+
+      const liqInputs = [
+        liqSpentInput,
+        liqReturnedInput,
+        liqReceiptsInput,
+        liqNoteInput,
+        liqSubmitBtn
+      ];
+
+      // Remplir les champs existants (trace)
+      liqSpentInput.value = req.amount_spent ?? '';
+      liqReturnedInput.value = req.returned_amount ?? '';
+      liqNoteInput.value = req.liquidation_note ?? '';
+      liqReceiptsInput.value = '';
+
+      // Verrouillage selon statut
+      if (req.status !== 'ToLiquidate') {
+        liqInputs.forEach(el => el.disabled = true);
+        liqPanel.classList.add('opacity-50');
+      } else {
+        liqInputs.forEach(el => el.disabled = false);
+        liqPanel.classList.remove('opacity-50');
+      }
+
+
+  // ---------- Panel Annuler ----------
+  const cancelPanel = document.getElementById('panel-cancel');
+  const cancelInputs = cancelPanel.querySelectorAll('input, textarea, button');
+
+  if (req.status === 'Closed') {
+    cancelInputs.forEach(el => el.disabled = true);
+    cancelPanel.classList.add('opacity-50');
+  } else {
+    cancelInputs.forEach(el => el.disabled = false);
+    cancelPanel.classList.remove('opacity-50');
+  }
+
+  // ---------- Ouvrir le modal ----------
+  const modal = document.getElementById('modal');
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+
+  // Attendre le rendu puis afficher le bon panel
+requestAnimationFrame(() => {
+  autoSelectMobileAction(req);
+
+});
+
+  // ---------- Actions : autorisées ou lecture seule ----------
+  document.querySelectorAll('#actionList .action-card').forEach(card => {
+    const action = card.dataset.action;
+
+  const allowed =
+    (action === 'received'  && req.status === 'Approved') ||
+    (action === 'liquidate' && req.status === 'ToLiquidate') ||
+    (action === 'validate'  && req.status === 'PendingValidation') ||
+    (action === 'cancel'    && req.status !== 'Closed');
+
+    // Toujours cliquable → même si non autorisé (lecture seule)
+    card.classList.remove('pointer-events-none');
+
+    if (!allowed) {
+      // grisé visuel
+      card.classList.add('opacity-40');
+      card.classList.remove('is-active');
+    } else {
+      card.classList.remove('opacity-40');
+    }
+  });
+
+
+}
+
+/**
+ * Fermeture du modal
+ */
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  document.body.style.overflow = '';
+  currentRequestId = null;
+
+  // reset action sélectionnée
+  if (activeActionCard) {
+    activeActionCard.classList.remove('is-active');
+    activeActionCard = null;
+  }
+
+  hideAllPanels();
+}
+
+
+    // ---------- Listeners ----------
+    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+    document.getElementById('modalOverlay').addEventListener('click', closeModal);
+    window.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    document.querySelector('#actionList').addEventListener('click', e => {
+      const card = e.target.closest('.action-card');
+      if (!card || card === activeActionCard) return;
+      if (card.classList.contains('pointer-events-none')) return;
+
+
+      // retire l'ancienne sélection
+      if (activeActionCard) {
+        activeActionCard.classList.remove('is-active');
+      }
+
+      // active la nouvelle
+      card.classList.add('is-active');
+      activeActionCard = card;
+
+      showPanel(card.dataset.action);
+    });
+
+
+
+/* ==============================
+   Handlers Retour pour les panels
+============================= */
+['receivedBack', 'liqCancel', 'cancelBack', 'validateBack'].forEach(id => {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    hideAllPanels();
+
+    // mobile : revenir à la liste d’actions
+    if (window.innerWidth < 768) {
+      if (activeActionCard) {
+        activeActionCard.classList.remove('is-active');
+        activeActionCard = null;
+      }
+    }
+  });
+});
+
+
+/* ==============================
+   Handler amélioré pour "Confirmer réception ✅"
+============================== */
+document.getElementById('confirmReceivedBtn').addEventListener('click', async () => {
+  if (!currentRequestId) return alert("Demande introuvable.");
+  const req = requestsMap.get(currentRequestId);
+  if (!req) return alert("Demande introuvable.");
+
+  // Vérification : doit être approuvée
+  if (req.status !== 'Approved') {
+    return alert("This request must be approved before confirming receipt.");
+  }
+
+  const amount = parseFloat(document.getElementById('receivedAmount').value);
+  const dateInput = document.getElementById('receivedDate').value;
+  const check = document.getElementById('receivedCheck').checked;
+  const receivedName = document.getElementById('receivedName').value.trim();
+
+  if (!amount || amount <= 0) return alert("Please enter the amount received.");
+  if (!dateInput) return alert("Please enter the receipt date.");
+  if (!check) return alert("You must confirm that you have received the money.");
+
+  const received_at = new Date(dateInput + "T12:00:00").toISOString();
+
+  try {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch(`${API_URL}/requests/${currentRequestId}/received`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        amount_received: amount,
+        received_at: received_at,
+        received_name: receivedName,
+        received_confirmed: true
+      })
+    });
+
+    // 🔒 token invalide/expiré → redirect login
+    if (handleAuthError(res)) return;
+
+    if (!res.ok) throw new Error('Erreur serveur');
+
+    const updatedData = await res.json();
+    if (!updatedData.data || !updatedData.data.length) throw new Error('Aucune donnée retournée');
+
+    // Mettre à jour localement avec les données du serveur
+    const updatedReq = updatedData.data[0];
+    requestsMap.set(updatedReq.request_id, updatedReq);
+    upsertRow(updatedReq);
+
+    // Recharge le panel en mode verrouillé
+    openModalFor(updatedReq.request_id);
+
+    alert("✅ Réception confirmée !");
+  } catch (err) {
+    console.error(err);
+    alert("❌ Impossible de mettre à jour le serveur : " + err.message);
+  }
+});
+
+
+/* ==============================
+   Handler pour le bouton "💰 Liquider"
+============================== */
+document.getElementById('liqSubmitBtn').addEventListener('click', async () => {
+  if (!currentRequestId) return alert("Demande introuvable.");
+    const reqId = currentRequestId;
+
+
+  const req = requestsMap.get(currentRequestId);
+  if (!req) return alert("Demande introuvable.");
+
+  // ❌ Statut invalide
+  if (req.status !== 'ToLiquidate') {
+    return alert("Impossible: the request must be in ‘ToLiquidate’ status to be liquidated.");
+  }
+
+  // ==============================
+  // Récupération des champs
+  // ==============================
+  const spent = parseFloat(document.getElementById('liqSpent').value);
+  const returned = parseFloat(document.getElementById('liqAmount').value);
+  const receiptsInput = document.getElementById('liqReceipts');
+  const note = document.getElementById('liqNote').value.trim();
+
+  if (isNaN(spent) || spent <= 0) {
+    return alert("Please enter the amount spent.");
+  }
+
+  if (isNaN(returned) || returned < 0) {
+    return alert("Please enter the returned amount.");
+  }
+
+  // ==============================
+  // Vérification cohérence montants
+  // ==============================
+  const approved = Number(req.approved_amount || 0);
+  const epsilon = 0.01;
+
+  if (Math.abs((spent + returned) - approved) > epsilon) {
+    return alert(
+      `❌ Amounts do not match.\n\n` +
+      `Amount approuved: ${approved}\n` +
+      `Spent + Returned: ${spent + returned}\n\n` +
+      `Amounts must match exactly.`
+    );
+  }
+
+
+    // ==============================
+    // Préparer les fichiers reçus → TOUJOURS PDF
+    // ==============================
+    const rawFiles = getAllPhotos();
+
+    if (rawFiles.length === 0) {
+      alert("Please add at least one receipt.");
+      return;
+    }
+
+    if (rawFiles.length > 10) {
+      alert("Please select max 10 photos.");
+      return;
+    }
+
+    // 🔥 Convertir toutes les images en UN SEUL PDF
+    const pdfBlob = await imagesToSinglePDF(rawFiles);
+
+    const pdfFile = new File([pdfBlob], `${req.request_id}.pdf`, {
+      type: 'application/pdf'
+    });
+
+    const receiptsFiles = [{
+      file: pdfFile,
+      filename: pdfFile.name
+    }];
+
+
+    // ==============================
+    // Mise à jour locale immédiate (UX)
+    // ==============================
+      req.amount_spent = spent;
+      req.returned_amount = returned;
+      req.liquidation_note = note;
+      req.receipts = null;
+      req.receipts_upload_status = 'pending';
+
+      // ⚠️ on ne met PAS Closed ici
+      upsertRow(req);
+
+      renderTable();
+      if (window.innerWidth < 768) renderMobileCards();
+
+
+    // ==============================
+    // Loader / bouton
+    // ==============================
+    const liqBtn = document.getElementById('liqSubmitBtn');
+    const liqBtnText = document.getElementById('liqBtnText');
+    const liqLoader = document.getElementById('liqLoader');
+
+    liqBtn.disabled = true;
+    liqBtnText.textContent = 'Processing...';
+    liqLoader.classList.remove('hidden');
+
+
+  try {
+    const token = localStorage.getItem('access_token');
+
+// ==============================
+// 1) PATCH liquidation (JSON) → réponse immédiate
+// ==============================
+const res = await fetch(`${API_URL}/requests/${reqId}/liquidate`, {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + token
+  },
+  body: JSON.stringify({
+    amount_spent: spent,
+    returned_amount: returned,
+    liquidation_note: note
+  })
+});
+
+if (handleAuthError(res)) {
+  liqBtn.disabled = false;
+  liqBtnText.textContent = '📤 Submit liquidation';
+  liqLoader.classList.add('hidden');
+  // ✅ RESET PHOTOS CAMERA
+  capturedPhotos = [];
+  return;
+}
+
+if (!res.ok) {
+  let errMsg = 'Erreur serveur';
+  try {
+    const json = await res.json();
+    if (json?.error) errMsg = json.error;
+  } catch {}
+  throw new Error(errMsg);
+}
+
+
+// ✅ UI immédiate + synchro
+closeModal();
+await refreshRequest(reqId);
+
+renderTable();
+if (window.innerWidth < 768) renderMobileCards();
+
+
+alert("✅ Liquidation submitted. Waiting for admin validation");
+
+
+// ==============================
+// 2) POST receipts (PENDING)
+// ==============================
+if (receiptsFiles.length > 0) {
+  const fd = new FormData();
+
+  receiptsFiles.forEach(f => {
+    fd.append('receipts', f.file, f.filename);
+  });
+
+
+  await fetch(`${API_URL}/requests/${reqId}/receipts`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token
+    },
+    body: fd
+  });
+}
+
+} catch (err) {
+  console.error(err);
+  alert("❌ Unable to update the server:" + err.message);
+} finally {
+
+  // ==============================
+  // RESET UI (TOUJOURS)
+  // ==============================
+  liqBtn.disabled = false;
+  liqBtnText.textContent = '📤 Submit liquidation';
+  liqLoader.classList.add('hidden');
+
+  // ✅ RESET PHOTOS (ICI EXACTEMENT)
+  capturedPhotos = [];
+  document.getElementById('liqReceipts').value = '';
+  updateReceiptsUI();
+}
+});
+
+
+/* ==============================
+   Handler pour le bouton "✖ Annuler" dans le panel Cancel
+============================== */
+document.getElementById('cancelSubmitBtn').addEventListener('click', async () => {
+  if (!currentRequestId) return alert("Request not found.");
+  const req = requestsMap.get(currentRequestId);
+  if (!req) return alert("Request not found.");
+
+  const reason = document.getElementById('cancelReason').value.trim();
+  if (!reason) return alert("Please enter a cancellation reason.");
+
+  try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_URL}/requests/${currentRequestId}/cancel`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({
+          cancellation_note: reason
+        })
+      });
+
+      // 🔒 token invalide/expiré → redirect login
+      if (handleAuthError(res)) return;
+
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      const text = await res.text();
+      console.error('Réponse non JSON', text);
+      throw new Error('Erreur serveur : réponse non JSON');
+    }
+
+    if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+
+    // Mise à jour locale
+    req.status = 'Cancelled';
+    req.cancellation_note = reason;
+    upsertRow(req);
+
+    alert("✅ Request cancelled successfully!");
+    hideAllPanels();
+    closeModal();
+
+  } catch (err) {
+    console.error(err);
+    alert("❌ Impossible d'annuler la demande : " + err.message);
+  }
+});
+
+
+//==============================================
+// TABLEAU : FILTRE MONTANT + PAGINATION (SIMPLE)
+//==============================================
+
+let currentPage = 1;
+const rowsPerPage = 10; // ajuste si tu veux plus/moins de lignes
+
+function renderTable() {
+  const tableBody = document.getElementById('myRequestsTable');
+  if (!tableBody) return;
+
+  const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+  // -------------------------------------------
+  // Filtrage
+  // -------------------------------------------
+  let filtered = rows;
+
+  // Filtrer par montant
+    const amountValue = parseFloat(amountSearchInput?.value);
+    if (!isNaN(amountValue)) {
+      filtered = filtered.filter(row => {
+        const approvedCell = row.querySelector('.approved_amount');
+        const requestedCell = row.querySelector('.amount_requested');
+
+        const approved = approvedCell
+          ? parseFloat(approvedCell.textContent.replace(/,/g, '')) 
+          : NaN;
+
+        const requested = requestedCell
+          ? parseFloat(requestedCell.textContent.replace(/,/g, '')) 
+          : NaN;
+
+        // logique : approved si existe, sinon requested
+        const rowAmount = !isNaN(approved) && approved > 0 ? approved : (requested || 0);
+
+        return rowAmount === amountValue;
+      });
+    }
+
+
+  // -------------------------------------------
+  // Pagination
+  // -------------------------------------------
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
+
+  // Si tu étais sur une page trop loin (après filtre), on revient à la dernière page possible
+  if (currentPage > totalPages) {
+    currentPage = totalPages;
+  }
+  if (currentPage < 1) {
+    currentPage = 1;
+  }
+
+  const start = (currentPage - 1) * rowsPerPage;
+  const paginated = filtered.slice(start, start + rowsPerPage);
+
+  // -------------------------------------------
+  // Affichage
+  // -------------------------------------------
+  rows.forEach(r => (r.style.display = 'none'));
+  paginated.forEach(r => (r.style.display = ''));
+
+  renderPagination(totalItems);
+}
+
+function renderPagination(totalItems) {
+  const paginationDiv = document.getElementById('pagination');
+  if (!paginationDiv) return;
+
+  paginationDiv.innerHTML = '';
+
+  const totalPages = Math.ceil(totalItems / rowsPerPage);
+
+  // Si 0 ou 1 page : pas besoin d'afficher des boutons
+  if (!totalPages || totalPages <= 1) return;
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+
+    btn.className =
+      `px-3 py-1 rounded ` +
+      (i === currentPage ? 'bg-indigo-500 text-white' : 'bg-gray-200');
+
+    btn.addEventListener('click', () => {
+      currentPage = i;
+      renderTable();
+    });
+
+    paginationDiv.appendChild(btn);
+  }
+}
+
+// Re-render mobile si on repasse en vue mobile
+window.addEventListener('resize', () => {
+  if (window.innerWidth < 768) {
+    renderMobileCards();
+  }
+});
+
+
+
+//===================
+// LOGOUT - DECONNEXION 
+//========================
+
+
+ // Handler de logout robuste
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#logoutBtnMobile, #logoutBtnDesktop');
+    if (!btn) return;
+
+    try {
+      // Supprime toutes les clés d'auth possibles (adapte les noms si tu as d'autres clés)
+      localStorage.removeItem('user');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      // Optionnel : si tu utilises sessionStorage
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('access_token');
+      // Si tu veux tout supprimer (attention : supprime toutes les données locales)
+      // localStorage.clear();
+
+      // Supprime aussi les cookies d'auth si tu en utilises (exemple)
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.replace(/^ +/, "")
+                           .replace(/=.*/, "=;expires=" + new Date(0).toUTCString() + ";path=/");
+      });
+    } catch (err) {
+      console.warn('Erreur lors du nettoyage du storage:', err);
+    }
+
+    // Redirection : use replace pour ne pas laisser login dans l'historique
+    window.location.replace('login.html');
+  });
+
+
+
+</script>
+
+</body>
+</html>

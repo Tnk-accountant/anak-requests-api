@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin – Anak Requests</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-4 font-sans">
+  <h1 class="text-2xl font-bold mb-4 text-center">Admin – Gestion des demandes</h1>
+
+  <div class="mb-4 flex justify-between items-center">
+    <select id="filterStatus" class="border rounded p-2">
+      <option value="">Tous les statuts</option>
+      <option value="Pending">En attente</option>
+      <option value="Approved">Approuvé</option>
+      <option value="Rejected">Refusé</option>
+      <option value="ToLiquidate">À liquider</option>
+      <option value="Closed">Clôturé</option>
+    </select>
+    <button id="refreshBtn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Rafraîchir</button>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white shadow rounded">
+      <thead class="bg-indigo-100">
+        <tr>
+          <th class="py-2 px-3 border">ID</th>
+          <th class="py-2 px-3 border">Date de demande</th>
+          <th class="py-2 px-3 border">Demandeur</th>
+          <th class="py-2 px-3 border">Centre</th>
+          <th class="py-2 px-3 border">Montant demandé</th>
+          <th class="py-2 px-3 border">Description</th>
+          <th class="py-2 px-3 border">Statut</th>
+          <th class="py-2 px-3 border">Montant approuvé</th>
+          <th class="py-2 px-3 border">Validé par</th>
+          <th class="py-2 px-3 border">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="requestsTableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const requestsTableBody = document.getElementById('requestsTableBody');
+    const filterStatus = document.getElementById('filterStatus');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    // Utilisateur admin courant
+    const currentAdmin = "Father"; // ou "Charles", à adapter
+
+    filterStatus.addEventListener('change', fetchRequests);
+    refreshBtn.addEventListener('click', fetchRequests);
+
+    fetchRequests();
+
+//CODE pour faire fonctionner les boutons Approve/Reject (montant approuvé)
+function renderTable(data) {
+  requestsTableBody.innerHTML = '';
+
+  // Trier par date décroissante (dernière demande en premier)
+  data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+
+  data.forEach(req => {
+    const tr = document.createElement('tr');
+    tr.className = "text-center border-b hover:bg-gray-100";
+
+    tr.innerHTML = `
+      <td>${req.request_id}</td>
+      <td>${new Date(req.timestamp).toLocaleDateString('fr-FR')}</td>
+      <td>${req.requestor_name}</td>
+      <td>${req.center_name}</td>
+      <td>${req.amount_requested}</td>
+      <td class="text-left max-w-xs">
+        <span class="description-preview">${req.description?.slice(0, 50) || ''}</span>
+        <span class="description-full hidden">${req.description || ''}</span>
+        ${req.description && req.description.length > 50 ? '<button class="toggleDescription text-blue-500 ml-1 text-sm hover:underline">...</button>' : ''}
+      </td>
+      <td>${req.status}</td>
+      <td>${req.approved_amount || ''}</td>
+      <td>${req.approved_by || ''}</td>
+      <td>
+        <input type="number" placeholder="Montant" class="approvedAmount w-20 p-1 border rounded">
+        <button class="approveBtn bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">✅</button>
+        <button class="rejectBtn bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">❌</button>
+      </td>
+    `;
+
+    requestsTableBody.appendChild(tr);
+
+    // Boutons Approve / Reject
+    const approveBtn = tr.querySelector('.approveBtn');
+    const rejectBtn = tr.querySelector('.rejectBtn');
+    const approvedAmountInput = tr.querySelector('.approvedAmount');
+
+    approveBtn.addEventListener('click', () => {
+      const approved_amount = Number(approvedAmountInput.value) || req.amount_requested;
+      updateRequest(req.request_id, 'Approved', currentAdmin, approved_amount, tr);
+    });
+
+    rejectBtn.addEventListener('click', () => {
+      updateRequest(req.request_id, 'Rejected', currentAdmin, null, tr);
+    });
+
+    // Toggle description
+    const toggleBtn = tr.querySelector('.toggleDescription');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const preview = tr.querySelector('.description-preview');
+        const full = tr.querySelector('.description-full');
+        const isHidden = full.classList.contains('hidden');
+
+        if (isHidden) {
+          preview.classList.add('hidden');
+          full.classList.remove('hidden');
+          toggleBtn.textContent = '▲';
+        } else {
+          preview.classList.remove('hidden');
+          full.classList.add('hidden');
+          toggleBtn.textContent = '...';
+        }
+      });
+    }
+  });
+}
+
+
+async function updateRequest(request_id, status, approved_by, approved_amount, rowElement) {
+  try {
+    const response = await fetch(`http://localhost:3000/requests/${request_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, approved_by, approved_amount })
+    });
+    const result = await response.json();
+    console.log(result);
+
+    if (!result.error) {
+    rowElement.querySelector('td:nth-child(7)').textContent = status; // statut
+    rowElement.querySelector('td:nth-child(8)').textContent = approved_amount || ''; // montant approuvé
+    rowElement.querySelector('td:nth-child(9)').textContent = approved_by; // validé par
+     }
+
+  } catch (err) {
+    console.error('Erreur update request:', err);
+  }
+}
+
+
+async function fetchRequests() {
+  try {
+    const statusFilter = filterStatus.value;
+    let url = 'http://localhost:3000/requests';
+    if (statusFilter) {
+      url += `?status=${statusFilter}`;
+    }
+
+    const response = await fetch(url);
+    const data = await response.json();
+    console.log("Données reçues du serveur :", data); // debug
+    renderTable(data);
+  } catch (err) {
+    console.error("Erreur fetch requests:", err);
+  }
+}
+
+  </script>
+</body>
+</html>

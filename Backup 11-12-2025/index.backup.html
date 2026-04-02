@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anak Requests Dashboard CC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-5">
+
+  <!-- Formulaire de demande -->
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-3xl mb-8">
+    <h1 class="text-2xl font-bold text-indigo-600 text-center mb-6">Soumettre une demande</h1>
+
+    <form id="requestForm" class="space-y-4">
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Nom du demandeur</label>
+        <input type="text" id="requestor_name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Centre</label>
+        <select id="center_name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="">Sélectionner un centre</option>
+          <option value="DIB">DIB</option>
+          <option value="RB1">RB1</option>
+          <option value="RB2">RB2</option>
+          <option value="RB3">RB3</option>
+          <option value="CFH">CFH</option>
+          <option value="CARP">CARP</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Montant demandé</label>
+        <input type="number" id="amount_requested" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Description</label>
+        <textarea id="description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+      </div>
+
+      <button type="submit" id="submitBtn" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-lg hover:bg-indigo-700 transition-colors">Envoyer la demande</button>
+    </form>
+
+    <p id="status" class="mt-4 text-center font-semibold"></p>
+    <p id="generatedId" class="mt-2 text-center text-sm text-gray-600"></p>
+  </div>
+
+
+  <!-- Tableau Mes demandes -->
+  <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-3xl mt-8">
+    <h2 class="text-xl font-bold text-gray-700 mb-4">Mes demandes</h2>
+
+      <!-- Filtre pour trouver les demandes par centre -->
+      <label for="centerFilter" class="block mb-2 font-semibold">Filtrer par centre :</label>
+    <select id="centerFilter" class="border p-2 rounded mb-4">
+      <option value="" selected disabled>-- Sélectionner un centre --</option>
+      <option value="DIB">DIB</option>
+      <option value="RB1">RB1</option>
+      <option value="RB2">RB2</option>
+      <option value="RB3">RB3</option>
+      <option value="CFH">CFH</option>
+      <option value="CARP">CARP</option>
+    </select>
+
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-indigo-100">
+          <th class="p-2 border">ID</th>
+          <th class="p-2 border">Date</th>
+          <th class="p-2 border">Montant demandé</th>
+          <th class="p-2 border">Statut</th>
+          <th class="p-2 border">Montant approuvé</th>
+          <th class="p-2 border">Reçus</th>
+          <th class="p-2 border">Montant rendu</th>
+        </tr>
+      </thead>
+      <tbody id="myRequestsTable" class="divide-y divide-gray-200"></tbody>
+    </table>
+  </div>
+
+
+
+
+  <script>
+const requestorInput = document.getElementById('requestor_name');
+const form = document.getElementById('requestForm');
+const status = document.getElementById('status');
+const generatedIdEl = document.getElementById('generatedId');
+const myTableBody = document.getElementById('myRequestsTable');
+const centerFilter = document.getElementById('centerFilter');
+
+function applyCenterFilter() {
+  const selectedCenter = (centerFilter.value || '').toString().trim().toLowerCase();
+  const rows = myTableBody.querySelectorAll('tr');
+
+  rows.forEach(row => {
+    const center = (row.dataset.center || '').toString().trim().toLowerCase();
+    // Si rien n’est sélectionné, on cache tout
+    if (!selectedCenter) {
+      row.style.display = 'none';
+    } else {
+      row.style.display = center === selectedCenter ? '' : 'none';
+    }
+  });
+}
+
+centerFilter.addEventListener('change', applyCenterFilter);
+
+
+// Fonction pour créer ou mettre à jour une ligne
+function upsertRow(req) {
+  let row = myTableBody.querySelector(`tr[data-id="${req.request_id}"]`);
+  const statusHtml = `<span class="px-2 py-1 rounded-full text-white text-sm ${
+    req.status === 'Pending' ? 'bg-yellow-400' :
+    req.status === 'Approved' ? 'bg-blue-500' :
+    req.status === 'Rejected' ? 'bg-red-600' :
+    req.status === 'Certified' ? 'bg-indigo-600' :
+    req.status === 'ToLiquidate' ? 'bg-purple-500' :
+    req.status === 'Closed' ? 'bg-green-600' : 'bg-gray-400'
+  }">${req.status}</span>`;
+
+  if (row) {
+  // mettre à jour l'attribut data-center si besoin
+  row.dataset.center = req.center_name || '';
+
+  row.querySelector('.status').innerHTML = statusHtml;
+  row.querySelector('.approved_amount').textContent = req.approved_amount || '';
+   } else {
+  row = document.createElement('tr');
+  row.setAttribute('data-id', req.request_id);
+  row.dataset.center = req.center_name || ''; // <-- IMPORTANT
+  row.classList.add('hover:bg-gray-100');
+  row.innerHTML = `
+    <td class="p-2 border">${req.request_id}</td>
+    <td class="p-2 border">${req.timestamp ? new Date(req.timestamp).toLocaleDateString('fr-FR') : ''}</td>
+    <td class="p-2 border">${req.amount_requested}</td>
+    <td class="p-2 border status">${statusHtml}</td>
+    <td class="p-2 border approved_amount">${req.approved_amount || ''}</td>
+    <td class="p-2 border">${req.receipts ? req.receipts.map(r => `<a href="${r}" target="_blank" class="text-indigo-600 underline">Voir</a>`).join('<br>') : ''}</td>
+    <td class="p-2 border">${req.returned_amount || ''}</td>
+  `;
+  myTableBody.appendChild(row);
+   }
+
+}
+
+// Fonction pour récupérer les demandes de l’utilisateur courant
+async function fetchMyRequests() {
+  try {
+    const userName = requestorInput.value.trim();
+    const response = await fetch('http://localhost:3000/test-db');
+    const data = await response.json();
+
+    const myRequests = data;
+
+    myTableBody.innerHTML = ''; // vider le tableau avant réaffichage
+    myRequests.forEach(upsertRow);
+
+    // Appliquer le filtre après avoir rempli le tableau
+    applyCenterFilter();
+
+  } catch (err) {
+    console.error('Erreur fetch my requests:', err);
+  }
+}
+
+// Initial et auto actualisation toutes les 5 secondes
+setInterval(fetchMyRequests, 5000);
+
+// --- Gestion du formulaire ---
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  status.textContent = '';
+  generatedIdEl.textContent = '';
+
+  const requestor_name = requestorInput.value.trim();
+  const center_name = document.getElementById('center_name').value.trim();
+  const amountRaw = document.getElementById('amount_requested').value;
+  const amount_requested = Number(amountRaw);
+  const description = document.getElementById('description').value.trim();
+
+  if (!requestor_name || !center_name || !Number.isFinite(amount_requested) || amount_requested <= 0) {
+    status.textContent = '❌ Champs obligatoires manquants ou invalides';
+    status.className = 'mt-4 text-center font-semibold text-red-600';
+    return;
+  }
+
+  const requestData = { requestor_name, center_name, amount_requested, description };
+
+  try {
+    const response = await fetch('http://localhost:3000/requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData)
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      status.textContent = '✅ Demande envoyée avec succès !';
+      status.className = 'mt-4 text-center font-semibold text-green-600';
+      generatedIdEl.textContent = `ID généré : ${result.data.request_id}`;
+      upsertRow(result.data);
+      // Ne pas réinitialiser le champ du nom
+      document.getElementById('center_name').value = '';
+      document.getElementById('amount_requested').value = '';
+      document.getElementById('description').value = '';
+      fetchMyRequests(); // rafraîchir le tableau après insertion
+    } else {
+      status.textContent = '❌ Erreur : ' + (result.error || 'Serveur');
+      status.className = 'mt-4 text-center font-semibold text-red-600';
+    }
+  } catch (err) {
+    status.textContent = '❌ Impossible de contacter le serveur.';
+    status.className = 'mt-4 text-center font-semibold text-red-600';
+    console.error('Fetch error:', err);
+  }
+});
+
+// déclencher la première récupération au chargement
+fetchMyRequests();
+requestorInput.addEventListener('input', fetchMyRequests);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,178 @@
+/* ===============================
+   Reset & base
+=============================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background: #f4f6fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* ===============================
+   Conteneur principal
+=============================== */
+.container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 1rem 2rem;
+}
+
+/* ===============================
+   Titres
+=============================== */
+h1, h2, h3 {
+    color: #1e1e2f;
+    margin-bottom: 1rem;
+}
+
+h1 {
+    font-size: 2rem;
+}
+
+/* ===============================
+   Formulaires
+=============================== */
+form {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+input:focus,
+textarea:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+    outline: none;
+}
+
+/* ===============================
+   Boutons
+=============================== */
+button {
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+}
+
+button:hover {
+    background: #4f46e5;
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* ===============================
+   Tableaux
+=============================== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+
+thead {
+    background: #6366f1;
+    color: #fff;
+}
+
+thead th {
+    padding: 1rem;
+    text-align: left;
+}
+
+tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+tbody tr:hover {
+    background: #f0f0ff;
+    transition: background 0.3s;
+}
+
+/* ===============================
+   Alert / messages
+=============================== */
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* ===============================
+   Layout responsive
+=============================== */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+
+    thead tr {
+        display: none;
+    }
+
+    tbody td {
+        padding: 0.5rem;
+        position: relative;
+        padding-left: 50%;
+        text-align: left;
+        border: none;
+        border-bottom: 1px solid #eee;
+    }
+
+    tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 1rem;
+        font-weight: bold;
+        color: #555;
+    }
+}

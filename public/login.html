@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Connexion - Anak Requests</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+  body {
+    background:#f5f6fb;
+    display:flex; justify-content:center; align-items:center;
+    min-height:100vh; color:#1f2937;
+  }
+  .login-container {
+    background:#fff;
+    padding:3rem 2.5rem;
+    border-radius:20px;
+    box-shadow:0 15px 40px rgba(0,0,0,0.1);
+    width:100%; max-width:400px;
+    text-align:center;
+    position:relative;
+    transition:transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .login-container:hover {
+    transform:translateY(-3px);
+    box-shadow:0 20px 50px rgba(0,0,0,0.15);
+  }
+  h1 { margin-bottom:2rem; font-size:1.8rem; color:#111827; }
+
+  form { display:flex; flex-direction:column; gap:1rem; }
+  input {
+    padding:0.8rem 1rem;
+    border:1px solid #e0e0e0;
+    border-radius:12px;
+    font-size:1rem;
+    transition:border 0.3s, box-shadow 0.3s;
+  }
+  input:focus {
+    border-color:#004f9f;
+    box-shadow:0 0 0 3px rgba(0,79,159,0.2);
+    outline:none;
+  }
+
+  button {
+    background:linear-gradient(135deg, #004f9f, #0166cc);
+    color:#fff;
+    border:none;
+    padding:0.9rem 1.5rem;
+    font-size:1rem;
+    font-weight:600;
+    border-radius:12px;
+    cursor:pointer;
+    transition:all 0.3s ease;
+    box-shadow:0 6px 15px rgba(43,46,230,0.3);
+  }
+  button:hover {
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(60,63,228,0.4);
+  }
+  button:active {
+    transform:translateY(0);
+    box-shadow:0 4px 10px rgba(99,102,241,0.2);
+  }
+
+  .alert {
+    margin-top:1rem;
+    padding:0.8rem 1rem;
+    border-radius:12px;
+    font-weight:500;
+    color:#b91c1c;
+    background:#fee2e2;
+    display:none;
+  }
+
+  .notification-container {
+    position:fixed;
+    top:1rem; right:1rem;
+    display:flex;
+    flex-direction:column;
+    gap:0.5rem;
+    z-index:1000;
+  }
+  .notification {
+    padding:0.8rem 1rem;
+    border-radius:12px;
+    color:#fff;
+    font-weight:500;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    animation:fadein 0.3s ease;
+  }
+  .notification.info { background:#004f9f; }
+  .notification.success { background:#16a34a; }
+  .notification.error { background:#b91c1c; }
+  @keyframes fadein { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
+
+  #loader {
+    position: absolute;
+    inset:0;
+    background: rgba(255,255,255,0.8);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    font-size:1.2rem;
+    color:#004f9f;
+    border-radius:20px;
+    z-index:10;
+    cursor:wait;
+    text-align:center;
+  }
+
+  /* Barre mdp + oeil */
+  .password-wrapper {
+    position:relative;
+    width:100%;
+    cursor:text; /* clique n’importe où sur le wrapper */
+  }
+
+  .password-wrapper input {
+    width:100%;
+    padding:0.8rem 1rem; /* même que email pour uniformité */
+    border-radius:12px;
+    border:1px solid #e0e0e0;
+    font-size:1rem;
+  }
+
+  .toggle-password {
+    position:absolute;
+    top:50%;
+    right:0.75rem;
+    transform:translateY(-50%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:16px; /* plus petit */
+    height:16px;
+    cursor:pointer;
+    color:#555;
+    user-select:none;
+  }
+  .toggle-password svg { display:block; width:100%; height:100%; }
+
+  /* ======================= MOBILE FIRST============================= */
+@media (max-width: 600px) {
+
+  body {
+    padding: 1rem;
+    align-items: flex-start;
+  }
+
+  .login-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 2rem 1.25rem;
+    border-radius: 16px;
+    margin-top: 2rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  input {
+    font-size: 1rem;
+    padding: 1rem;
+  }
+
+  button {
+    padding: 1rem;
+    font-size: 1.05rem;
+  }
+
+  /* œil mot de passe plus facile à toucher */
+  .toggle-password {
+    width: 24px;
+    height: 24px;
+    right: 1rem;
+  }
+
+  /* notifications lisibles sur mobile */
+  .notification-container {
+    left: 1rem;
+    right: 1rem;
+    top: 0.75rem;
+  }
+
+  .notification {
+    text-align: center;
+  }
+
+    #loader {
+    font-size: 1rem;
+    padding: 1rem;
+    text-align: center;
+  }
+
+}
+
+@media (hover: none) {
+  .login-container:hover {
+    transform: none;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+  }
+
+  button:hover {
+    transform: none;
+    box-shadow: 0 6px 15px rgba(43,46,230,0.3);
+  }
+}
+
+
+</style>
+</head>
+<body>
+<div class="login-container">
+  <div id="loader">⏳ Loading...</div>
+
+    <img
+      src="https://www.anak-tnk.org/images-ong-enfants-manille/2023/05/Logo-ANAK-Tnk-01-ombre-site-500x200-1.png"
+      alt="Logo Anak"
+      style="max-width:200px; width:100%; height:auto; margin-bottom:1.5rem;"
+    />
+
+
+  <h1 style="font-size:1.8rem; color:#004f9f; margin-bottom:2rem;">Special Requests</h1>
+
+  <form id="loginForm">
+    <input 
+        type="email"
+        id="loginEmail"
+        placeholder="Email"
+        required
+        inputmode="email"
+        autocomplete="email"
+          />
+    <div class="password-wrapper">
+      <input 
+        type="password"
+        id="loginPassword"
+        placeholder="Password"
+        required
+        autocomplete="current-password"
+      />
+      <span id="togglePassword" class="toggle-password">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8-10-8-10-8z"></path>
+        </svg>
+      </span>
+    </div>
+    <button type="submit">Log in</button>
+  </form>
+
+  <div class="alert" id="loginAlert"></div>
+</div>
+
+<div id="notificationContainer" class="notification-container"></div>
+
+<script>
+const API_URL = 'http://192.168.254.145:3000';
+if(localStorage.getItem('access_token')) { window.location.href='index.html'; }
+
+const loginForm=document.getElementById('loginForm');
+const loginAlert=document.getElementById('loginAlert');
+const loader=document.getElementById('loader');
+const notifyContainer=document.getElementById('notificationContainer');
+
+function showLoader(show=true){ loader.style.display=show?'flex':'none'; }
+function notify(msg,type='info'){ const note=document.createElement('div'); note.className=`notification ${type}`; note.textContent=msg; notifyContainer.appendChild(note); setTimeout(()=>note.remove(),4000); }
+
+
+loginForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  loginAlert.style.display='none';
+  showLoader(true);
+  const submitBtn=loginForm.querySelector('button');
+  submitBtn.disabled=true;
+
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+
+  try{
+    const res=await fetch(`${API_URL}/login`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
+    const data=await res.json();
+    showLoader(false);
+    if(!res.ok) throw new Error(data.error||'Server error');
+
+    localStorage.setItem('access_token', data.access_token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    if (data.user?.center_name) {
+      localStorage.setItem('user_center', data.user.center_name);
+    }
+
+    notify('Login successful!','success');
+
+    // Redirection selon le rôle du user
+    const userRole = data.user.role.toLowerCase(); // exemple: "admin" ou "chef de centre"
+
+    setTimeout(() => {
+      if (userRole === 'admin') {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'index.html';
+      }
+    }, 800);
+
+  }catch(err){
+    showLoader(false);
+    loginAlert.textContent='❌ '+err.message;
+    loginAlert.style.display='block';
+    notify('Login failed','error');
+  }finally{ submitBtn.disabled=false; }
+});
+
+const togglePassword=document.getElementById('togglePassword');
+const passwordInput=document.getElementById('loginPassword');
+
+const eyeOpen=`
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+  <circle cx="12" cy="12" r="3"/>
+</svg>`;
+
+const eyeClosed=`
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+  <circle cx="12" cy="12" r="3"/>
+  <line x1="4" y1="4" x2="20" y2="20"/>
+</svg>`;
+
+togglePassword.innerHTML=eyeOpen;
+togglePassword.addEventListener('click',()=>{
+  if(passwordInput.type==='password'){
+    passwordInput.type='text';
+    togglePassword.innerHTML=eyeClosed;
+  } else {
+    passwordInput.type='password';
+    togglePassword.innerHTML=eyeOpen;
+  }
+});
+</script>
+</body>
+</html>

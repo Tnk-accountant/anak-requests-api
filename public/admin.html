@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin – Anak Requests</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-50 p-4 text-sm font-sans min-h-screen">
+
+  <h1 class="text-xl font-semibold mb-4 text-gray-800">Admin – Request Management</h1>
+  <div class="flex gap-2 mb-4">
+  <button id="tabAll" class="tab-btn bg-indigo-600 text-white px-4 py-2 rounded">
+    All Requests
+  </button>
+
+  <button id="tabLiquidation" class="tab-btn bg-gray-200 px-4 py-2 rounded">
+    💰 Liquidations
+  </button>
+</div>
+
+  <!-- Filtres et actions -->
+
+<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+
+  <!-- Bloc gauche -->
+  <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+    <input id="searchName" type="text" placeholder="Requested by"
+      class="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none w-full sm:w-48 placeholder-gray-400">
+
+    <input id="searchCenter" type="text" placeholder="Center"
+      class="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none w-full sm:w-48 placeholder-gray-400">
+
+    <input id="minAmount" type="number" placeholder="Amount ="
+      class="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none w-full sm:w-32 placeholder-gray-400">
+
+    <!-- Total ToLiquidate -->
+    <div class="bg-white border border-gray-200 rounded-md px-3 py-2 shadow-sm w-full sm:w-auto">
+      <div class="text-[11px] text-gray-500 leading-none">
+        Total To Liquidate
+      </div>
+      <div id="totalToLiquidate" class="text-sm font-semibold text-gray-800">
+        0.00 PHP
+      </div>
+    </div>
+  </div>
+
+  <!-- Bloc droite (aligné à droite) -->
+  <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto md:justify-end">
+    
+    <select id="filterStatus"
+      class="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none w-full sm:w-auto">
+      <option value="">All statuses</option>
+      <option value="Pending">Pending</option>
+      <option value="Approved">Approved</option>
+      <option value="Rejected">Rejected</option>
+      <option value="ToLiquidate">To liquidate</option>
+      <option value="PendingValidation">Pending Validation</option>
+      <option value="Closed">Closed</option>
+    </select>
+
+    <button id="refreshBtn"
+      class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition duration-200 shadow-sm w-full sm:w-auto">
+      Refresh
+    </button>
+
+    <button id="exportBtn"
+      class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition duration-200 shadow-sm w-full sm:w-auto">
+      Export to Excel
+    </button>
+
+  </div>
+</div>
+
+  <!-- Tableau des demandes -->
+  <div class="overflow-x-auto bg-white shadow-md rounded-xl">
+    <table class="min-w-full text-left border-collapse">
+      <thead class="bg-indigo-50">
+        <tr>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">ID</th>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">Date</th>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">Requested by</th>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">Center</th>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">Amount Requested</th>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">Payment</th>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">Description</th>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">Status</th>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">Amount approved</th>
+          <th class="py-2 px-4 border-b text-gray-700 font-medium">Approved by</th>
+          <th class="py-2 px-2 border-b text-gray-700 font-medium w-[130px] text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="requestsTableBody" class="divide-y divide-gray-100"></tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex justify-center mt-4 gap-2">
+    <button id="prevPage" class="bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-200">Previous</button>
+    <span id="pageInfo" class="px-3 py-2 text-gray-700"></span>
+    <button id="nextPage" class="bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-200">Next</button>
+  </div>
+
+  <!-- Carte description -->
+<div id="descriptionModal"
+     class="fixed inset-0 bg-black/30 hidden flex items-center justify-center z-50">
+  <div class="bg-white w-full max-w-lg rounded-xl shadow-lg p-5">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="text-sm font-semibold text-gray-800">Description</h3>
+      <button id="closeDescription"
+              class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="descriptionContent"
+         class="text-sm text-gray-700 whitespace-pre-wrap max-h-[60vh] overflow-auto">
+    </div>
+  </div>
+</div>
+
+  <script>
+
+    let activeTab = 'all';
+
+    const tabAll = document.getElementById('tabAll');
+    const tabLiquidation = document.getElementById('tabLiquidation');
+
+    tabAll.addEventListener('click', () => {
+      activeTab = 'all';
+      tabAll.classList.add('bg-indigo-600', 'text-white');
+      tabAll.classList.remove('bg-gray-200');
+
+      tabLiquidation.classList.remove('bg-indigo-600', 'text-white');
+      tabLiquidation.classList.add('bg-gray-200');
+
+      applyAdvancedFilters();
+    });
+
+    tabLiquidation.addEventListener('click', () => {
+      activeTab = 'liquidation';
+      tabLiquidation.classList.add('bg-indigo-600', 'text-white');
+      tabLiquidation.classList.remove('bg-gray-200');
+
+      tabAll.classList.remove('bg-indigo-600', 'text-white');
+      tabAll.classList.add('bg-gray-200');
+
+      applyAdvancedFilters();
+    });
+
+const API_URL = 'http://192.168.254.145:3000';
+
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (currentUser.role?.toLowerCase() !== 'admin') {
+      alert("Access denied. You don't have permission to view this page.");
+      window.location.href = 'index.html';
+      throw new Error("Not admin");
+    }
+
+
+
+    // Redirige vers login si pas de token
+    if (!localStorage.getItem('access_token')) {
+      window.location.href = 'login.html';
+      throw new Error("No token → redirect login");
+    }
+
+
+    const requestsTableBody = document.getElementById('requestsTableBody');
+    const filterStatus = document.getElementById('filterStatus');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const searchName = document.getElementById('searchName');
+    const searchCenter = document.getElementById('searchCenter');
+    const minAmount = document.getElementById('minAmount');
+    let allRequests = [];
+    let currentPage = 1;
+    const rowsPerPage = 20;
+    let filteredRequests = [];
+    const currentAdmin = "Father";
+
+    const statusClasses = {
+      Pending: 'bg-yellow-400',
+      Approved: 'bg-blue-500',
+      Rejected: 'bg-red-600',
+      ToLiquidate: 'bg-purple-500',
+      PendingValidation: 'bg-orange-500',
+      Closed: 'bg-green-600',
+      Cancelled: 'bg-gray-400',
+    };
+
+    function setRowActionState(req, row) {
+  const input = row.querySelector('.approvedAmount');
+  const approveBtn = row.querySelector('.approveBtn');
+  const rejectBtn = row.querySelector('.rejectBtn');
+
+  if (!input || !approveBtn || !rejectBtn) return;
+
+  // Reset classes
+  input.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+  approveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+  rejectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+  // Reset disabled
+  input.readOnly = true;
+  approveBtn.disabled = true;
+  rejectBtn.disabled = true;
+
+  // Valeur affichée
+  if (req.approved_amount != null) {
+    input.value = formatAmount(req.approved_amount);
+    input.dataset.raw = req.approved_amount;
+  } else {
+    input.value = '';
+    input.dataset.raw = '';
+  }
+
+  // Pending => editable + boutons actifs
+  if (req.status === 'Pending') {
+    input.readOnly = false;    
+    approveBtn.disabled = false;
+    rejectBtn.disabled = false;
+    return;
+  }
+
+  // Approved => lecture seule (dblclick gère l'édition)
+    if (req.status === 'Approved') {
+      input.readOnly = true;
+      input.classList.add('opacity-50'); // plus de cursor-not-allowed
+
+      approveBtn.disabled = true;
+      rejectBtn.disabled = true;
+      approveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      rejectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      return;
+    }
+
+  // Autres statuts => tout bloqué
+  input.readOnly = true;
+  input.classList.add('opacity-50', 'cursor-not-allowed');
+
+  approveBtn.disabled = true;
+  rejectBtn.disabled = true;
+  approveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  rejectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+}
+
+
+    function formatAmount(value) {
+      if (value === null || value === undefined || value === '') return '';
+      return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(Number(value));
+    }
+
+    function updateToLiquidateSummary() {
+      const list = allRequests.filter(r => r.status === "ToLiquidate");
+
+      const total = list.reduce((sum, r) => {
+        const value = Number(r.approved_amount || 0);
+        return sum + (isNaN(value) ? 0 : value);
+      }, 0);
+
+      document.getElementById("totalToLiquidate").textContent =
+        `${formatAmount(total)} PHP`;
+    }
+
+    function applyAdvancedFilters() {
+      let filtered = [...allRequests];
+
+      // 🔥 NOUVEAU : filtre par onglet
+      if (activeTab === 'liquidation') {
+        filtered = filtered.filter(r => r.status === 'PendingValidation');
+      }
+
+      // ✅ Filtre statut (important pour SSE)
+     if (filterStatus.value && activeTab === 'all') {
+        filtered = filtered.filter(r => r.status === filterStatus.value);
+      }
+      // Filtre demandeur
+      const nameQuery = searchName.value.trim().toLowerCase();
+      if (nameQuery) {
+        filtered = filtered.filter(r =>
+          (r.requestor_name || '').toLowerCase().includes(nameQuery)
+        );
+      }
+      // Filtre centre
+      const centerQuery = searchCenter.value.trim().toLowerCase();
+      if (centerQuery) {
+        filtered = filtered.filter(r =>
+          (r.center_name || '').toLowerCase().includes(centerQuery)
+        );
+      }
+      // Filtre montant approuvé (=)
+      if (minAmount.value) {
+        const amount = parseFloat(minAmount.value);
+
+        filtered = filtered.filter(r => {
+          const approved = Number(r.approved_amount || 0);
+          const requested = Number(r.amount_requested || 0);
+
+          const value = approved > 0 ? approved : requested;
+          return value === amount;
+        });
+      }
+
+      // Fallback : si aucun résultat → afficher tout
+      filteredRequests = filtered;
+
+      currentPage = 1; 
+      renderPage();
+      updatePaginationInfo();
+    }
+
+
+    searchName.addEventListener('input', applyAdvancedFilters);
+    searchCenter.addEventListener('input', applyAdvancedFilters);
+    minAmount.addEventListener('input', applyAdvancedFilters);
+
+    async function fetchRequests() {
+    try {
+    // Construire l'URL de la requête
+   let url = `${API_URL}/requests`;
+    if (filterStatus.value) url += `?status=${filterStatus.value}`;
+
+    // Appel à l'API avec token
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      }
+    });
+
+    // Vérifie si le token est invalide ou expiré
+  if (res.status === 401) {
+    localStorage.removeItem('access_token');
+    window.location.href = 'login.html';
+    return;
+  }
+
+    const data = await res.json();
+    allRequests = data.data || [];
+    applyAdvancedFilters();
+    updateToLiquidateSummary();
+
+
+    } catch (err) {
+    console.error('fetchRequests error:', err);
+    alert("Unable to fetch requests.");
+    }
+    }
+
+    // Écoute des changements pour filtrage et rafraîchissement
+    filterStatus.addEventListener('change', fetchRequests);
+    refreshBtn.addEventListener('click', fetchRequests);
+
+
+  function renderTable(data) {
+    
+  requestsTableBody.innerHTML = '';
+  data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  data.forEach(req => {
+    const tr = document.createElement('tr');
+    tr.className = 'group text-sm text-gray-700 border-b border-gray-100 transition-colors duration-75 hover:bg-gray-50 hover:border-l-gray-200';
+
+
+    tr.innerHTML = `
+      <td>${req.request_id}</td>
+      <td>${new Date(req.timestamp).toLocaleDateString('fr-FR')}</td>
+      <td>${req.requestor_name}</td>
+      <td>${req.center_name}</td>
+      <td>${formatAmount(req.amount_requested)}</td>
+
+      <td>
+        <span class="px-2 py-1 rounded-full text-xs font-semibold
+          ${req.payment_method === 'cash' ? 'bg-green-100 text-green-700' :
+            req.payment_method === 'cheque' ? 'bg-yellow-100 text-yellow-700' :
+            req.payment_method === 'card' ? 'bg-blue-100 text-blue-700' :
+            'bg-gray-100 text-gray-500'}">
+          ${
+            req.payment_method === 'cash' ? '💵 Cash' :
+            req.payment_method === 'cheque' ? '🧾 Check' :
+            req.payment_method === 'card' ? '💳 Card' : '—'
+          }
+        </span>
+      </td>
+
+      <td class="text-left">
+        ${req.description
+          ? `<button class="openDescription text-gray-400 hover:text-indigo-600 text-sm">
+              View description
+            </button>`
+          : `<span class="text-gray-300">—</span>`
+        }
+      </td>
+
+      <td class="status-cell">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-1 rounded-full text-white text-sm ${statusClasses[req.status] || ''}">
+            ${req.status || ''}
+          </span>
+
+          ${
+            req.request_type === 'FundTransfer'
+              ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                  FT
+                </span>`
+              : ''
+          }
+        </div>
+      </td>
+
+
+      <td class="approved-amount-cell">
+        ${req.approved_amount != null ? formatAmount(req.approved_amount) : ''}
+      </td>
+
+      <td class="approved-by-cell">${req.approved_by || ''}</td>
+
+      <td class="actions-cell flex justify-center items-center gap-1 p-1 cursor-pointer">
+          <input type="text" class="approvedAmount w-20 p-1 border rounded" />
+
+          <button class="approveBtn bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">✅</button>
+          <button class="rejectBtn bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">❌</button>
+
+      ${
+        activeTab === 'liquidation' && req.status === 'PendingValidation'
+          ? `<button class="validateBtn bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">✅ Validate</button>`
+          : ''
+      }
+              </td>
+    `;
+
+    requestsTableBody.appendChild(tr);
+
+      const openDescBtn = tr.querySelector('.openDescription');
+      if (openDescBtn) {
+        openDescBtn.addEventListener('click', () => {
+          document.getElementById('descriptionContent').textContent =
+            req.description || '';
+          const modal = document.getElementById('descriptionModal');
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+
+        });
+      }
+
+        const approveBtn = tr.querySelector('.approveBtn');
+        const rejectBtn = tr.querySelector('.rejectBtn');
+        const approvedAmountInput = tr.querySelector('.approvedAmount');
+
+        const validateBtn = tr.querySelector('.validateBtn');
+
+        // 🔥 ONGLET LIQUIDATION → UI CLEAN
+      if (activeTab === 'liquidation') {
+        if (approveBtn) approveBtn.style.display = 'none';
+        if (rejectBtn) rejectBtn.style.display = 'none';
+        if (approvedAmountInput) approvedAmountInput.style.display = 'none';
+      }
+
+
+      //Validation btn vert dans liquidation 
+      
+      if (validateBtn) {
+          validateBtn.addEventListener('click', async () => {
+
+            // 🚫 empêche double clic
+            if (validateBtn.disabled) return;
+
+            validateBtn.disabled = true;
+            validateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            validateBtn.textContent = '⏳...';
+
+            try {
+              const token = localStorage.getItem('access_token');
+
+              const res = await fetch(`${API_URL}/requests/${req.request_id}/validate-liquidation`, {
+                method: 'PATCH',
+                headers: {
+                  'Authorization': 'Bearer ' + token
+                }
+              });
+
+              if (res.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = 'login.html';
+                return;
+              }
+
+              const result = await res.json();
+
+              if (!res.ok) {
+                // 🔁 réactive si erreur
+                validateBtn.disabled = false;
+                validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                validateBtn.textContent = '✅ Validate';
+
+                alert(result.error || 'Error validating');
+                return;
+              }
+
+              // ✅ succès
+              req.status = 'Closed';
+
+              tr.style.transition = 'all 0.3s ease';
+              tr.style.opacity = '0';
+
+              setTimeout(() => {
+                applyAdvancedFilters();
+              }, 300);
+
+              updateToLiquidateSummary();
+
+              alert('✅ Liquidation validated');
+
+            } catch (err) {
+              console.error(err);
+
+              // 🔁 réactive si crash
+              validateBtn.disabled = false;
+              validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+              validateBtn.textContent = '✅ Validate';
+
+              alert('Server error');
+            }
+          });
+        }
+
+        // Appliquer état initial propre
+        setRowActionState(req, tr);
+
+        // Double click => édition uniquement si Approved
+          tr.addEventListener('dblclick', () => {
+            if (req.status !== 'Approved') return;
+
+            approvedAmountInput.readOnly = false;
+            approvedAmountInput.value = approvedAmountInput.dataset.raw || '';
+
+            approvedAmountInput.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            approveBtn.disabled = false;
+            rejectBtn.disabled = false;
+
+            approveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            rejectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            approvedAmountInput.focus();
+          });
+
+
+
+        if (approveBtn) {
+        approveBtn.addEventListener('click', async () => {
+          let approved_amount = Number(
+            approvedAmountInput.value.replace(/,/g, '')
+          );
+
+          if (isNaN(approved_amount) || approved_amount <= 0) {
+            alert("Invalid approved amount.");
+            return;
+          }
+
+          if (approved_amount > req.amount_requested) {
+            approved_amount = req.amount_requested;
+          }
+
+          disableButtons([approveBtn, rejectBtn]);
+          await updateRequest(
+            req,
+            'Approved',
+            currentAdmin,
+            approved_amount,
+            tr
+            );
+          enableButtons([approveBtn, rejectBtn]);
+        });
+        }
+
+        rejectBtn.addEventListener('click', async () => {
+          disableButtons([approveBtn, rejectBtn]);
+          await updateRequest(req, 'Rejected', currentAdmin, null, tr);
+          enableButtons([approveBtn, rejectBtn]);
+        });
+      });
+    }
+
+    function renderPage() {
+      const start = (currentPage-1)*rowsPerPage;
+      const paginatedData = filteredRequests.slice(start, start+rowsPerPage);
+      renderTable(paginatedData);
+    }
+
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+
+    function updatePaginationInfo() {
+      const totalPages = Math.max(1, Math.ceil(filteredRequests.length / rowsPerPage));
+
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+      prevPageBtn.disabled = currentPage === 1;
+      nextPageBtn.disabled = currentPage === totalPages;
+    }
+
+
+    prevPageBtn.addEventListener('click', () => { if(currentPage>1){currentPage--; renderPage(); updatePaginationInfo();} });
+    nextPageBtn.addEventListener('click', () => { const totalPages=Math.ceil(filteredRequests.length/rowsPerPage); if(currentPage<totalPages){currentPage++; renderPage(); updatePaginationInfo();} });
+
+    async function updateRequest(req, status, approved_by, approved_amount, row) {
+    try {
+    const bodyData = { status, approved_by };
+    if (approved_amount !== null) bodyData.approved_amount = approved_amount;
+
+    const res = await fetch(`${API_URL}/requests/${req.request_id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}` // Ajout du token
+      },
+      body: JSON.stringify(bodyData)
+    });
+
+    // Vérifie si le token est invalide
+    if (res.status === 401) {
+      localStorage.removeItem('access_token');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const result = await res.json();
+
+    if (!result.error) {
+
+      req.status = status;
+      req.approved_by = approved_by;
+      req.approved_amount = approved_amount;
+
+
+      // 1️⃣ Mise à jour de l'affichage
+      const statusCell = row.querySelector('.status-cell span');
+      statusCell.textContent = status;
+      statusCell.className = `px-2 py-1 rounded-full text-white text-sm ${statusClasses[status] || ''}`;
+
+      row.querySelector('.approved-by-cell').textContent = approved_by || '';
+
+      row.querySelector('.approved-amount-cell').textContent =
+        approved_amount != null ? formatAmount(approved_amount) : '';
+
+
+      // 2️⃣ 🔒 Verrouillage automatique APRÈS mise à jour
+      const input = row.querySelector('.approvedAmount');
+      const approveBtn = row.querySelector('.approveBtn');
+      const rejectBtn = row.querySelector('.rejectBtn');
+
+      if (input) {
+        input.readOnly = true;
+        input.classList.add(
+          'opacity-50',
+          'cursor-not-allowed'
+        );
+      }
+
+      if (approveBtn) {
+        approveBtn.disabled = true;
+        approveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+
+      if (rejectBtn) {
+        rejectBtn.disabled = true;
+        rejectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+
+      updateToLiquidateSummary();
+      setRowActionState(req, row);
+
+
+    } else {
+      alert("Error : " + result.error);
+    }
+
+
+    
+    } catch (err) {
+    console.error(err);
+    alert("Unable to reach the server.");
+    }
+    }
+
+    // Fonctions utilitaires pour activer/désactiver les boutons
+    function disableButtons(buttons) {
+      buttons.forEach(btn => (btn.disabled = true));
+    }
+
+    function enableButtons(buttons) {
+      buttons.forEach(btn => (btn.disabled = false));
+    }
+
+     // Export Excel
+      const exportBtn = document.getElementById('exportBtn');
+
+      exportBtn.addEventListener('click', () => {
+        if (!filteredRequests.length) {
+          alert("No data to export!");
+          return;
+        }
+
+        const wsData = filteredRequests.map(r => ({
+          ID: r.request_id,
+          Date: new Date(r.timestamp).toLocaleDateString('en-US'),
+          "Requested by": r.requestor_name,
+          Center: r.center_name,
+          Type: r.request_type === "FundTransfer" ? "FT" : "CA",
+
+          "Requested amount": r.amount_requested,
+          "Approved amount": r.approved_amount,
+          "Amount spent": r.amount_spent,
+          "Returned amount": r.returned_amount,
+
+          Description: r.description || '',
+          Status: r.status,
+          "Approved by": r.approved_by || ''
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(wsData);
+
+        XLSX.utils.book_append_sheet(wb, ws, "Requests");
+        XLSX.writeFile(wb, "Anak_Requests.xlsx");
+      });
+
+    fetchRequests();
+
+    let evtSource = null;
+    let sseReconnectTimer = null;
+
+// -------------------------
+// SSE — mises à jour en temps réel (admin) + reconnexion auto
+// -------------------------
+    function setupSSE() {
+      const token = localStorage.getItem('access_token');
+
+      // pas de token → pas de SSE
+      if (!token) {
+        console.warn("SSE non lancé : aucun token trouvé.");
+        return;
+      }
+
+      // 🔁 éviter doublons : fermer l’ancienne connexion
+      if (evtSource) {
+        try { evtSource.close(); } catch {}
+        evtSource = null;
+      }
+
+      // 🔁 annuler un timer de reconnexion si existant
+      if (sseReconnectTimer) {
+        clearTimeout(sseReconnectTimer);
+        sseReconnectTimer = null;
+      }
+
+      // Création EventSource
+      evtSource = new EventSource(
+        `${API_URL}/requests/stream?token=${encodeURIComponent(token)}`
+      );
+
+      evtSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          const requests = Array.isArray(payload) ? payload : [payload];
+
+          requests.forEach((req) => {
+            const exists = allRequests.some(r => r.request_id === req.request_id);
+
+            if (!exists) {
+              allRequests.unshift(req);
+            } else {
+              allRequests = allRequests.map(r =>
+                r.request_id === req.request_id ? req : r
+              );
+            }
+          });
+
+          // Re-render avec filtres + pagination
+          applyAdvancedFilters();
+          updateToLiquidateSummary();
+
+
+        } catch (err) {
+          console.error("Erreur parsing SSE:", err, event.data);
+        }
+      };
+
+      evtSource.onerror = (err) => {
+        console.warn("SSE error:", err);
+
+        // ferme proprement
+        if (evtSource) {
+          try { evtSource.close(); } catch {}
+          evtSource = null;
+        }
+
+        // 🔁 reconnexion après 5 secondes
+        sseReconnectTimer = setTimeout(() => {
+          setupSSE();
+        }, 5000);
+      };
+    }
+
+    // Lance SSE au chargement
+    setupSSE();
+
+    // -------------------------
+    // Modal description (1 seule fois)
+    // -------------------------
+    const modal = document.getElementById('descriptionModal');
+    const closeBtn = document.getElementById('closeDescription');
+
+    function closeModal() {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+
+  </script>
+
+
+</body>
+</html>
