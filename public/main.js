@@ -1,5 +1,5 @@
 // ---- const API_URL = 'http://localhost:3000';
-const API_URL = 'https://anak-requests-api.onrender.com';
+const API_URL = window.location.origin;
 
 // --- UTILITAIRES ---
 function setToken(token) {
