@@ -6,8 +6,61 @@
   <title>Admin – Anak Requests</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+
+<!-- =================== CSS =================== -->
+<style>
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.notification {
+  min-width: 250px;
+  max-width: 350px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  color: white;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.notification.success { background: #16a34a; }
+.notification.error { background: #dc2626; }
+.notification.info { background: #2563eb; }
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.fade-out {
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+</style>
+
 </head>
 <body class="bg-gray-50 p-4 text-sm font-sans min-h-screen">
+  <div id="notificationContainer" class="notification-container"></div>
 
   <h1 class="text-xl font-semibold mb-4 text-gray-800">Admin – Request Management</h1>
   <div class="flex gap-2 mb-4">
@@ -119,6 +172,32 @@
 
   <script>
 
+  function notify(message, type = "info") {
+  const container = document.getElementById("notificationContainer");
+  if (!container) return;
+
+  const el = document.createElement("div");
+  el.className = `notification ${type}`;
+
+  const span = document.createElement("span");
+  span.textContent = message;
+
+  const close = document.createElement("button");
+  close.className = "close-btn";
+  close.innerHTML = "&times;";
+
+  el.appendChild(span);
+  el.appendChild(close);
+  container.appendChild(el);
+
+  setTimeout(() => {
+    el.classList.add("fade-out");
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
+
+  close.onclick = () => el.remove();
+}
+
     let activeTab = 'all';
 
     const tabAll = document.getElementById('tabAll');
@@ -150,8 +229,10 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
     if (currentUser.role?.toLowerCase() !== 'admin') {
-      alert("Access denied. You don't have permission to view this page.");
+    notify("Access denied", "error");
+    setTimeout(() => {
       window.location.href = 'index.html';
+    }, 800);
       throw new Error("Not admin");
     }
 
@@ -343,7 +424,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
     } catch (err) {
     console.error('fetchRequests error:', err);
-    alert("Unable to fetch requests.");
+    notify("Unable to fetch requests", "error");
     }
     }
 
@@ -493,7 +574,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
                 validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 validateBtn.textContent = '✅ Validate';
 
-                alert(result.error || 'Error validating');
+                notify(result.error || "Error validating", "error");
                 return;
               }
 
@@ -509,7 +590,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
               updateToLiquidateSummary();
 
-              alert('✅ Liquidation validated');
+              notify("Liquidation validated", "success");
 
             } catch (err) {
               console.error(err);
@@ -519,7 +600,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
               validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
               validateBtn.textContent = '✅ Validate';
 
-              alert('Server error');
+              notify("Server error", "error");
             }
           });
         }
@@ -554,7 +635,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
           );
 
           if (isNaN(approved_amount) || approved_amount <= 0) {
-            alert("Invalid approved amount.");
+            notify("Invalid approved amount", "error");
             return;
           }
 
@@ -675,14 +756,14 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
 
     } else {
-      alert("Error : " + result.error);
+      notify(result.error || "Error", "error");
     }
 
 
     
     } catch (err) {
     console.error(err);
-    alert("Unable to reach the server.");
+    notify("Unable to reach server", "error");
     }
     }
 
@@ -700,7 +781,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
       exportBtn.addEventListener('click', () => {
         if (!filteredRequests.length) {
-          alert("No data to export!");
+          notify("No data to export", "error");
           return;
         }
 

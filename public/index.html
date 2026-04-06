@@ -156,6 +156,57 @@ button:active {
   transform: scale(0.97);
 }
 
+/* =========================
+   NOTIFICATIONS
+========================= */
+
+    .notification-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 9999;
+    }
+
+    .notification {
+      min-width: 250px;
+      max-width: 350px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      color: white;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .notification.success { background: #16a34a; }
+    .notification.error { background: #dc2626; }
+    .notification.info { background: #2563eb; }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .fade-out {
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
 </style>
 
 </head>
@@ -304,8 +355,6 @@ button:active {
           Submit request
         </button>
      </form>
-
-    <p id="status" class="mt-4 text-center font-semibold"></p>
     <p id="generatedId" class="mt-2 text-center text-sm text-gray-600"></p>
   </div>
 
@@ -550,6 +599,55 @@ button:active {
   const API_URL = window.location.origin;
   let requestorInput, form, status, generatedIdEl, myTableBody, amountSearchInput;
 
+  function notify(message, type = "info") {
+    const container = document.getElementById("notificationContainer");
+    if (!container) return;
+
+  const el = document.createElement("div");
+  el.className = `notification ${type}`;
+
+  const span = document.createElement("span");
+  span.textContent = message;
+
+  const close = document.createElement("button");
+  close.className = "close-btn";
+  close.innerHTML = "&times;";
+
+  el.appendChild(span);
+  el.appendChild(close);
+
+  container.appendChild(el);
+
+  setTimeout(() => {
+    el.classList.add("fade-out");
+    setTimeout(() => el.remove(), 300);
+    }, 3000);
+
+    el.querySelector(".close-btn").onclick = () => el.remove();
+}
+
+  function lockButton(btn, loadingText = "Processing...") {
+    if (!btn) return;
+
+    btn.disabled = true;
+    btn.dataset.originalText = btn.innerHTML;
+
+    btn.classList.add("opacity-60", "cursor-not-allowed");
+    btn.innerHTML = loadingText;
+  }
+
+  function unlockButton(btn) {
+    if (!btn) return;
+
+    btn.disabled = false;
+
+    if (btn.dataset.originalText) {
+      btn.innerHTML = btn.dataset.originalText;
+    }
+
+    btn.classList.remove("opacity-60", "cursor-not-allowed");
+  }
+
   function handleAuthError(res) {
   if (res.status === 401) {
     localStorage.removeItem('access_token');
@@ -661,12 +759,9 @@ let mobileAmountFilter = '';
     });
   }
 
-    let isSubmittingRequest = false;
-
     document.addEventListener('DOMContentLoaded', async () => {
       requestorInput = document.getElementById('requestor_name');
       form = document.getElementById('requestForm');
-      status = document.getElementById('status');
       generatedIdEl = document.getElementById('generatedId');
       myTableBody = document.getElementById('myRequestsTable');
       amountSearchInput = document.getElementById('amountSearch');
@@ -695,7 +790,8 @@ let mobileAmountFilter = '';
 
       requestTypeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-          requestTypeButtons.forEach(b => b.classList.remove('payment-active'));
+         document.querySelectorAll('#requestTypeButtons button')
+              .forEach(b => b.classList.remove('payment-active'));
           btn.classList.add('payment-active');
           requestTypeInput.value = btn.dataset.value;
         });
@@ -759,10 +855,6 @@ let mobileAmountFilter = '';
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  // Reset UI
-  status.textContent = '';
-  generatedIdEl.textContent = '';
-
   // ------------------------------
   // Récupération des champs
   // ------------------------------
@@ -776,38 +868,33 @@ form.addEventListener('submit', async (e) => {
   // ------------------------------
   // Validations
   // ------------------------------
-  if (!Number.isFinite(amount_requested) || amount_requested <= 0) {
-    alert("Please enter a valid amount.");
-    return;
-  }
+    if (!Number.isFinite(amount_requested) || amount_requested <= 0) {
+      notify("Enter a valid amount", "error");
+      return;
+    }
 
   if (!payment_method) {
-    alert("Please select a payment method.");
+    notify("Select a payment method", "error");
     return;
   }
 
   if (!request_type) {
-    alert("Please select a request type.");
+    notify("Select a request type", "error");
     return;
   }
 
   if (!description) {
-    alert("Please fill in the description (required).");
+    notify("Description is required", "error");
     return;
   }
 
   // ------------------------------
-  // Anti double submit
+  // Anti double submit/click
   // ------------------------------
-  if (isSubmittingRequest) return;
-  isSubmittingRequest = true;
+    const submitBtn = document.getElementById('submitRequestBtn');
 
-  const submitBtn = document.getElementById('submitRequestBtn');
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
-    submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
-  }
+    if (submitBtn?.disabled) return;
+    lockButton(submitBtn, "Submitting...");
 
   // ------------------------------
   // Payload
@@ -859,8 +946,8 @@ form.addEventListener('submit', async (e) => {
     // Succès
     // ------------------------------
     if (res.ok) {
-      status.textContent = '✅ Request submitted!';
-      status.className = 'mt-4 text-center font-semibold text-green-600';
+      notify("Request submitted", "success");
+
 
       if (result?.data?.request_id) {
         generatedIdEl.textContent = `ID created: ${result.data.request_id}`;
@@ -871,10 +958,12 @@ form.addEventListener('submit', async (e) => {
       form.reset();
 
       // Reset boutons UI
-      paymentButtons.forEach(b => b.classList.remove('payment-active'));
+      document.querySelectorAll('#paymentMethodButtons button')
+      .forEach(b => b.classList.remove('payment-active'));
       paymentInput.value = '';
 
-      requestTypeButtons.forEach(b => b.classList.remove('payment-active'));
+      document.querySelectorAll('#requestTypeButtons button')
+      .forEach(b => b.classList.remove('payment-active'));
       requestTypeInput.value = '';
 
       // Refresh liste
@@ -886,26 +975,19 @@ form.addEventListener('submit', async (e) => {
     // ------------------------------
     // Erreur serveur
     // ------------------------------
-    status.textContent = '❌ ' + (result?.error || 'Erreur serveur');
-    status.className = 'mt-4 text-center font-semibold text-red-600';
+  notify(result?.error || "Server error", "error");
 
   } catch (err) {
     console.error(err);
 
-    status.textContent = '❌ Impossible de contacter le serveur.';
-    status.className = 'mt-4 text-center font-semibold text-red-600';
+    notify("Unable to reach server", "error");
 
   } finally {
     // ------------------------------
     // Toujours unlock
     // ------------------------------
-    isSubmittingRequest = false;
 
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit request';
-      submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
-    }
+    unlockButton(submitBtn);
   }
 });
 
@@ -915,6 +997,11 @@ form.addEventListener('submit', async (e) => {
 // ==============================
 
 let sse = null;
+window.addEventListener('beforeunload', () => {
+  if (sse) {
+    try { sse.close(); } catch {}
+  }
+});
 
 function setupSSE() {
   const token = localStorage.getItem('access_token');
@@ -969,8 +1056,6 @@ setupSSE();
       document.getElementById('cameraInput').click();
     });
 
-    document.getElementById('liqReceipts').addEventListener('change', updateReceiptsUI);
-
     document.getElementById('cameraInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -984,11 +1069,13 @@ setupSSE();
 //========================
   // Filtre montant
 //========================
+const debouncedRenderTable = debounce(() => {
+  currentPage = 1;
+  renderTable();
+}, 300);
+
 if (amountSearchInput) {
-  amountSearchInput.addEventListener('input', debounce(() => {
-    currentPage = 1;
-    renderTable();
-  }, 300));
+  amountSearchInput.addEventListener('input', debouncedRenderTable);
 }
 
   // Auto-refresh toutes les 60s
@@ -1513,7 +1600,7 @@ function openModalFor(request_id) {
 
   const req = requestsMap.get(request_id);
   if (!req) {
-    alert("Request not found.");
+    notify("Request not found", "error");
     return;
   }
 
@@ -1755,24 +1842,46 @@ function closeModal() {
 /* ==============================
    Handler amélioré pour "Confirmer réception ✅"
 ============================== */
-document.getElementById('confirmReceivedBtn').addEventListener('click', async () => {
-  if (!currentRequestId) return alert("Demande introuvable.");
-  const req = requestsMap.get(currentRequestId);
-  if (!req) return alert("Demande introuvable.");
+  document.getElementById('confirmReceivedBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('confirmReceivedBtn');
 
-  // Vérification : doit être approuvée
-  if (req.status !== 'Approved') {
-    return alert("This request must be approved before confirming receipt.");
+  if (btn.disabled) return;
+
+  const req = requestsMap.get(currentRequestId);
+  if (!req) {
+    notify("Request not found", "error");
+    return;
   }
+
+  // ❗ Vérification AVANT lock
+  if (req.status !== 'Approved') {
+    notify("Request must be approved first", "error");
+    return;
+  }
+
+
 
   const amount = parseFloat(document.getElementById('receivedAmount').value);
   const dateInput = document.getElementById('receivedDate').value;
   const check = document.getElementById('receivedCheck').checked;
   const receivedName = document.getElementById('receivedName').value.trim();
 
-  if (!amount || amount <= 0) return alert("Please enter the amount received.");
-  if (!dateInput) return alert("Please enter the receipt date.");
-  if (!check) return alert("You must confirm that you have received the money.");
+  if (!amount || amount <= 0) {
+  notify("Enter amount received", "error");
+  return;
+  }
+  if (!dateInput) {
+  notify("Select a date", "error");
+  return;
+  }
+  if (!check) {
+    notify("Please confirm receipt", "error");
+    return;
+  }
+
+  
+  // 👉 lock seulement après validations critiques
+  lockButton(btn, "Confirming...");
 
   const received_at = new Date(dateInput + "T12:00:00").toISOString();
 
@@ -1808,11 +1917,13 @@ document.getElementById('confirmReceivedBtn').addEventListener('click', async ()
     // Recharge le panel en mode verrouillé
     openModalFor(updatedReq.request_id);
 
-    alert("✅ Réception confirmée !");
+    notify("Money received", "success");
   } catch (err) {
-    console.error(err);
-    alert("❌ Impossible de mettre à jour le serveur : " + err.message);
-  }
+      console.error(err);
+      notify("Server error: " + err.message, "error");
+    } finally {
+      unlockButton(btn);
+    }
 });
 
 
@@ -1820,17 +1931,23 @@ document.getElementById('confirmReceivedBtn').addEventListener('click', async ()
    Handler pour le bouton "💰 Liquider"
 ============================== */
 document.getElementById('liqSubmitBtn').addEventListener('click', async () => {
-  if (!currentRequestId) return alert("Demande introuvable.");
-    const reqId = currentRequestId;
-
-
-  const req = requestsMap.get(currentRequestId);
-  if (!req) return alert("Demande introuvable.");
-
-  // ❌ Statut invalide
-  if (req.status !== 'ToLiquidate') {
-    return alert("Impossible: the request must be in ‘ToLiquidate’ status to be liquidated.");
+  const reqId = currentRequestId;
+  if (!currentRequestId) {
+  notify("Request not found", "error");
+  return;
   }
+
+  
+  const req = requestsMap.get(currentRequestId);
+  if (!req) {
+  notify("Request not found", "error");
+  return;
+}
+
+if (req.status !== 'ToLiquidate') {
+  notify("Invalid request status", "error");
+  return;
+}
 
   // ==============================
   // Récupération des champs
@@ -1841,11 +1958,13 @@ document.getElementById('liqSubmitBtn').addEventListener('click', async () => {
   const note = document.getElementById('liqNote').value.trim();
 
   if (isNaN(spent) || spent <= 0) {
-    return alert("Please enter the amount spent.");
+    notify("Enter amount spent", "error");
+    return;
   }
 
   if (isNaN(returned) || returned < 0) {
-    return alert("Please enter the returned amount.");
+    notify("Enter returned amount", "error");
+    return;
   }
 
   // ==============================
@@ -1854,13 +1973,15 @@ document.getElementById('liqSubmitBtn').addEventListener('click', async () => {
   const approved = Number(req.approved_amount || 0);
   const epsilon = 0.01;
 
-  if (Math.abs((spent + returned) - approved) > epsilon) {
-    return alert(
-      `❌ Amounts do not match.\n\n` +
-      `Amount approuved: ${approved}\n` +
-      `Spent + Returned: ${spent + returned}\n\n` +
-      `Amounts must match exactly.`
+  const total = spent + returned;
+  const diff = Math.abs(total - approved);
+
+  if (diff > epsilon) {
+    notify(
+      `Amounts mismatch — approved: ${approved}, total: ${total}`,
+      "error"
     );
+    return;
   }
 
 
@@ -1870,14 +1991,14 @@ document.getElementById('liqSubmitBtn').addEventListener('click', async () => {
     const rawFiles = getAllPhotos();
 
     if (rawFiles.length === 0) {
-      alert("Please add at least one receipt.");
+      notify("Add at least one receipt", "error");
       return;
     }
 
-    if (rawFiles.length > 10) {
-      alert("Please select max 10 photos.");
-      return;
-    }
+  if (rawFiles.length > 10) {
+    notify("Maximum 10 photos allowed", "error");
+    return;
+  }
 
     // 🔥 Convertir toutes les images en UN SEUL PDF
     const pdfBlob = await imagesToSinglePDF(rawFiles);
@@ -1912,11 +2033,9 @@ document.getElementById('liqSubmitBtn').addEventListener('click', async () => {
     // Loader / bouton
     // ==============================
     const liqBtn = document.getElementById('liqSubmitBtn');
-    const liqBtnText = document.getElementById('liqBtnText');
     const liqLoader = document.getElementById('liqLoader');
 
-    liqBtn.disabled = true;
-    liqBtnText.textContent = 'Processing...';
+    lockButton(liqBtn, "Processing...");
     liqLoader.classList.remove('hidden');
 
 
@@ -1940,8 +2059,7 @@ const res = await fetch(`${API_URL}/requests/${reqId}/liquidate`, {
 });
 
 if (handleAuthError(res)) {
-  liqBtn.disabled = false;
-  liqBtnText.textContent = '📤 Submit liquidation';
+  unlockButton(liqBtn);
   liqLoader.classList.add('hidden');
   // ✅ RESET PHOTOS CAMERA
   capturedPhotos = [];
@@ -1961,12 +2079,13 @@ if (!res.ok) {
 // ✅ UI immédiate + synchro
 closeModal();
 await refreshRequest(reqId);
+window.scrollTo({ top: 0, behavior: 'smooth' });
 
 renderTable();
 if (window.innerWidth < 768) renderMobileCards();
 
 
-alert("✅ Liquidation submitted. Waiting for admin validation");
+notify("Liquidation submitted – waiting for validation", "info");
 
 
 // ==============================
@@ -1991,14 +2110,13 @@ if (receiptsFiles.length > 0) {
 
 } catch (err) {
   console.error(err);
-  alert("❌ Unable to update the server:" + err.message);
+  notify("Server error: " + err.message, "error");
 } finally {
 
   // ==============================
   // RESET UI (TOUJOURS)
   // ==============================
-  liqBtn.disabled = false;
-  liqBtnText.textContent = '📤 Submit liquidation';
+  unlockButton(liqBtn);
   liqLoader.classList.add('hidden');
 
   // ✅ RESET PHOTOS (ICI EXACTEMENT)
@@ -2010,55 +2128,100 @@ if (receiptsFiles.length > 0) {
 
 
 /* ==============================
-   Handler pour le bouton "✖ Annuler" dans le panel Cancel
+   Handler "✖ Cancel / Reject"
 ============================== */
 document.getElementById('cancelSubmitBtn').addEventListener('click', async () => {
-  if (!currentRequestId) return alert("Request not found.");
+  const btn = document.getElementById('cancelSubmitBtn');
+
+  // ------------------------------
+  // Sécurité double clic
+  // ------------------------------
+  if (btn.disabled) return;
+
+  // ------------------------------
+  // Validation contexte
+  // ------------------------------
+  if (!currentRequestId) {
+    notify("Request not found", "error");
+    return;
+  }
+
   const req = requestsMap.get(currentRequestId);
-  if (!req) return alert("Request not found.");
+  if (!req) {
+    notify("Request not found", "error");
+    return;
+  }
 
   const reason = document.getElementById('cancelReason').value.trim();
-  if (!reason) return alert("Please enter a cancellation reason.");
+  if (!reason) {
+    notify("Enter a reason", "error");
+    return;
+  }
+
+  // ------------------------------
+  // Lock bouton (APRÈS validation)
+  // ------------------------------
+  lockButton(btn, "Cancelling...");
 
   try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`${API_URL}/requests/${currentRequestId}/cancel`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
-        body: JSON.stringify({
-          cancellation_note: reason
-        })
-      });
+    const token = localStorage.getItem('access_token');
 
-      // 🔒 token invalide/expiré → redirect login
-      if (handleAuthError(res)) return;
+    const res = await fetch(`${API_URL}/requests/${currentRequestId}/cancel`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        cancellation_note: reason
+      })
+    });
 
+    // 🔒 Gestion auth
+    if (handleAuthError(res)) return;
+
+    // ------------------------------
+    // Parsing réponse sécurisé
+    // ------------------------------
     let data;
     try {
       data = await res.json();
-    } catch (e) {
+    } catch {
       const text = await res.text();
-      console.error('Réponse non JSON', text);
-      throw new Error('Erreur serveur : réponse non JSON');
+      console.error('Non-JSON response:', text);
+      throw new Error('Invalid server response');
     }
 
-    if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+    if (!res.ok) {
+      throw new Error(data?.error || 'Server error');
+    }
 
+    // ------------------------------
     // Mise à jour locale
+    // ------------------------------
     req.status = 'Cancelled';
     req.cancellation_note = reason;
+
     upsertRow(req);
 
-    alert("✅ Request cancelled successfully!");
-    hideAllPanels();
+    // ------------------------------
+    // UX feedback
+    // ------------------------------
     closeModal();
+
+    setTimeout(() => {
+      notify("Request cancelled", "success");
+    }, 150);
 
   } catch (err) {
     console.error(err);
-    alert("❌ Impossible d'annuler la demande : " + err.message);
+    notify("Server error: " + err.message, "error");
+
+  } finally {
+    // ------------------------------
+    // Toujours unlock
+    // ------------------------------
+    unlockButton(btn);
   }
 });
 
@@ -2204,6 +2367,10 @@ window.addEventListener('resize', () => {
 
 
 </script>
+
+
+<!-- NOTIFICATIONS -->
+<div id="notificationContainer" class="notification-container"></div>
 
 </body>
 </html>
