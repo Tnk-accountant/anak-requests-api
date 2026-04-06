@@ -90,7 +90,7 @@ async function authenticate(req, res, next) {
     // Récupérer le profil Supabase
     let { data: profile, error: profErr } = await supabaseService
       .from('profiles')
-      .select('role, center_name, mail, "Name"')
+      .select('role, center_name, center_id, mail, "Name"')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -109,6 +109,7 @@ async function authenticate(req, res, next) {
     req.profile = profile;
     req.role = profile.role || 'Utilisateur';
     req.center = (profile.center_name || '').toString().trim().toUpperCase();
+    req.center_id = profile.center_id || null;
 
     console.log('authenticate: profil attaché à la requête', {
       userId: user.id,
@@ -391,6 +392,21 @@ app.post('/requests', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'center_name is required.' });
     }
 
+    const { data: center, error: centerError } = await supabaseService
+      .from('centers')
+      .select('id, code')
+      .eq('code', center_name)
+      .maybeSingle();
+
+    if (centerError) {
+      console.error('center lookup error:', centerError);
+      return res.status(500).json({ error: 'Database error (center lookup)' });
+    }
+
+    if (!center) {
+      return res.status(400).json({ error: 'Invalid center_name.' });
+    }
+
     // sécurité : empêcher centre inventé
     const CENTERS = [
       "ADM","DIB","DIG","NURB","NURG","RB1","RB2","RB3","RB4","RB5","RB6","RB7","RB8","RB9",
@@ -408,6 +424,7 @@ app.post('/requests', authenticate, async (req, res) => {
     const { data: insertedRow, error } = await supabaseService.rpc("create_request", {
       p_requestor_name: requestor_name,
       p_center_name: center_name,
+      p_center_id: center.id, // ✅ AJOUT ICI
       p_amount_requested: amount_requested,
       p_description: description,
       p_payment_method: payment_method,
