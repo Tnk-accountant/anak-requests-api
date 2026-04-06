@@ -547,7 +547,7 @@ button:active {
 
 <script>
 
-  const API_URL = 'http://192.168.254.145:3000';
+  const API_URL = window.location.origin;
   let requestorInput, form, status, generatedIdEl, myTableBody, amountSearchInput;
 
   function handleAuthError(res) {
