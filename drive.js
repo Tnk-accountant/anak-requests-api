@@ -3,8 +3,10 @@ const fs = require('fs');
 const path = require('path');
 
 // Authentification via Service Account
+const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+
 const auth = new google.auth.GoogleAuth({
-  keyFile: 'anak-requests-7898203eba71.json',
+  credentials,
   scopes: ['https://www.googleapis.com/auth/drive']
 });
 
