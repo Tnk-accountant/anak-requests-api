@@ -368,7 +368,7 @@ button:active {
     type="number"
     inputmode="decimal"
     id="mobileAmountSearch"
-    placeholder="Filtrer par montant"
+    placeholder="Filter by amount"
     class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
   >
 </div>
@@ -1616,8 +1616,18 @@ validateCard?.classList.add('hidden');
 liquidateCard?.classList.add('hidden');
 
 // AFFICHAGE PROPRE
-if (req.status === 'ToLiquidate') {
+if (
+  req.status === 'ToLiquidate' ||
+  req.status === 'Closed' ||
+  req.status === 'PendingValidation'
+) {
   liquidateCard?.classList.remove('hidden');
+}
+
+if (req.status === 'Closed') {
+  liquidateCard?.classList.add('opacity-50');
+} else {
+  liquidateCard?.classList.remove('opacity-50');
 }
 
 if (req.status === 'PendingValidation') {
@@ -1720,14 +1730,47 @@ if (req.status === 'PendingValidation') {
       liqNoteInput.value = req.liquidation_note ?? '';
       liqReceiptsInput.value = '';
 
-      // Verrouillage selon statut
-      if (req.status !== 'ToLiquidate') {
-        liqInputs.forEach(el => el.disabled = true);
-        liqPanel.classList.add('opacity-50');
-      } else {
-        liqInputs.forEach(el => el.disabled = false);
-        liqPanel.classList.remove('opacity-50');
-      }
+  // Verrouillage selon statut
+  const isClosed = req.status === 'Closed';
+
+  if (req.status !== 'ToLiquidate') {
+    // 🔒 lecture seule
+    liqSpentInput.disabled = true;
+    liqReturnedInput.disabled = true;
+    liqReceiptsInput.disabled = true;
+    liqNoteInput.disabled = true;
+    liqSubmitBtn.disabled = true;
+
+    liqPanel.classList.add('opacity-50');
+
+    // 🎨 style gris uniquement si Closed
+    if (isClosed) {
+      liqSpentInput.classList.add('bg-gray-100', 'text-gray-500');
+      liqReturnedInput.classList.add('bg-gray-100', 'text-gray-500');
+      liqNoteInput.classList.add('bg-gray-100', 'text-gray-500');
+    }
+
+    // 🚫 cacher submit si Closed
+    if (isClosed) {
+      liqSubmitBtn.classList.add('hidden');
+    }
+
+  } else {
+    // ✅ mode édition
+    liqSpentInput.disabled = false;
+    liqReturnedInput.disabled = false;
+    liqReceiptsInput.disabled = false;
+    liqNoteInput.disabled = false;
+    liqSubmitBtn.disabled = false;
+
+    liqPanel.classList.remove('opacity-50');
+
+    liqSpentInput.classList.remove('bg-gray-100', 'text-gray-500');
+    liqReturnedInput.classList.remove('bg-gray-100', 'text-gray-500');
+    liqNoteInput.classList.remove('bg-gray-100', 'text-gray-500');
+
+    liqSubmitBtn.classList.remove('hidden');
+  }
 
 
   // ---------- Panel Annuler ----------
