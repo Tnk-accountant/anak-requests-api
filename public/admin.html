@@ -542,6 +542,42 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         const validateBtn = tr.querySelector('.validateBtn');
         const validateCancelBtn = tr.querySelector('.validateCancelBtn');
 
+
+        // PRESS TOUCH ENTER => VALID  THE AMOUNT
+        approvedAmountInput.addEventListener('keydown', async (e) => {
+        if (e.key !== 'Enter') return;
+
+        e.preventDefault();
+
+        // 🔒 empêche si bouton désactivé (sécurité)
+        if (approveBtn.disabled) return;
+
+        let approved_amount = Number(
+          approvedAmountInput.value.replace(/,/g, '')
+        );
+
+        if (isNaN(approved_amount) || approved_amount <= 0) {
+          notify("Invalid approved amount", "error");
+          return;
+        }
+
+        if (approved_amount > req.amount_requested) {
+          approved_amount = req.amount_requested;
+        }
+
+        disableButtons([approveBtn, rejectBtn]);
+
+        await updateRequest(
+          req,
+          'Approved',
+          currentAdmin,
+          approved_amount,
+          tr
+        );
+
+        enableButtons([approveBtn, rejectBtn]);
+      });
+
         // 🔥 ONGLET LIQUIDATION → UI CLEAN
       if (activeTab === 'liquidation') {
         if (approveBtn) approveBtn.style.display = 'none';
