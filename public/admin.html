@@ -69,7 +69,7 @@
   </button>
 
   <button id="tabLiquidation" class="tab-btn bg-gray-200 px-4 py-2 rounded">
-    💰 Liquidations
+    Liquidations/Cancellation
   </button>
 </div>
 
@@ -349,9 +349,12 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       let filtered = [...allRequests];
 
       // 🔥 NOUVEAU : filtre par onglet
-      if (activeTab === 'liquidation') {
-        filtered = filtered.filter(r => r.status === 'PendingValidation');
-      }
+    if (activeTab === 'liquidation') {
+      filtered = filtered.filter(r =>
+        r.status === 'PendingValidation' ||
+        r.status === 'PendingCancel'
+      );
+    }
 
       // ✅ Filtre statut (important pour SSE)
      if (filterStatus.value && activeTab === 'all') {
@@ -505,15 +508,15 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
       ${
         activeTab === 'liquidation' && req.status === 'PendingValidation'
-          ? `<button class="validateBtn bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">✅ Validate</button>`
+          ? `<button class="validateBtn bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Validate</button>`
           : ''
         }
-          ${
-        req.status === 'PendingCancel' && activeTab === 'all'
-        ? `<button class="validateCancelBtn bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
-            ❌ Validate Cancel
-          </button>`
-        : ''
+        ${
+          activeTab === 'liquidation' && req.status === 'PendingCancel'
+            ? `<button class="validateCancelBtn bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+                Validate Cancel
+              </button>`
+            : ''
         }
       </td>
     `;

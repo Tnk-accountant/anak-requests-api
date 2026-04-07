@@ -1248,7 +1248,7 @@ function renderMobileCards() {
     req.status === 'PendingValidation' ? 'bg-orange-500' :
     req.status === 'Closed' ? 'bg-green-600' :
     req.status === 'PendingCancel' ? 'bg-red-400' :
-    req.status === 'Rejected' || req.status === 'Cancelled' ? 'bg-red-600' :
+    req.status === 'Rejected' || req.status === 'Cancelled' ? 'bg-gray-400' :
     'bg-gray-400';
 
     const card = document.createElement('div');
@@ -1744,9 +1744,9 @@ if (req.status === 'PendingValidation') {
       liqReceiptsInput.value = '';
 
   // Verrouillage selon statut
-  const isClosed = req.status === 'Closed';
+  const isLocked = req.status === 'Closed' || req.status === 'Cancelled';
 
-  if (req.status !== 'ToLiquidate') {
+  if (req.status !== 'ToLiquidate' || isLocked) {
     // 🔒 lecture seule
     liqSpentInput.disabled = true;
     liqReturnedInput.disabled = true;
@@ -1763,14 +1763,14 @@ if (req.status === 'PendingValidation') {
     cameraBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
     // 🎨 style gris uniquement si Closed
-    if (isClosed) {
+    if (isLocked) {
       liqSpentInput.classList.add('bg-gray-100', 'text-gray-500');
       liqReturnedInput.classList.add('bg-gray-100', 'text-gray-500');
       liqNoteInput.classList.add('bg-gray-100', 'text-gray-500');
     }
 
     // 🚫 cacher submit si Closed
-    if (isClosed) {
+    if (isLocked) {
       liqSubmitBtn.classList.add('hidden');
     }
 
@@ -1798,50 +1798,59 @@ if (req.status === 'PendingValidation') {
   }
 
 // ---------- Panel Annuler ----------
-    const cancelPanel = document.getElementById('panel-cancel');
-    const cancelInputs = cancelPanel.querySelectorAll('input, textarea, button');
+const cancelPanel = document.getElementById('panel-cancel');
+const cancelInputs = cancelPanel.querySelectorAll('input, textarea, button');
 
-    if (req.status === 'Closed' || req.status === 'PendingCancel') {
-      cancelInputs.forEach(el => el.disabled = true);
-      cancelPanel.classList.add('opacity-50');
-    } else {
-      cancelInputs.forEach(el => el.disabled = false);
-      cancelPanel.classList.remove('opacity-50');
-    }
+// 🔒 états bloqués
+if (isLocked) {
+  cancelInputs.forEach(el => el.disabled = true);
+  cancelPanel.classList.add('opacity-50');
+} else {
+  cancelInputs.forEach(el => el.disabled = false);
+  cancelPanel.classList.remove('opacity-50');
+}
 
-  // ---------- Ouvrir le modal ----------
-  const modal = document.getElementById('modal');
-  modal.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
 
-  // Attendre le rendu puis afficher le bon panel
+// ---------- Ouvrir le modal ----------
+const modal = document.getElementById('modal');
+modal.classList.remove('hidden');
+document.body.style.overflow = 'hidden';
+
+// afficher bon panel après rendu
 requestAnimationFrame(() => {
   autoSelectMobileAction(req);
-
 });
 
-  // ---------- Actions : autorisées ou lecture seule ----------
-  document.querySelectorAll('#actionList .action-card').forEach(card => {
-    const action = card.dataset.action;
+
+// ---------- Gestion des action cards (gauche) ----------
+document.querySelectorAll('#actionList .action-card').forEach(card => {
+  const action = card.dataset.action;
+
+  const isCancelled = req.status === 'Cancelled';
 
   const allowed =
     (action === 'received'  && req.status === 'Approved') ||
     (action === 'liquidate' && req.status === 'ToLiquidate') ||
     (action === 'validate'  && req.status === 'PendingValidation') ||
-    (action === 'cancel' && req.status !== 'Closed' && req.status !== 'PendingCancel');
+    (action === 'cancel'    && req.status !== 'Closed' && req.status !== 'PendingCancel');
 
-    // Toujours cliquable → même si non autorisé (lecture seule)
-    card.classList.remove('pointer-events-none');
+  // 👉 toujours cliquable (lecture seule possible)
+  card.classList.remove('pointer-events-none');
 
-    if (!allowed) {
-      // grisé visuel
-      card.classList.add('opacity-40');
-      card.classList.remove('is-active');
-    } else {
-      card.classList.remove('opacity-40');
-    }
-  });
+  // 🔥 CAS PRIORITAIRE → Cancelled
+  if (isCancelled) {
+    card.classList.add('opacity-40');
+    return;
+  }
 
+  // 🔁 logique normale
+  if (!allowed) {
+    card.classList.add('opacity-40');
+    card.classList.remove('is-active');
+  } else {
+    card.classList.remove('opacity-40');
+  }
+});
 
 }
 
