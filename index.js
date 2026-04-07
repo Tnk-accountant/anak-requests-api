@@ -248,16 +248,28 @@ app.get('/requests', authenticate, async (req, res) => {
       .order('timestamp', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // filtre centre (sécurité)
-    if (req.role !== 'Admin') {
-      if (req.center_id) {
-        query = query.eq('center_id', req.center_id);
-      } else {
-        query = query.eq('center_name', req.center); // fallback temporaire
-      }
-    }
+// 🔥 NOUVELLE LOGIQUE MULTI-CENTRES en fonction de l'utilisateur
 
-    // filtre status optionnel
+      if (req.role === 'Admin') {
+        // rien → voit tout
+      }
+      else if (req.role === 'Purchaser') {
+        query = query.or(
+          `created_by.eq.${req.user.id},status.eq.Approved`
+        );
+      }
+      else if (req.role === 'ChefCentre') {
+        query = query.or(
+          `created_by.eq.${req.user.id},center_id.eq.${req.center_id}`
+        );
+      }
+      else {
+        // utilisateur normal
+        query = query.eq('created_by', req.user.id);
+      }
+
+
+// filtre status optionnel
     if (req.query.status) {
       query = query.eq('status', req.query.status);
     }
@@ -454,7 +466,8 @@ app.post('/requests', authenticate, async (req, res) => {
       p_amount_requested: amount_requested,
       p_description: description,
       p_payment_method: payment_method,
-      p_request_type: request_type
+      p_request_type: request_type,
+      p_created_by: req.user.id 
     });
 
     // 1) Toujours gérer l'erreur en premier
