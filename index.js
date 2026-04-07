@@ -775,27 +775,117 @@ app.post(
   }
 );
 
-// PATCH annuler une demande
-app.patch('/requests/:request_id/cancel', authenticate, async (req, res) => {
+
+app.patch('/requests/:request_id/request-cancel', authenticate, async (req, res) => {
   try {
     const { request_id } = req.params;
     const { cancellation_note } = req.body;
 
+    if (!cancellation_note) {
+      return res.status(400).json({ error: 'Cancellation reason required' });
+    }
+
+    // 🔒 empêcher double demande
+    const { data: existing } = await supabaseService
+      .from('Requests')
+      .select('status')
+      .eq('request_id', request_id)
+      .maybeSingle();
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+
+    if (existing.status === 'PendingCancel') {
+      return res.status(400).json({ error: 'Already pending cancel' });
+    }
+
+    if (existing.status === 'Closed' || existing.status === 'Cancelled') {
+      return res.status(400).json({ error: 'Cannot cancel this request' });
+    }
+
     const { data, error } = await supabaseService
       .from('Requests')
-      .update({ status: 'Cancelled', cancellation_note })
+      .update({
+        status: 'PendingCancel',
+        cancellation_note
+      })
       .eq('request_id', request_id)
-      .select();
+      .select()
+      .maybeSingle();
 
     if (error) throw error;
-    if (!data || !data.length) return res.status(404).json({ error: 'Demande non trouvée.' });
 
-    res.json({ message: 'Demande annulée avec succès', data });
+    notifyAdmins(data);
+
+    res.json({
+      message: 'Cancellation requested',
+      data
+    });
+
   } catch (err) {
-    console.error('PATCH /requests/:request_id/cancel error:', err);
+    console.error('request-cancel error:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
+// PATCH demander une annulation (flow avec validation admin)
+    app.patch('/requests/:request_id/cancel', authenticate, async (req, res) => {
+      try {
+        const { request_id } = req.params;
+        const { cancellation_note } = req.body;
+
+        // 🔒 validation
+        if (!cancellation_note) {
+          return res.status(400).json({ error: 'Cancellation reason required' });
+        }
+
+        // 🔎 récupérer la demande actuelle
+        const { data: existing } = await supabaseService
+          .from('Requests')
+          .select('status')
+          .eq('request_id', request_id)
+          .maybeSingle();
+
+        if (!existing) {
+          return res.status(404).json({ error: 'Request not found' });
+        }
+
+        // 🔒 protections métier
+        if (existing.status === 'PendingCancel') {
+          return res.status(400).json({ error: 'Already pending cancel' });
+        }
+
+        if (existing.status === 'Closed' || existing.status === 'Cancelled') {
+          return res.status(400).json({ error: 'Cannot cancel this request' });
+        }
+
+        // 🔁 passer en attente de validation admin
+        const { data, error } = await supabaseService
+          .from('Requests')
+          .update({
+            status: 'PendingCancel',
+            cancellation_note
+          })
+          .eq('request_id', request_id)
+          .select()
+          .maybeSingle();
+
+        if (error) throw error;
+
+        // 🔔 notifier admin (SSE)
+        notifyAdmins(data);
+
+        res.json({
+          message: 'Cancellation requested',
+          data
+        });
+
+      } catch (err) {
+        console.error('PATCH /cancel error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    });
 
 // PATCH VALIDATION LIQUIDATION
 app.patch('/requests/:request_id/validate-liquidation', authenticate, async (req, res) => {
@@ -917,6 +1007,69 @@ app.patch('/requests/:request_id/validate-liquidation', authenticate, async (req
   } catch (err) {
     console.error('validate liquidation error:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+app.patch('/requests/:request_id/validate-cancel', authenticate, async (req, res) => {
+  try {
+    const { request_id } = req.params;
+
+    // 🔒 Admin uniquement
+    if (req.role !== 'Admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+
+    // 🔎 Récupérer la demande
+    const { data: existing, error: fetchError } = await supabaseService
+      .from('Requests')
+      .select('status')
+      .eq('request_id', request_id)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+
+    // 🔒 sécurité anti double action / incohérence
+    if (existing.status === 'Cancelled') {
+      return res.status(400).json({ error: 'Already cancelled' });
+    }
+
+    if (existing.status !== 'PendingCancel') {
+      return res.status(400).json({
+        error: `Cannot cancel from status '${existing.status}'`
+      });
+    }
+
+    // ✅ Update
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .update({
+        status: 'Cancelled',
+        cancelled_at: new Date().toISOString(), // 🔥 bonus audit
+        cancelled_by: req.user?.email || 'admin' // 🔥 traçabilité
+      })
+      .eq('request_id', request_id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+
+    // 🔔 SSE update
+    notifyAdmins(data);
+
+    return res.json({
+      message: 'Request cancelled',
+      data
+    });
+
+  } catch (err) {
+    console.error('validate-cancel error:', err);
+    return res.status(500).json({ error: err.message });
   }
 });
 

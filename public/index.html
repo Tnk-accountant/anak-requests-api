@@ -1241,14 +1241,15 @@ function renderMobileCards() {
   const paginated = requests.slice(start, start + mobilePerPage);
 
   paginated.forEach(req => {
-    const statusColor =
-      req.status === 'Pending' ? 'bg-yellow-400' :
-      req.status === 'Approved' ? 'bg-blue-500' :
-      req.status === 'ToLiquidate' ? 'bg-purple-500' :
-      req.status === 'PendingValidation' ? 'bg-orange-500' :
-      req.status === 'Closed' ? 'bg-green-600' :
-      req.status === 'Rejected' || req.status === 'Cancelled' ? 'bg-red-600' :
-      'bg-gray-400';
+  const statusColor =
+    req.status === 'Pending' ? 'bg-yellow-400' :
+    req.status === 'Approved' ? 'bg-blue-500' :
+    req.status === 'ToLiquidate' ? 'bg-purple-500' :
+    req.status === 'PendingValidation' ? 'bg-orange-500' :
+    req.status === 'Closed' ? 'bg-green-600' :
+    req.status === 'PendingCancel' ? 'bg-red-400' :
+    req.status === 'Rejected' || req.status === 'Cancelled' ? 'bg-red-600' :
+    'bg-gray-400';
 
     const card = document.createElement('div');
     card.className = `
@@ -1399,6 +1400,7 @@ async function refreshRequest(request_id) {
           req.status === 'ToLiquidate' ? 'bg-purple-500' :
           req.status === 'PendingValidation' ? 'bg-orange-500' :
           req.status === 'Closed' ? 'bg-green-600' :
+          req.status === 'PendingCancel' ? 'bg-red-400' :
           'bg-gray-400'
         }">
           ${req.status || ''}
@@ -1795,18 +1797,17 @@ if (req.status === 'PendingValidation') {
     liqSubmitBtn.classList.remove('hidden');
   }
 
+// ---------- Panel Annuler ----------
+    const cancelPanel = document.getElementById('panel-cancel');
+    const cancelInputs = cancelPanel.querySelectorAll('input, textarea, button');
 
-  // ---------- Panel Annuler ----------
-  const cancelPanel = document.getElementById('panel-cancel');
-  const cancelInputs = cancelPanel.querySelectorAll('input, textarea, button');
-
-  if (req.status === 'Closed') {
-    cancelInputs.forEach(el => el.disabled = true);
-    cancelPanel.classList.add('opacity-50');
-  } else {
-    cancelInputs.forEach(el => el.disabled = false);
-    cancelPanel.classList.remove('opacity-50');
-  }
+    if (req.status === 'Closed' || req.status === 'PendingCancel') {
+      cancelInputs.forEach(el => el.disabled = true);
+      cancelPanel.classList.add('opacity-50');
+    } else {
+      cancelInputs.forEach(el => el.disabled = false);
+      cancelPanel.classList.remove('opacity-50');
+    }
 
   // ---------- Ouvrir le modal ----------
   const modal = document.getElementById('modal');
@@ -1827,7 +1828,7 @@ requestAnimationFrame(() => {
     (action === 'received'  && req.status === 'Approved') ||
     (action === 'liquidate' && req.status === 'ToLiquidate') ||
     (action === 'validate'  && req.status === 'PendingValidation') ||
-    (action === 'cancel'    && req.status !== 'Closed');
+    (action === 'cancel' && req.status !== 'Closed' && req.status !== 'PendingCancel');
 
     // Toujours cliquable → même si non autorisé (lecture seule)
     card.classList.remove('pointer-events-none');
@@ -2236,7 +2237,7 @@ document.getElementById('cancelSubmitBtn').addEventListener('click', async () =>
   try {
     const token = localStorage.getItem('access_token');
 
-    const res = await fetch(`${API_URL}/requests/${currentRequestId}/cancel`, {
+    const res = await fetch(`${API_URL}/requests/${currentRequestId}/request-cancel`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -2269,7 +2270,7 @@ document.getElementById('cancelSubmitBtn').addEventListener('click', async () =>
     // ------------------------------
     // Mise à jour locale
     // ------------------------------
-    req.status = 'Cancelled';
+    req.status = 'PendingCancel';
     req.cancellation_note = reason;
 
     upsertRow(req);
@@ -2280,7 +2281,7 @@ document.getElementById('cancelSubmitBtn').addEventListener('click', async () =>
     closeModal();
 
     setTimeout(() => {
-      notify("Request cancelled", "success");
+      notify("Cancellation request sent", "info");
     }, 150);
 
   } catch (err) {

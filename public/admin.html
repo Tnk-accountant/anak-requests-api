@@ -264,6 +264,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       ToLiquidate: 'bg-purple-500',
       PendingValidation: 'bg-orange-500',
       Closed: 'bg-green-600',
+      PendingCancel: 'bg-red-400',
       Cancelled: 'bg-gray-400',
     };
 
@@ -506,8 +507,15 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         activeTab === 'liquidation' && req.status === 'PendingValidation'
           ? `<button class="validateBtn bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">✅ Validate</button>`
           : ''
-      }
-              </td>
+        }
+          ${
+        req.status === 'PendingCancel' && activeTab === 'all'
+        ? `<button class="validateCancelBtn bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+            ❌ Validate Cancel
+          </button>`
+        : ''
+        }
+      </td>
     `;
 
     requestsTableBody.appendChild(tr);
@@ -529,6 +537,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         const approvedAmountInput = tr.querySelector('.approvedAmount');
 
         const validateBtn = tr.querySelector('.validateBtn');
+        const validateCancelBtn = tr.querySelector('.validateCancelBtn');
 
         // 🔥 ONGLET LIQUIDATION → UI CLEAN
       if (activeTab === 'liquidation') {
@@ -599,6 +608,67 @@ const API_URL = 'https://anak-requests-api.onrender.com';
               validateBtn.disabled = false;
               validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
               validateBtn.textContent = '✅ Validate';
+
+              notify("Server error", "error");
+            }
+          });
+        }
+
+          if (validateCancelBtn) {
+            validateCancelBtn.addEventListener('click', async () => {
+
+              // 🔥 AJOUT ICI
+              if (req.status !== 'PendingCancel') return;
+
+              if (validateCancelBtn.disabled) return;
+
+              validateCancelBtn.disabled = true;
+              validateCancelBtn.classList.add('opacity-50');
+              validateCancelBtn.textContent = '⏳...';
+
+            try {
+              const token = localStorage.getItem('access_token');
+
+              const res = await fetch(`${API_URL}/requests/${req.request_id}/validate-cancel`, {
+                method: 'PATCH',
+                headers: {
+                  'Authorization': 'Bearer ' + token
+                }
+              });
+
+              if (res.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = 'login.html';
+                return;
+              }
+
+              const result = await res.json();
+
+              if (!res.ok) {
+                validateCancelBtn.disabled = false;
+                validateCancelBtn.textContent = '❌ Validate Cancel';
+                notify(result.error || "Error", "error");
+                return;
+              }
+
+              // ✅ update local
+              const updated = result?.data || req;
+              req.status = updated.status || 'Cancelled';
+
+              tr.style.transition = 'all 0.3s ease';
+              tr.style.opacity = '0';
+
+              setTimeout(() => {
+                applyAdvancedFilters();
+              }, 300);
+
+              notify("Request cancelled", "success");
+
+            } catch (err) {
+              console.error(err);
+
+              validateCancelBtn.disabled = false;
+              validateCancelBtn.textContent = '❌ Validate Cancel';
 
               notify("Server error", "error");
             }
