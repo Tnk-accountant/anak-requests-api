@@ -734,29 +734,32 @@ let mobileAmountFilter = '';
 // Initialisation après DOM loaded
 // ==============================
 
-  const CENTERS = [
-    "ADM","DIB","DIG","NURB","NURG", "RB1","RB2",
-    "RB3","RB4","RB5","RB6","RB7","RB8","RB9","CARP","SJE","BH","CFH","RG3",
-    "RG4","RG5","RG6","JLH","OLG","SAH","SJB","OLMC","SSK","SMG","NBBS","MOB","CLINIC","SEDS","CYDW","ELD"
-  ];
 
-  function populateCenters(selectedCenter = "") {
+  async function populateCenters(selectedCenter = "") {
     const select = document.getElementById("center_name");
     if (!select) return;
 
     select.innerHTML = `<option value="">Select a center</option>`;
 
-    CENTERS.forEach(center => {
-      const opt = document.createElement("option");
-      opt.value = center;
-      opt.textContent = center;
+    try {
+      const res = await fetch(`${API_URL}/centers`);
+      const centers = await res.json();
 
-      if (selectedCenter && center === selectedCenter) {
-        opt.selected = true;
-      }
+      centers.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.code;
+        opt.textContent = c.name;
 
-      select.appendChild(opt);
-    });
+        if (selectedCenter && c.code === selectedCenter) {
+          opt.selected = true;
+        }
+
+        select.appendChild(opt);
+      });
+
+    } catch (err) {
+      console.error("Erreur chargement centers:", err);
+    }
   }
 
     document.addEventListener('DOMContentLoaded', async () => {

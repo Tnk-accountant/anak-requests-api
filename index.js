@@ -200,9 +200,31 @@ app.get('/profile', authenticate, async (req, res) => {
 
 // Racine
 app.get('/', (req, res) => {
-  res.send('Bienvenue dans la belle API Anak Requests !');
+  res.send('Welcome in the beautiful API Anak Requests !');
 });
 
+
+// =====================
+// GET CENTERS
+// =====================
+app.get('/centers', async (req, res) => {
+  try {
+    const { data, error } = await supabaseService
+      .from('centers')
+      .select('id, code, name')
+      .order('code');
+
+    if (error) {
+      console.error('GET /centers error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error('GET /centers catch error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // =====================
 // GET REQUESTS (PAGINATED)
@@ -228,7 +250,11 @@ app.get('/requests', authenticate, async (req, res) => {
 
     // filtre centre (sécurité)
     if (req.role !== 'Admin') {
-      query = query.eq('center_name', req.center);
+      if (req.center_id) {
+        query = query.eq('center_id', req.center_id);
+      } else {
+        query = query.eq('center_name', req.center); // fallback temporaire
+      }
     }
 
     // filtre status optionnel
