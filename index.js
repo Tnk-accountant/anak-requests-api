@@ -620,7 +620,7 @@ app.post('/requests', authenticate, async (req, res) => {
 app.get('/admin/requests/open', authenticate, async (req, res) => {
   try {
     // Vérifier que l'utilisateur est Admin
-    if (req.role !== 'Admin') {
+    if (req.profile.role !== 'Admin') {
       return res.status(403).json({ error: 'Access restricted to administrators.' });
     }
 
@@ -771,7 +771,7 @@ app.patch('/requests/:request_id/liquidate', authenticate, async (req, res) => {
         .toLowerCase()
         .replace(/\s/g, '');
 
-      const role = (req.role || '').toLowerCase();
+      const role = (req.profile.role || '').toLowerCase();
 
       if (!role.includes('admin') && !role.includes('chef')) {
         return res.status(403).json({ error: 'Not allowed' });
@@ -1017,7 +1017,7 @@ app.patch('/requests/:request_id/validate-liquidation', authenticate, async (req
     const { request_id } = req.params;
 
     // 🔒 Admin only
-    if (req.role !== 'Admin') {
+    if (req.profile.role !== 'Admin') {
       return res.status(403).json({ error: 'Admin only' });
     }
 
@@ -1141,7 +1141,7 @@ app.patch('/requests/:request_id/validate-cancel', authenticate, async (req, res
     const { request_id } = req.params;
 
     // 🔒 Admin uniquement
-    if (req.role !== 'Admin') {
+    if (req.profile.role !== 'Admin') {
       return res.status(403).json({ error: 'Admin only' });
     }
 

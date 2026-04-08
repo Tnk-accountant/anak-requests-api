@@ -60,6 +60,9 @@
 
 </head>
 <body class="bg-gray-50 p-4 text-sm font-sans min-h-screen">
+  <div id="loader" class="fixed inset-0 flex items-center justify-center bg-white z-50">
+  <div class="text-gray-500 text-lg">Loading...</div>
+  </div>
   <div id="notificationContainer" class="notification-container"></div>
 
   <h1 class="text-xl font-semibold mb-4 text-gray-800">Admin – Request Management</h1>
@@ -227,23 +230,52 @@
 
 const API_URL = 'https://anak-requests-api.onrender.com';
 
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    if (currentUser.role?.toLowerCase() !== 'admin') {
-    notify("Access denied", "error");
-    setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 800);
-      throw new Error("Not admin");
+    function hideLoader() {
+      const loader = document.getElementById('loader');
+      if (loader) loader.style.display = 'none';
     }
 
+    async function checkAdminAccess() {
+      try {
+        const res = await fetch(`${API_URL}/profile`, {
+          credentials: 'include'
+        });
 
+        if (!res.ok) {
+          hideLoader(); // 👈 ajoute ça
+          window.location.href = 'login.html';
+          return;
+        }
 
-    // Redirige vers login si pas de token
-    if (!localStorage.getItem('access_token')) {
-      window.location.href = 'login.html';
-      throw new Error("No token → redirect login");
+        const data = await res.json();
+
+        const role = (data.role || '').toLowerCase().trim();
+
+        console.log("ADMIN ROLE:", role); // debug
+
+      if (role !== 'admin') {
+        hideLoader();
+        window.location.href = 'select.html';
+        return;
+      }
+
+      hideLoader(); // ✅ IMPORTANT
+
+      } catch (err) {
+        console.error(err);
+         hideLoader(); 
+        window.location.href = 'login.html';
+      }
     }
 
+    async function initAdminPage() {
+      await checkAdminAccess(); // 🔒 vérifie admin AVANT tout
+
+      fetchRequests();          // 📊 charge les données
+      setupSSE();               // 🔁 active le temps réel
+    }
+
+    initAdminPage();
 
     const requestsTableBody = document.getElementById('requestsTableBody');
     const filterStatus = document.getElementById('filterStatus');
@@ -918,8 +950,6 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         XLSX.writeFile(wb, "Anak_Requests.xlsx");
       });
 
-    fetchRequests();
-
     let evtSource = null;
     let sseReconnectTimer = null;
 
@@ -994,9 +1024,6 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         }, 5000);
       };
     }
-
-    // Lance SSE au chargement
-    setupSSE();
 
     // -------------------------
     // Modal description (1 seule fois)
