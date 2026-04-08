@@ -73,12 +73,12 @@
   <div id="notificationContainer" class="notification-container"></div>
 
   <!-- WRAPPER -->
-  <div class="max-w-7xl mx-auto">
+  <div class="max-w-[1400px] mx-auto px-4">
 
     <!-- HEADER -->
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-semibold text-gray-800 tracking-tight">
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
           Admin Dashboard
         </h1>
         <p class="text-gray-400 text-sm">
@@ -160,7 +160,7 @@
       <table class="min-w-full text-left border-collapse">
         <thead class="bg-gray-50">
           <tr>
-            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">ID</th>
+            <th class="py-3 pl-6 pr-4 text-gray-500 font-medium text-xs uppercase">ID</th>
             <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Date</th>
             <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Requested by</th>
             <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Center</th>
@@ -526,7 +526,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
 
     tr.innerHTML = `
-      <td>${req.request_id}</td>
+      <td class="pl-6 pr-4 font-medium text-gray-700">${req.request_id}</td>
       <td>${new Date(req.timestamp).toLocaleDateString('fr-FR')}</td>
       <td>${req.requestor_name}</td>
       <td>${req.center_name}</td>
