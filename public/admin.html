@@ -59,119 +59,158 @@
 </style>
 
 </head>
-<body class="bg-gray-50 p-4 text-sm font-sans min-h-screen">
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 text-sm font-sans min-h-screen">
+
+  <!-- LOADER -->
   <div id="loader" class="fixed inset-0 flex items-center justify-center bg-white z-50">
-  <div class="text-gray-500 text-lg">Loading...</div>
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <div class="text-gray-500 text-sm">Loading dashboard...</div>
+    </div>
   </div>
+
+  <!-- NOTIFICATIONS -->
   <div id="notificationContainer" class="notification-container"></div>
 
-  <h1 class="text-xl font-semibold mb-4 text-gray-800">Admin – Request Management</h1>
-  <div class="flex gap-2 mb-4">
-  <button id="tabAll" class="tab-btn bg-indigo-600 text-white px-4 py-2 rounded">
-    All Requests
-  </button>
+  <!-- WRAPPER -->
+  <div class="max-w-7xl mx-auto">
 
-  <button id="tabLiquidation" class="tab-btn bg-gray-200 px-4 py-2 rounded">
-    Liquidations/Cancellation
-  </button>
-</div>
-
-  <!-- Filtres et actions -->
-
-<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-
-  <!-- Bloc gauche -->
-  <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-    <input id="searchName" type="text" placeholder="Requested by"
-      class="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none w-full sm:w-48 placeholder-gray-400">
-
-    <input id="searchCenter" type="text" placeholder="Center"
-      class="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none w-full sm:w-48 placeholder-gray-400">
-
-    <input id="minAmount" type="number" placeholder="Amount ="
-      class="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none w-full sm:w-32 placeholder-gray-400">
-
-    <!-- Total ToLiquidate -->
-    <div class="bg-white border border-gray-200 rounded-md px-3 py-2 shadow-sm w-full sm:w-auto">
-      <div class="text-[11px] text-gray-500 leading-none">
-        Total To Liquidate
-      </div>
-      <div id="totalToLiquidate" class="text-sm font-semibold text-gray-800">
-        0.00 PHP
+    <!-- HEADER -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-800 tracking-tight">
+          Admin Dashboard
+        </h1>
+        <p class="text-gray-400 text-sm">
+          Manage and validate requests efficiently
+        </p>
       </div>
     </div>
-  </div>
 
-  <!-- Bloc droite (aligné à droite) -->
-  <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto md:justify-end">
-    
-    <select id="filterStatus"
-      class="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none w-full sm:w-auto">
-      <option value="">All statuses</option>
-      <option value="Pending">Pending</option>
-      <option value="Approved">Approved</option>
-      <option value="Rejected">Rejected</option>
-      <option value="ToLiquidate">To liquidate</option>
-      <option value="PendingValidation">Pending Validation</option>
-      <option value="Closed">Closed</option>
-    </select>
+    <!-- TABS -->
+    <div class="flex gap-2 mb-6">
+      <button id="tabAll"
+        class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-sm hover:shadow-md active:scale-95">
+        All Requests
+      </button>
 
-    <button id="refreshBtn"
-      class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition duration-200 shadow-sm w-full sm:w-auto">
-      Refresh
-    </button>
-
-    <button id="exportBtn"
-      class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition duration-200 shadow-sm w-full sm:w-auto">
-      Export to Excel
-    </button>
-
-  </div>
-</div>
-
-  <!-- Tableau des demandes -->
-  <div class="overflow-x-auto bg-white shadow-md rounded-xl">
-    <table class="min-w-full text-left border-collapse">
-      <thead class="bg-indigo-50">
-        <tr>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">ID</th>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">Date</th>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">Requested by</th>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">Center</th>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">Amount Requested</th>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">Payment</th>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">Description</th>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">Status</th>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">Amount approved</th>
-          <th class="py-2 px-4 border-b text-gray-700 font-medium">Approved by</th>
-          <th class="py-2 px-2 border-b text-gray-700 font-medium w-[130px] text-center">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="requestsTableBody" class="divide-y divide-gray-100"></tbody>
-    </table>
-  </div>
-
-  <!-- Pagination -->
-  <div class="flex justify-center mt-4 gap-2">
-    <button id="prevPage" class="bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-200">Previous</button>
-    <span id="pageInfo" class="px-3 py-2 text-gray-700"></span>
-    <button id="nextPage" class="bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300 transition duration-200">Next</button>
-  </div>
-
-  <!-- Carte description -->
-<div id="descriptionModal"
-     class="fixed inset-0 bg-black/30 hidden flex items-center justify-center z-50">
-  <div class="bg-white w-full max-w-lg rounded-xl shadow-lg p-5">
-    <div class="flex justify-between items-center mb-3">
-      <h3 class="text-sm font-semibold text-gray-800">Description</h3>
-      <button id="closeDescription"
-              class="text-gray-400 hover:text-gray-600">✕</button>
+      <button id="tabLiquidation"
+        class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95">
+        Liquidations / Cancellation
+      </button>
     </div>
-    <div id="descriptionContent"
-         class="text-sm text-gray-700 whitespace-pre-wrap max-h-[60vh] overflow-auto">
+
+    <!-- FILTER CARD -->
+    <div class="bg-white/80 backdrop-blur border border-gray-200 rounded-2xl p-4 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+
+      <!-- LEFT -->
+      <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+
+        <input id="searchName" type="text" placeholder="Requested by"
+          class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition w-full sm:w-48">
+
+        <input id="searchCenter" type="text" placeholder="Center"
+          class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition w-full sm:w-48">
+
+        <input id="minAmount" type="number" placeholder="Amount ="
+          class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition w-full sm:w-32">
+
+        <!-- TOTAL -->
+        <div class="bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm">
+          <div class="text-xs text-gray-400">
+            Total To Liquidate
+          </div>
+          <div id="totalToLiquidate" class="text-sm font-semibold text-gray-800">
+            0.00 PHP
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT -->
+      <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto md:justify-end">
+
+        <select id="filterStatus"
+          class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition w-full sm:w-auto">
+          <option value="">All statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+          <option value="ToLiquidate">To liquidate</option>
+          <option value="PendingValidation">Pending Validation</option>
+          <option value="Closed">Closed</option>
+        </select>
+
+        <button id="refreshBtn"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition shadow-sm hover:shadow-md active:scale-95">
+          Refresh
+        </button>
+
+        <button id="exportBtn"
+          class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition shadow-sm hover:shadow-md active:scale-95">
+          Export
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
+      <table class="min-w-full text-left border-collapse">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">ID</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Date</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Requested by</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Center</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Amount</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Payment</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Description</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Status</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Approved</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">By</th>
+            <th class="py-3 px-2 text-gray-500 font-medium text-xs uppercase text-center">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody id="requestsTableBody" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="flex justify-center items-center mt-6 gap-3">
+      <button id="prevPage"
+        class="bg-white border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition">
+        Previous
+      </button>
+
+      <span id="pageInfo" class="text-gray-500 text-sm"></span>
+
+      <button id="nextPage"
+        class="bg-white border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition">
+        Next
+      </button>
+    </div>
+
+  </div>
+
+  <!-- MODAL -->
+  <div id="descriptionModal"
+       class="fixed inset-0 bg-black/30 hidden flex items-center justify-center z-50">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl p-5">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-sm font-semibold text-gray-800">Description</h3>
+        <button id="closeDescription"
+                class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
+      <div id="descriptionContent"
+           class="text-sm text-gray-700 whitespace-pre-wrap max-h-[60vh] overflow-auto">
+      </div>
     </div>
   </div>
-</div>
+
+</body>
 
   <script>
 
@@ -1056,6 +1095,4 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
   </script>
 
-
-</body>
 </html>
