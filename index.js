@@ -342,6 +342,7 @@ app.get('/requests/stream', async (req, res) => {
     // 4) stocker client + infos
     sseClients.push({
       res,
+      userId: data.user.id, // 🔥 IMPORTANT
       role: profile.role,
       center: (profile.center_name || '').toString().trim().toUpperCase()
     });

@@ -259,16 +259,49 @@
 
 <script>
 const API_URL = 'https://anak-requests-api.onrender.com';
-if(localStorage.getItem('access_token')) { window.location.href='index.html'; }
 
-const loginForm=document.getElementById('loginForm');
-const loginAlert=document.getElementById('loginAlert');
-const loader=document.getElementById('loader');
-const notifyContainer=document.getElementById('notificationContainer');
+const loginForm = document.getElementById('loginForm');
+const loginAlert = document.getElementById('loginAlert');
+const loader = document.getElementById('loader');
+const notifyContainer = document.getElementById('notificationContainer');
 
-function showLoader(show=true){ loader.style.display=show?'flex':'none'; }
-function notify(msg,type='info'){ const note=document.createElement('div'); note.className=`notification ${type}`; note.textContent=msg; notifyContainer.appendChild(note); setTimeout(()=>note.remove(),4000); }
+function showLoader(show = true) {
+  loader.style.display = show ? 'flex' : 'none';
+}
 
+function notify(msg, type = 'info') {
+  const note = document.createElement('div');
+  note.className = `notification ${type}`;
+  note.textContent = msg;
+  notifyContainer.appendChild(note);
+  setTimeout(() => note.remove(), 4000);
+}
+
+// 🔥 loader ON au début
+showLoader(true);
+
+// 🔐 check session
+async function checkSession() {
+  try {
+    const res = await fetch(`${API_URL}/profile`, {
+      credentials: 'include'
+    });
+
+    if (res.ok) {
+      window.location.href = 'index.html';
+      return;
+    }
+
+  } catch (err) {
+    console.warn('No active session');
+  }
+
+  // 👉 pas connecté → on affiche le form
+  setTimeout(() => showLoader(false), 200);
+}
+
+// 🔥 lance après tout
+checkSession();
 
 loginForm.addEventListener('submit',async e=>{
   e.preventDefault();
@@ -281,12 +314,16 @@ loginForm.addEventListener('submit',async e=>{
   const password=document.getElementById('loginPassword').value;
 
   try{
-    const res=await fetch(`${API_URL}/login`,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
+    const res = await fetch(`${API_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // 🔥 TRÈS IMPORTANT
+    body: JSON.stringify({ email, password })
+  });
     const data=await res.json();
     showLoader(false);
     if(!res.ok) throw new Error(data.error||'Server error');
 
-    localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('user', JSON.stringify(data.user));
 
     if (data.user?.center_name) {

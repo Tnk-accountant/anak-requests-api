@@ -1044,15 +1044,26 @@ function setupSSE() {
     }
   };
 
-  sse.onerror = (err) => {
-    console.warn('SSE error:', err);
+    sse.onerror = (err) => {
+      console.warn('SSE error:', err);
 
-    try { sse.close(); } catch {}
-    sse = null;
+      try { sse.close(); } catch {}
+      sse = null;
 
-    // 🔁 Reconnexion automatique
-    setTimeout(setupSSE, 5000);
-  };
+      // 🟡 fallback temporaire (refresh toutes les 30s)
+      const fallbackInterval = setInterval(fetchMyRequests, 30000);
+
+      // 🔁 tentative reconnexion SSE
+      setTimeout(() => {
+        setupSSE();
+
+        // ✅ stop fallback si SSE revient
+        if (sse) {
+          clearInterval(fallbackInterval);
+        }
+
+      }, 5000);
+    };
 }
 
 // Lance SSE
@@ -1094,8 +1105,6 @@ if (amountSearchInput) {
   amountSearchInput.addEventListener('input', debouncedRenderTable);
 }
 
-  // Auto-refresh toutes les 60s
-  setInterval(fetchMyRequests, 60000);
 });
 
 
