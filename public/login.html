@@ -288,7 +288,16 @@ async function checkSession() {
     });
 
     if (res.ok) {
-      window.location.href = 'index.html';
+      const data = await res.json();
+
+      const role = data.role?.toLowerCase();
+
+      if (role === 'admin') {
+        window.location.href = 'select.html';
+      } else {
+        window.location.href = 'index.html';
+      }
+
       return;
     }
 
@@ -336,11 +345,11 @@ loginForm.addEventListener('submit',async e=>{
     const userRole = data.user.role.toLowerCase(); // exemple: "admin" ou "chef de centre"
 
     setTimeout(() => {
-      if (userRole === 'admin') {
-        window.location.href = 'admin.html';
-      } else {
-        window.location.href = 'index.html';
-      }
+    if (userRole === 'admin') {
+      window.location.href = 'select.html'; // 🔥 nouvelle page
+    } else {
+      window.location.href = 'index.html';
+    }
     }, 800);
 
   }catch(err){
