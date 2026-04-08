@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
+const cookieParser = require('cookie-parser'); //
 const { supabaseAuth, supabaseService } = require('./supabase');
 
 
@@ -46,6 +47,7 @@ const corsOptions = {
 
 // Appliquer CORS globalement
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 // 🔥 IMPORTANT : limite payload (évite crash upload)
 app.use(express.json({ limit: '10mb' }));
@@ -54,137 +56,204 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Multer pour upload temporaire
 const upload = multer({ dest: '/tmp/uploads/' });
 
-// ---------- AUTHENTICATION / UTILITAIRES ----------
-// Récupère l'user Supabase depuis le token d'Authorization Bearer
+// ==============================
+// AUTH + LOGIN + REFRESH CLEAN
+// ==============================
 
+const path = require('path');
+
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ==============================
+// 🔐 AUTH UTIL
+// ==============================
 async function getUserFromAuthHeader(req) {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) return null;
-  const token = auth.split(' ')[1];
+  let token = null;
+
+  if (req.cookies?.access_token) {
+    token = req.cookies.access_token;
+  } else if (req.headers.authorization?.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) return null;
 
   try {
-    // Nouvelle façon : on appelle /auth/v1/user via le client
     const { data, error } = await supabaseAuth.auth.getUser(token);
     if (error || !data?.user) return null;
     return data.user;
   } catch (e) {
-    console.error('getUserFromAuthHeader error:', e);
+    console.error('getUser error:', e);
     return null;
   }
 }
 
-
-// Middleware express : authentifie et attache profile à req.profile
+// ==============================
+// 🔐 MIDDLEWARE AUTH
+// ==============================
 async function authenticate(req, res, next) {
   try {
-    // Récupération de l'utilisateur depuis le token
-    const user = await getUserFromAuthHeader(req);
-    if (!user) {
-      console.warn(
-        'authenticate: token absent ou invalide. Authorization header:',
-        req.headers.authorization ? '[présent]' : '[absent]'
-      );
+    const token = req.cookies?.access_token;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Non authentifié' });
+    }
+
+    const { data, error } = await supabaseAuth.auth.getUser(token);
+
+    if (error || !data?.user) {
       return res.status(401).json({ error: 'Token invalide ou expiré' });
     }
 
-    // Récupérer le profil Supabase
-    let { data: profile, error: profErr } = await supabaseService
+    const user = data.user;
+
+    const { data: profile, error: profErr } = await supabaseService
       .from('profiles')
       .select('role, center_name, center_id, mail, "Name"')
       .eq('id', user.id)
       .maybeSingle();
 
     if (profErr) {
-      console.error('authenticate: erreur récupération profil Supabase:', profErr);
       return res.status(500).json({ error: 'Erreur récupération profil' });
     }
 
- if (!profile) {
-  console.warn(`Profile introuvable pour user.id=${user.id}`);
-  return res.status(403).json({ error: 'Profil introuvable. Contactez un administrateur.' });
-}
+    if (!profile) {
+      return res.status(403).json({ error: 'Profil introuvable' });
+    }
 
-    // Attacher les infos utiles à la requête
     req.user = user;
-    req.profile = profile;
-    req.role = profile.role || 'Utilisateur';
-    req.center = (profile.center_name || '').toString().trim().toUpperCase();
-    req.center_id = profile.center_id || null;
-
-    console.log('authenticate: profil attaché à la requête', {
+    req.profile = {
       userId: user.id,
-      role: req.role,
-      center: req.center
-    });
+      role: profile.role,
+      center: (profile.center_name || '').trim().toUpperCase(),
+      center_id: profile.center_id,
+      name: profile.Name,
+      email: profile.mail
+    };
 
     next();
+
   } catch (err) {
-    console.error('authenticate: erreur interne', err);
-    res.status(500).json({ error: 'Erreur interne middleware auth' });
+    console.error('authenticate error:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 }
 
-
-const path = require('path');
-
-// Sert tout ce qui est dans /public comme fichiers statiques
-app.use(express.static(path.join(__dirname, 'public')));
-
+// ==============================
+// 🔐 LOGIN
+// ==============================
 app.post('/login', async (req, res) => {
-const { email, password } = req.body;
-if (!email || !password) {
-return res.status(400).json({ error: 'Email et mot de passe requis' });
-}
+  const { email, password } = req.body;
 
-try {
-// Connexion Supabase
-const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
-if (error || !data?.user || !data?.session) {
-return res.status(401).json({ error: error?.message || 'Échec de l’authentification' });
-}
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email et mot de passe requis' });
+  }
 
-const user = data.user;
-const session = data.session;
+  try {
+    const { data, error } = await supabaseAuth.auth.signInWithPassword({
+      email,
+      password
+    });
 
-// Récupération du profil (peut être null si pas encore créé)
-const { data: profile, error: profileErr } = await supabaseService
-  .from('profiles')
-  .select('role, center_name')
-  .eq('id', user.id)
-  .maybeSingle(); // évite le crash si aucun profil
+    if (error || !data?.session) {
+      return res.status(401).json({ error: 'Échec de l’authentification' });
+    }
 
-if (profileErr) {
-  console.error('Erreur récupération profil:', profileErr);
-  return res.status(500).json({ error: 'Impossible de récupérer le profil' });
-}
+    const user = data.user;
+    const session = data.session;
 
-res.json({
-  user: {
-    id: user.id,
-    email: user.email,
-    role: profile?.role || 'Utilisateur',        // fallback si profil absent
-    center_name: profile?.center_name || null
-  },
-  access_token: session.access_token,
-  expires_at: session.expires_at
+    const { data: profile } = await supabaseService
+      .from('profiles')
+      .select('role, center_name')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    // 🔥 ACCESS TOKEN (court)
+    res.cookie('access_token', session.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      maxAge: 1000 * 60 * 60 * 24 // 1 jour
+    });
+
+    // 🔥 REFRESH TOKEN (long)
+    res.cookie('refresh_token', session.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7 // 7 jours
+    });
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        role: profile?.role || 'Utilisateur',
+        center_name: profile?.center_name || null
+      }
+    });
+
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
-} catch (err) {
-console.error('Login error:', err);
-res.status(500).json({ error: 'Erreur serveur' });
-}
+// ==============================
+// 🔁 REFRESH TOKEN
+// ==============================
+app.post('/refresh', async (req, res) => {
+  try {
+    const refresh_token = req.cookies?.refresh_token;
+
+    if (!refresh_token) {
+      return res.status(401).json({ error: 'No refresh token' });
+    }
+
+    const { data, error } = await supabaseAuth.auth.refreshSession({
+      refresh_token
+    });
+
+    if (error || !data?.session) {
+      return res.status(401).json({ error: 'Invalid refresh token' });
+    }
+
+    const session = data.session;
+
+    // 🔁 nouveaux cookies
+    res.cookie('access_token', session.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      maxAge: 1000 * 60 * 60 * 24
+    });
+
+    res.cookie('refresh_token', session.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7
+    });
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error('Refresh error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
-
-
-// Endpoint pour récupérer le profil de l'utilisateur connecté
+// ==============================
+// 👤 PROFILE
+// ==============================
 app.get('/profile', authenticate, async (req, res) => {
   try {
     res.json({
       id: req.user.id,
       email: req.user.email,
       role: req.profile.role,
-      center_name: (req.profile.center_name || '').toString().trim().toUpperCase()
+      center_name: req.profile.center
     });
   } catch (err) {
     console.error('GET /profile error:', err);
@@ -235,8 +304,8 @@ app.get('/requests', authenticate, async (req, res) => {
     const offset = Math.max(parseInt(req.query.offset || '0', 10), 0);
 
     console.log(
-      '🔹 GET /requests | role=', req.role,
-      '| center=', req.center,
+      '🔹 GET /requests | role=', req.profile.role,
+      '| center=', req.profile.center,
       '| status=', req.query.status || 'none',
       '| limit=', limit,
       '| offset=', offset
@@ -248,28 +317,27 @@ app.get('/requests', authenticate, async (req, res) => {
       .order('timestamp', { ascending: false })
       .range(offset, offset + limit - 1);
 
-// 🔥 NOUVELLE LOGIQUE MULTI-CENTRES en fonction de l'utilisateur
+    // 🔥 LOGIQUE MULTI-CENTRES CORRIGÉE
 
-      if (req.role === 'Admin') {
-        // rien → voit tout
-      }
-      else if (req.role === 'Purchaser') {
-        query = query.or(
-          `created_by.eq.${req.user.id},status.eq.Approved`
-        );
-      }
-      else if (req.role === 'ChefCentre') {
-        query = query.or(
-          `created_by.eq.${req.user.id},center_id.eq.${req.center_id}`
-        );
-      }
-      else {
-        // utilisateur normal
-        query = query.eq('created_by', req.user.id);
-      }
+    if (req.profile.role === 'Admin') {
+      // voit tout
+    }
+    else if (req.profile.role === 'Purchaser') {
+      query = query.or(
+        `created_by.eq.${req.user.id},status.eq.Approved`
+      );
+    }
+    else if (req.profile.role === 'ChefCentre' || req.profile.role === 'Chef de centre') {
+      query = query.or(
+        `created_by.eq.${req.user.id},center_id.eq.${req.profile.center_id}`
+      );
+    }
+    else {
+      // utilisateur normal
+      query = query.eq('created_by', req.user.id);
+    }
 
-
-// filtre status optionnel
+    // filtre status optionnel
     if (req.query.status) {
       query = query.eq('status', req.query.status);
     }
@@ -294,17 +362,20 @@ app.get('/requests', authenticate, async (req, res) => {
 });
 
 
-
-
-// Test base de données
+// =====================
+// TEST BASE DE DONNÉES
+// =====================
 app.get('/test-db', async (req, res) => {
   try {
     const { data, error } = await supabaseService
       .from('Requests')
       .select('*')
       .order('timestamp', { ascending: false });
+
     if (error) throw error;
+
     res.json(data);
+
   } catch (err) {
     console.error('GET /test-db error:', err);
     res.status(500).json({ error: err.message || 'Erreur serveur' });
@@ -312,75 +383,114 @@ app.get('/test-db', async (req, res) => {
 });
 
 // =========================================
-// SSE : stream temps réel (token dans URL)
+// SSE : stream temps réel (COOKIE AUTH)
 // =========================================
 app.get('/requests/stream', async (req, res) => {
   try {
-    const token = req.query.token;
-    if (!token) return res.status(401).end();
+    // 🔐 Lire le token depuis le cookie
+    const token = req.cookies?.access_token;
 
-    // 1) vérifier user via Supabase
+    if (!token) {
+      console.warn('❌ SSE: cookie manquant');
+      return res.status(401).end();
+    }
+
+    // 🔎 Vérifier utilisateur via Supabase
     const { data, error } = await supabaseAuth.auth.getUser(token);
-    if (error || !data?.user) return res.status(401).end();
 
-    // 2) récupérer profil
+    if (error || !data?.user) {
+      console.warn('❌ SSE: token invalide');
+      return res.status(401).end();
+    }
+
+    // 📦 Récupérer profil utilisateur
     const { data: profile, error: profErr } = await supabaseService
       .from('profiles')
       .select('role, center_name')
       .eq('id', data.user.id)
       .maybeSingle();
 
+    if (profErr || !profile) {
+      console.warn('❌ SSE: profil introuvable');
+      return res.status(403).end();
+    }
 
-    if (profErr || !profile) return res.status(403).end();
-
-    // 3) ouvrir le stream SSE
+    // ==============================
+    // INIT SSE
+    // ==============================
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders();
 
-    // 4) stocker client + infos
-    sseClients.push({
+    // 🔥 important pour certains environnements (Render, proxies)
+    if (res.flushHeaders) res.flushHeaders();
+
+    // ==============================
+    // ENREGISTRER LE CLIENT
+    // ==============================
+    const client = {
       res,
-      userId: data.user.id, // 🔥 IMPORTANT
+      userId: data.user.id,
       role: profile.role,
       center: (profile.center_name || '').toString().trim().toUpperCase()
-    });
+    };
+
+    sseClients.push(client);
 
     console.log(
-      `✅ SSE connecté | role=${profile.role} | center=${profile.center_name} | total=${sseClients.length}`
+      `✅ SSE connecté | role=${client.role} | center=${client.center} | total=${sseClients.length}`
     );
 
+    // ==============================
+    // CLEANUP À LA DÉCONNEXION
+    // ==============================
     req.on('close', () => {
-      sseClients = sseClients.filter(c => c.res !== res);
+      sseClients = sseClients.filter(c => c !== client);
       console.log('❌ SSE déconnecté | total:', sseClients.length);
     });
 
   } catch (err) {
-    console.error('SSE error:', err);
+    console.error('❌ SSE error:', err);
     return res.status(500).end();
   }
 });
 
+
+// =========================================
+// NOTIFY CLIENTS (SSE BROADCAST)
+// =========================================
 function notifyAdmins(newRequest) {
   const payload = `data: ${JSON.stringify(newRequest)}\n\n`;
 
+  const reqCenter = (newRequest.center_name || '')
+    .toString()
+    .trim()
+    .toUpperCase();
+
+  console.log('📡 SSE broadcast → center:', reqCenter);
+
   sseClients.forEach(client => {
     try {
-      // Admin reçoit tout
+      console.log('👤 client center:', client.center);
+
+      // 🔵 Admin → tout
       if (client.role === 'Admin') {
         client.res.write(payload);
         client.res.flush?.();
         return;
       }
 
-      // User reçoit uniquement son centre
-      if (client.center && newRequest.center_name === client.center) {
+      // 🟢 User → même centre
+      if (client.center && reqCenter === client.center) {
+        console.log('✅ MATCH → envoi SSE');
         client.res.write(payload);
         client.res.flush?.();
+      } else {
+        console.log('❌ NO MATCH');
       }
+
     } catch (err) {
-      console.warn('⚠️ SSE write failed, suppression client');
+      console.warn('⚠️ SSE write failed → suppression client');
       sseClients = sseClients.filter(c => c !== client);
     }
   });
@@ -1085,6 +1195,21 @@ app.patch('/requests/:request_id/validate-cancel', authenticate, async (req, res
     console.error('validate-cancel error:', err);
     return res.status(500).json({ error: err.message });
   }
+});
+
+
+// =========================================
+// LOGOUT
+// =========================================
+app.post('/logout', (req, res) => {
+  res.clearCookie('access_token', {
+    httpOnly: true,
+    sameSite: 'Lax',
+    secure: process.env.NODE_ENV === 'production'
+  });
+
+  console.log('👋 Logout OK');
+  res.json({ success: true });
 });
 
 /* =========================================

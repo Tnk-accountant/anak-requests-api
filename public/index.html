@@ -608,6 +608,57 @@ button:active {
 <script>
 
   const API_URL = window.location.origin;
+
+  //fetchWithAuth
+
+    async function fetchWithAuth(url, options = {}) {
+      let res = await fetch(url, {
+        ...options,
+        credentials: 'include'
+      });
+
+      if (res.status === 401) {
+
+        console.warn("🔁 Access token expiré → refresh");
+
+        // ⚠️ IMPORTANT : fetch NORMAL (PAS fetchWithAuth)
+        const refreshRes = await fetch(`${API_URL}/refresh`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        if (refreshRes.ok) {
+          res = await fetch(url, {
+            ...options,
+            credentials: 'include'
+          });
+        } else {
+          window.location.replace('login.html');
+          return res;
+        }
+      }
+
+      return res;
+    }
+
+  async function checkSession() {
+  try {
+    const res = await fetchWithAuth(`${API_URL}/profile`, {
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      window.location.replace('login.html');
+      return false;
+    }
+
+    return true;
+
+  } catch (err) {
+    window.location.replace('login.html');
+    return false;
+  }
+}
   let requestorInput, form, status, generatedIdEl, myTableBody, amountSearchInput;
 
   function notify(message, type = "info") {
@@ -661,7 +712,6 @@ button:active {
 
   function handleAuthError(res) {
   if (res.status === 401) {
-    localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     window.location.replace('login.html');
     return true;
@@ -677,23 +727,25 @@ button:active {
   return window.innerWidth < 768;
 }
 
-
 // =============================
-// Affichage du nom et centre de l'utilisateur
+// Affichage du profil utilisateur
 // =============================
 async function displayUserProfile() {
-  const token = localStorage.getItem('access_token');
-  if (!token) return null;
-
   try {
-    const res = await fetch(`${API_URL}/profile`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+    const res = await fetchWithAuth(`${API_URL}/profile`, {
+      credentials: 'include'
     });
 
-    if (handleAuthError(res)) return null;
+    // 🔒 non authentifié → retour null (le checkSession gère la redirection)
+    if (!res.ok) {
+      return null;
+    }
 
     const profile = await res.json();
 
+    // -------------------------
+    // Affichage UI
+    // -------------------------
     const userCenterEl = document.getElementById('userCenter');
     const userEmailEl = document.getElementById('userEmail');
 
@@ -708,9 +760,15 @@ async function displayUserProfile() {
     }
 
     const userDisplay = document.getElementById('userDisplay');
-    if (userDisplay) userDisplay.classList.remove('hidden');
+    if (userDisplay) {
+      userDisplay.classList.remove('hidden');
+    }
 
-    return profile; // ← retourne le profil pour l’utiliser
+    // -------------------------
+    // Retour du profil
+    // -------------------------
+    return profile;
+
   } catch (err) {
     console.error('Erreur displayUserProfile:', err);
     return null;
@@ -753,7 +811,7 @@ let mobileAmountFilter = '';
     select.innerHTML = `<option value="">Select a center</option>`;
 
     try {
-      const res = await fetch(`${API_URL}/centers`);
+      const res = await fetchWithAuth(`${API_URL}/centers`);
       const centers = await res.json();
 
       centers.forEach(c => {
@@ -813,9 +871,11 @@ let mobileAmountFilter = '';
 
 
     console.log("DOM ready, script chargé");
-    const token = localStorage.getItem('access_token');
-    console.log("Token:", token);
-    if (!token) return window.location.replace('login.html');
+    const profile = await displayUserProfile();
+    if (!profile) {
+      window.location.replace('login.html');
+      return;
+    }
     
   const mobileAmountInput = document.getElementById('mobileAmountSearch');
   if (mobileAmountInput) {
@@ -825,25 +885,6 @@ let mobileAmountFilter = '';
       renderMobileCards();
     });
   }
-
-  // Vérifie expiration du token
-  function isTokenExpired(token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return Date.now() >= payload.exp * 1000;
-    } catch {
-      return true;
-    }
-  }
-  if (isTokenExpired(token)) {
-    localStorage.removeItem('access_token');
-    window.location.replace('login.html');
-    return;
-  }
-
-  // Attendre le profil avant tout
-  const profile = await displayUserProfile();
-  if (!profile) return;
 
   populateCenters((profile.center_name || "").trim().toUpperCase());
   console.log("Centers populated, select options =", document.getElementById("center_name")?.options?.length);
@@ -925,16 +966,14 @@ form.addEventListener('submit', async (e) => {
   console.log('POST /requests payload =>', payload);
 
   try {
-    const token = localStorage.getItem('access_token');
-
-    const res = await fetch(`${API_URL}/requests`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify(payload)
-    });
+      const res = await fetchWithAuth(`${API_URL}/requests`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload) // 🔥 MANQUANT
+      });
 
     // 🔒 token invalide/expiré → redirect login
     if (handleAuthError(res)) {
@@ -1007,66 +1046,97 @@ form.addEventListener('submit', async (e) => {
 
 
 // ==============================
-// SSE : mises à jour en temps réel
+// SSE : mises à jour en temps réel (VERSION CLEAN COOKIE)
 // ==============================
 
 let sse = null;
+let fallbackInterval = null;
+
+// Fermer SSE si on quitte la page
 window.addEventListener('beforeunload', () => {
   if (sse) {
     try { sse.close(); } catch {}
   }
 });
 
+// ------------------------------
+// Setup SSE
+// ------------------------------
 function setupSSE() {
-  const token = localStorage.getItem('access_token');
-  if (!token) return;
 
-  // 🔁 Ferme l’ancienne connexion si elle existe (évite doublons)
+  // 🔁 Ferme ancienne connexion
   if (sse) {
     try { sse.close(); } catch {}
+    sse = null;
   }
 
-  sse = new EventSource(
-    `${API_URL}/requests/stream?token=${encodeURIComponent(token)}`
-  );
+  console.log("🔌 SSE connecting...");
 
+  // ✅ COOKIE (plus de token)
+  sse = new EventSource(`${API_URL}/requests/stream`, {
+    withCredentials: true
+  });
+
+  // ------------------------------
+  // MESSAGE
+  // ------------------------------
   sse.onmessage = (event) => {
     try {
       const payload = JSON.parse(event.data);
-
       const requests = Array.isArray(payload) ? payload : [payload];
+
       requests.forEach(upsertRow);
 
       renderTable();
       if (window.innerWidth < 768) renderMobileCards();
+
     } catch (err) {
       console.error('SSE parsing error', err, event.data);
     }
   };
 
-    sse.onerror = (err) => {
-      console.warn('SSE error:', err);
+  // ------------------------------
+  // OPEN (connexion OK)
+  // ------------------------------
+  sse.onopen = () => {
+    console.log("✅ SSE connected");
 
-      try { sse.close(); } catch {}
-      sse = null;
+    // 🔥 stop fallback si actif
+    if (fallbackInterval) {
+      clearInterval(fallbackInterval);
+      fallbackInterval = null;
+      console.log("🟢 fallback stopped");
+    }
+  };
 
-      // 🟡 fallback temporaire (refresh toutes les 30s)
-      const fallbackInterval = setInterval(fetchMyRequests, 30000);
+  // ------------------------------
+  // ERROR
+  // ------------------------------
+  sse.onerror = (err) => {
+    console.warn('⚠️ SSE error:', err);
 
-      // 🔁 tentative reconnexion SSE
-      setTimeout(() => {
-        setupSSE();
+    try { sse.close(); } catch {}
+    sse = null;
 
-        // ✅ stop fallback si SSE revient
-        if (sse) {
-          clearInterval(fallbackInterval);
-        }
+    // 🟡 fallback ONLY si pas déjà actif
+    if (!fallbackInterval) {
+      console.log("🟡 fallback polling started");
 
-      }, 5000);
-    };
+      fallbackInterval = setInterval(() => {
+        fetchMyRequests();
+      }, 30000);
+    }
+
+    // 🔁 retry SSE
+    setTimeout(() => {
+      setupSSE();
+    }, 5000);
+  };
 }
 
-// Lance SSE
+// ------------------------------
+// START
+// ------------------------------
 setupSSE();
 
 // ==============================
@@ -1373,9 +1443,8 @@ function renderMobilePagination(totalItems) {
 ============================== */
 async function refreshRequest(request_id) {
   try {
-    const token = localStorage.getItem('access_token');
-    const res = await fetch(`${API_URL}/requests/${request_id}`, {
-    headers: { 'Authorization': 'Bearer ' + token }
+    const res = await fetchWithAuth(`${API_URL}/requests/${request_id}`, {
+    credentials: 'include'
     });
 
     if (handleAuthError(res)) return;
@@ -1510,7 +1579,6 @@ async function refreshRequest(request_id) {
 ============================== */
 async function fetchMyRequests() {
   try {
-    const token = localStorage.getItem('access_token');
 
     const limit = 200;
     let offset = 0;
@@ -1518,8 +1586,8 @@ async function fetchMyRequests() {
     let hasMore = true;
 
     while (hasMore) {
-      const res = await fetch(`${API_URL}/requests?limit=${limit}&offset=${offset}`, {
-        headers: { 'Authorization': 'Bearer ' + token }
+      const res = await fetchWithAuth(`${API_URL}/requests?limit=${limit}&offset=${offset}`, {
+    credentials: 'include'
       });
 
       if (handleAuthError(res)) return;
@@ -1985,12 +2053,11 @@ function closeModal() {
   const received_at = new Date(dateInput + "T12:00:00").toISOString();
 
   try {
-    const token = localStorage.getItem('access_token');
-    const res = await fetch(`${API_URL}/requests/${currentRequestId}/received`, {
+    const res = await fetchWithAuth(`${API_URL}/requests/${currentRequestId}/received`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
       },
       body: JSON.stringify({
         amount_received: amount,
@@ -2140,16 +2207,15 @@ if (req.status !== 'ToLiquidate') {
 
 
   try {
-    const token = localStorage.getItem('access_token');
 
 // ==============================
 // 1) PATCH liquidation (JSON) → réponse immédiate
 // ==============================
-const res = await fetch(`${API_URL}/requests/${reqId}/liquidate`, {
+const res = await fetchWithAuth(`${API_URL}/requests/${reqId}/liquidate`, {
   method: 'PATCH',
+  credentials: 'include',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer ' + token
   },
   body: JSON.stringify({
     amount_spent: spent,
@@ -2199,10 +2265,10 @@ if (receiptsFiles.length > 0) {
   });
 
 
-  await fetch(`${API_URL}/requests/${reqId}/receipts`, {
+  await fetchWithAuth(`${API_URL}/requests/${reqId}/receipts`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
-      'Authorization': 'Bearer ' + token
     },
     body: fd
   });
@@ -2264,13 +2330,10 @@ document.getElementById('cancelSubmitBtn').addEventListener('click', async () =>
   lockButton(btn, "Cancelling...");
 
   try {
-    const token = localStorage.getItem('access_token');
-
-    const res = await fetch(`${API_URL}/requests/${currentRequestId}/request-cancel`, {
+    const res = await fetchWithAuth(`${API_URL}/requests/${currentRequestId}/request-cancel`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
       },
       body: JSON.stringify({
         cancellation_note: reason
@@ -2430,39 +2493,37 @@ window.addEventListener('resize', () => {
 
 
 
-//===================
-// LOGOUT - DECONNEXION 
-//========================
+// ===================
+// LOGOUT - DECONNEXION
+// ===================
 
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('#logoutBtnMobile, #logoutBtnDesktop');
+  if (!btn) return;
 
- // Handler de logout robuste
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('#logoutBtnMobile, #logoutBtnDesktop');
-    if (!btn) return;
+  try {
+    // 🔐 appel backend → supprime cookie httpOnly
+    await fetchWithAuth(`${API_URL}/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
 
-    try {
-      // Supprime toutes les clés d'auth possibles (adapte les noms si tu as d'autres clés)
-      localStorage.removeItem('user');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      // Optionnel : si tu utilises sessionStorage
-      sessionStorage.removeItem('user');
-      sessionStorage.removeItem('access_token');
-      // Si tu veux tout supprimer (attention : supprime toutes les données locales)
-      // localStorage.clear();
+  } catch (err) {
+    console.warn('Erreur logout backend:', err);
+  }
 
-      // Supprime aussi les cookies d'auth si tu en utilises (exemple)
-      document.cookie.split(";").forEach(function(c) {
-        document.cookie = c.replace(/^ +/, "")
-                           .replace(/=.*/, "=;expires=" + new Date(0).toUTCString() + ";path=/");
-      });
-    } catch (err) {
-      console.warn('Erreur lors du nettoyage du storage:', err);
-    }
+  try {
+    // 🧹 nettoyage local (non sensible)
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
 
-    // Redirection : use replace pour ne pas laisser login dans l'historique
-    window.location.replace('login.html');
-  });
+  } catch (err) {
+    console.warn('Erreur nettoyage storage:', err);
+  }
+
+  // 🔁 redirection propre
+  window.location.replace('login.html');
+});
 
 
 
