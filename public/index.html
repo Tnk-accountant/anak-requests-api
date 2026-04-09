@@ -917,7 +917,29 @@ let mobileAmountFilter = '';
       generatedIdEl = document.getElementById('generatedId');
       myTableBody = document.getElementById('myRequestsTable');
       amountSearchInput = document.getElementById('amountSearch');
-      document.getElementById('liqReceipts').addEventListener('change', updateReceiptsUI);
+      
+      document.getElementById('liqReceipts').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+
+      const total = getAllPhotos().length + files.length;
+
+      if (total > 20) {
+        notify("Maximum 20 receipts reached", "error");
+        return;
+      }
+
+      // 🔥 ajouter au même flux que scan
+      files.forEach(file => capturedPhotos.push(file));
+
+      // 🔥 afficher direct dans le scan modal
+      renderScanPreview();
+      updateReceiptsUI();
+      updateScanUI();
+
+      // reset input
+      e.target.value = '';
+    });
 
       
     // ==============================
@@ -1233,9 +1255,9 @@ setupSSE();
         return;
       }
 
-      scanningMode = true;
       getCameraInput()?.click();
     });
+
     function getCameraInput() {
     return document.getElementById('cameraInput');
   }
@@ -1243,17 +1265,23 @@ setupSSE();
     const scanCount = document.getElementById('scanCount');
     const stopScanBtn = document.getElementById('stopScanBtn');
 
-    // ==============================
-    // 📂 Galerie (multi upload)
-    // ==============================
-    galleryBtn.addEventListener('click', () => {
-      if (galleryBtn.disabled) return;
+ // ==============================
+  // 📂 Galerie (multi upload → preview modal)
+  // ==============================
+  galleryBtn.addEventListener('click', () => {
+    if (galleryBtn.disabled) return;
 
-      scanningMode = false; // 🔥 stop scan si actif
-      scanStatus?.classList.add('hidden');
+    // 🔥 stop scan propre
+    scanningMode = false;
+    scanStatus?.classList.add('hidden');
 
-      document.getElementById('liqReceipts').click();
-    });
+    // 🔥 ouvrir le scan modal (comme caméra)
+    document.getElementById('scanModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // 🔥 ouvrir galerie
+    document.getElementById('liqReceipts').click();
+  });
 
     // ==============================
     // 📸 Mode scan (camera continue)
@@ -1328,15 +1356,6 @@ setupSSE();
         // 🔄 update UI
         updateReceiptsUI();
         updateScanUI();
-
-        // 🔁 relancer caméra si scan actif
-        if (scanningMode && !document.getElementById('scanModal')?.classList.contains('hidden')) {
-          setTimeout(() => {
-            if (scanningMode) {
-              getCameraInput()?.click();
-            }
-          }, 400); // délai safe Android/iOS
-        }
 
         // ♻️ reset input pour re-sélection
         e.target.value = '';
@@ -1456,7 +1475,13 @@ function formatAmount(amount) {
 
     const img = document.createElement('img');
     img.src = url;
-    img.className = "w-full h-24 object-cover rounded";
+    img.className = "w-full h-24 object-cover rounded border border-white/10";
+
+    const badge = document.createElement('div');
+    badge.textContent = index + 1;
+    badge.className = "absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1 rounded";
+
+    wrapper.appendChild(badge);
 
     const del = document.createElement('button');
     del.textContent = '✕';
