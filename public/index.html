@@ -571,28 +571,47 @@ button:active {
           <div class="mb-3">
             <label class="block text-sm text-gray-700 mb-2">Receipts</label>
 
-            <div class="flex gap-2">
-              
-              <!-- Galerie -->
-              <button
-                type="button"
-                id="galleryBtn"
-                class="flex-1 bg-gray-100 py-2 rounded-lg text-sm active:scale-95">
-                🖼️ Gallery
-              </button>
+            <div class="flex flex-col gap-2">
 
-              <!-- Camera -->
-              <button
-                type="button"
-                id="cameraBtn"
-                class="flex-1 bg-indigo-100 text-indigo-700 py-2 rounded-lg text-sm active:scale-95">
-                📸 Photo
-              </button>
+              <!-- ACTION BUTTONS -->
+              <div class="flex gap-2">
+                
+                <!-- Galerie -->
+                <button
+                  type="button"
+                  id="galleryBtn"
+                  class="flex-1 bg-gray-100 py-2 rounded-lg text-sm active:scale-95">
+                  🖼️ Gallery
+                </button>
+
+                <!-- Scan -->
+                <button
+                  type="button"
+                  id="cameraBtn"
+                  class="flex-1 bg-indigo-100 text-indigo-700 py-2 rounded-lg text-sm active:scale-95">
+                  📸 Scan receipts
+                </button>
+
+              </div>
+
+              <!-- 🔥 SCAN STATUS (nouveau) -->
+              <div id="scanStatus"
+                  class="hidden text-xs text-gray-600 bg-indigo-50 px-3 py-2 rounded-lg flex items-center justify-between">
+
+                <span id="scanCount">📸 0 receipts</span>
+
+                <button id="stopScanBtn"
+                  class="text-red-600 text-xs font-medium">
+                  Stop scan
+                </button>
+              </div>
 
             </div>
 
             <!-- inputs cachés -->
             <input id="liqReceipts" type="file" accept="image/*" multiple hidden>
+
+            <!-- 🔥 camera reste simple (important iOS) -->
             <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
 
             <!-- compteur -->
@@ -1174,27 +1193,120 @@ function setupSSE() {
 // ------------------------------
 setupSSE();
 
+
 // ==============================
-// 📸 CAMERA MULTI PHOTOS
+// 📸 CAMERA + SCAN MODE PRO
 // ==============================
 
-    document.getElementById('galleryBtn').addEventListener('click', () => {
-      if (document.getElementById('galleryBtn').disabled) return;
+    let scanningMode = false;
+
+    const galleryBtn = document.getElementById('galleryBtn');
+    const cameraBtn = document.getElementById('cameraBtn');
+    function getCameraInput() {
+    return document.getElementById('cameraInput');
+  }
+    const scanStatus = document.getElementById('scanStatus');
+    const scanCount = document.getElementById('scanCount');
+    const stopScanBtn = document.getElementById('stopScanBtn');
+
+    // ==============================
+    // 📂 Galerie (multi upload)
+    // ==============================
+    galleryBtn.addEventListener('click', () => {
+      if (galleryBtn.disabled) return;
+
+      scanningMode = false; // 🔥 stop scan si actif
+      scanStatus?.classList.add('hidden');
+
       document.getElementById('liqReceipts').click();
     });
 
-    document.getElementById('cameraBtn').addEventListener('click', () => {
-      if (document.getElementById('cameraBtn').disabled) return;
-      document.getElementById('cameraInput').click();
+    // ==============================
+    // 📸 Mode scan (camera continue)
+    // ==============================
+    cameraBtn.addEventListener('click', () => {
+      if (cameraBtn.disabled) return;
+
+      if (getAllPhotos().length >= 20) {
+      notify("Maximum 20 receipts reached", "error");
+      return;
+    }
+
+      scanningMode = true;
+      scanStatus?.classList.remove('hidden');
+
+      updateScanUI();
+      getCameraInput()?.click();
     });
 
-    document.getElementById('cameraInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        capturedPhotos.push(file);
+    // ==============================
+    // 🔢 Update compteur scan
+    // ==============================
+    function updateScanUI() {
+      const total = getAllPhotos().length;
+      scanCount.textContent = `📸 ${total}/20`;
+
+      if (total === 0) {
+        scanCount.textContent = "📸 Start scanning";
       }
-      e.target.value = '';
-      updateReceiptsUI();
+
+      if (total >= 20 && scanningMode) {
+        scanningMode = false;
+        notify("Maximum 20 receipts reached", "info");
+      }
+    }
+
+// ==============================
+// 📸 Capture photo + scan loop (clean)
+// ==============================
+    const camInput = getCameraInput();
+
+    if (camInput) {
+      camInput.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+
+        if (!file) {
+          e.target.value = '';
+          return;
+        }
+
+        // 📸 ajouter photo
+        if (getAllPhotos().length >= 20) {
+        scanningMode = false;
+        notify("Maximum 20 receipts reached", "error");
+        e.target.value = '';
+        return;
+      }
+
+      capturedPhotos.push(file);
+
+        // 📳 feedback mobile (optionnel mais premium)
+        navigator.vibrate?.(50);
+
+        // 🔄 update UI
+        updateReceiptsUI();
+        updateScanUI();
+
+        // 🔁 relancer caméra si scan actif
+        if (scanningMode && document.getElementById('modal')?.classList.contains('hidden') === false) {
+          setTimeout(() => {
+            if (scanningMode) {
+              getCameraInput()?.click();
+            }
+          }, 400); // délai safe Android/iOS
+        }
+
+        // ♻️ reset input pour re-sélection
+        e.target.value = '';
+      });
+    }
+
+    // ==============================
+    // ✋ Stop scan
+    // ==============================
+    stopScanBtn?.addEventListener('click', () => {
+      scanningMode = false;
+      scanStatus?.classList.add('hidden');
     });
 
 
@@ -1223,9 +1335,9 @@ function formatAmount(amount) {
 
 // Fonction pour compresser les images upload lors de la liquidation
   async function compressImage(file, {
-    maxWidth = 1600,
+    maxWidth = 1200,
     maxHeight = 1600,
-    quality = 0.72,
+    quality = 0.6,
     mimeType = 'image/jpeg'
   } = {}) {
     if (!file || !file.type || !file.type.startsWith('image/')) return file;
@@ -1289,7 +1401,10 @@ function formatAmount(amount) {
       } else if (total === 1) {
         info.textContent = "📎 1 receipt";
       } else {
-        info.textContent = `📎 ${total} receipts`;
+        info.textContent = `📎 ${total} receipts (max 20)`;
+        if (total > 15) {
+          info.textContent += " • large upload";
+        }
       }
     }
 
@@ -1559,7 +1674,7 @@ async function refreshRequest(request_id) {
       easing: 'ease-out'
     });
     setTimeout(() => {
-      row.classList.remove('bg-yellow-50');
+      row.classList.remove('bg-indigo-50');
     }, 800);
     row.classList.add('hover:bg-gray-100', 'align-top');
 
@@ -1785,6 +1900,10 @@ if (req.status === 'PendingValidation') {
 
   currentRequestId = request_id;
   capturedPhotos = [];
+  scanningMode = false;
+
+    const scanStatus = document.getElementById('scanStatus');
+    if (scanStatus) scanStatus.classList.add('hidden');
   updateReceiptsUI(req);
 
   // ---------- Infos générales ----------
@@ -1864,8 +1983,6 @@ if (req.status === 'PendingValidation') {
       const liqReceiptsInput = document.getElementById('liqReceipts');
       const liqNoteInput = document.getElementById('liqNote');
       const liqSubmitBtn = document.getElementById('liqSubmitBtn');
-      const galleryBtn = document.getElementById('galleryBtn');
-      const cameraBtn = document.getElementById('cameraBtn');
 
       const liqInputs = [
         liqSpentInput,
@@ -1997,6 +2114,11 @@ document.querySelectorAll('#actionList .action-card').forEach(card => {
  */
 function closeModal() {
   document.getElementById('modal').classList.add('hidden');
+  scanningMode = false;
+
+  const scanStatus = document.getElementById('scanStatus');
+  if (scanStatus) scanStatus.classList.add('hidden');
+
   document.body.style.overflow = '';
   currentRequestId = null;
 
@@ -2211,8 +2333,8 @@ if (req.status !== 'ToLiquidate') {
       return;
     }
 
-  if (rawFiles.length > 10) {
-    notify("Maximum 10 photos allowed", "error");
+  if (rawFiles.length > 20) {
+    notify("Maximum 20 photos allowed", "error");
     return;
   }
 
@@ -2328,6 +2450,15 @@ if (receiptsFiles.length > 0) {
   console.error(err);
   notify("Server error: " + err.message, "error");
 } finally {
+
+  capturedPhotos = [];
+updateReceiptsUI();
+updateScanUI();
+
+scanningMode = false;
+
+const scanStatus = document.getElementById('scanStatus');
+if (scanStatus) scanStatus.classList.add('hidden');
 
   // ==============================
   // RESET UI (TOUJOURS)
