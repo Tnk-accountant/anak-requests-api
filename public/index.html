@@ -65,6 +65,8 @@
     border-color 160ms ease,
     box-shadow 160ms ease,
     transform 120ms ease;
+
+  transform: translateY(0);
 }
 
 /* Hover (desktop surtout) */
@@ -75,6 +77,8 @@
   box-shadow:
     0 6px 14px -6px rgba(99, 102, 241, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  transform: translateY(-1px);
 }
 
 /* Active (tap mobile) */
@@ -94,6 +98,8 @@
   box-shadow:
     0 0 0 1px rgba(99, 102, 241, 0.35),
     0 6px 14px -6px rgba(99, 102, 241, 0.45);
+
+  transform: scale(1.04);
 }
 
 /* =========================
@@ -101,9 +107,16 @@
 ========================= */
 
 .card-desktop {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.75);
+
+  border: 1px solid rgba(255,255,255,0.6);
+
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.06),
-    0 2px 6px rgba(0, 0, 0, 0.04);
+    0 12px 30px rgba(0, 0, 0, 0.08),
+    0 4px 10px rgba(0, 0, 0, 0.05);
+
+  transition: all 180ms ease;
 }
 
 /* =========================
@@ -143,6 +156,8 @@
     background-color 120ms ease,
     box-shadow 120ms ease,
     border-color 120ms ease;
+
+transition: all 140ms ease;
 }
 
 /* Tap immédiat (mobile) */
@@ -214,6 +229,15 @@ button:active {
       to { opacity: 1; transform: translateX(0); }
     }
 
+    .mobile-card {
+  transition: all 140ms ease;
+    }
+
+    .mobile-card:active {
+      transform: scale(0.97);
+      background: rgba(99,102,241,0.08);
+    }
+
 </style>
 
 </head>
@@ -222,10 +246,9 @@ button:active {
 <link rel="apple-touch-icon" href="/icon-192.png">
 <meta name="theme-color" content="#4f46e5">
 
-<body class="bg-gray-100 min-h-screen flex flex-col overscroll-none md:pb-24">
+<body class="bg-gradient-to-br from-gray-50 to-indigo-50 min-h-screen flex flex-col overscroll-none md:pb-24 antialiased text-gray-800">
 
-
-<header class="sticky top-0 z-40 bg-gray-100/90 backdrop-blur border-b px-4 py-3 md:px-8 md:py-5">
+<header class="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-white/40 px-4 py-3 md:px-8 md:py-5">
   <div class="flex items-center justify-between max-w-6xl mx-auto">
 
     <!-- Left: titre -->
@@ -362,7 +385,7 @@ button:active {
         <button
           id="submitRequestBtn"
           type="submit"
-          class="w-full bg-indigo-600 text-white font-bold py-3 md:py-2 text-base md:text-sm rounded-lg hover:bg-indigo-700 transition-colors">
+          class="w-full bg-indigo-600 text-white font-semibold py-3 md:py-2 text-base md:text-sm rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.97] transition-all">
           Submit request
         </button>
      </form>
@@ -370,7 +393,7 @@ button:active {
   </div>
 
 <!-- Tableau des demandes amélioré -->
-<div class="bg-white rounded-2xl p-4 md:p-6 w-full max-w-6xl mx-auto mt-10 card-desktop">
+<div class="bg-white rounded-2xl p-6 md:p-8 w-full max-w-6xl mx-auto mt-12 card-desktop">
   <h2 class="text-xl font-bold text-indigo-700 mb-4">My Requests</h2>
 
 <!-- 📱 MOBILE : filtre montant -->
@@ -1080,20 +1103,19 @@ function setupSSE() {
   // ------------------------------
   // MESSAGE
   // ------------------------------
-  sse.onmessage = (event) => {
-    try {
-      const payload = JSON.parse(event.data);
-      const requests = Array.isArray(payload) ? payload : [payload];
+    sse.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        const requests = Array.isArray(payload) ? payload : [payload];
 
-      requests.forEach(upsertRow);
+        requests.forEach(upsertRow);
 
-      renderTable();
-      if (window.innerWidth < 768) renderMobileCards();
+        if (window.innerWidth < 768) renderMobileCards();
 
-    } catch (err) {
-      console.error('SSE parsing error', err, event.data);
-    }
-  };
+      } catch (err) {
+        console.error('SSE parsing error', err, event.data);
+      }
+    };
 
   // ------------------------------
   // OPEN (connexion OK)
@@ -1343,8 +1365,9 @@ function renderMobileCards() {
 
     const card = document.createElement('div');
     card.className = `
-      bg-white rounded-lg border px-3 py-2 shadow-sm
-      cursor-pointer active:scale-[0.98] transition
+      mobile-card
+      bg-white/80 backdrop-blur rounded-xl border px-3 py-2 shadow-sm
+      cursor-pointer
     `;
 
     card.innerHTML = `
@@ -1511,6 +1534,20 @@ async function refreshRequest(request_id) {
     row = document.createElement('tr');
     row.dataset.id = req.request_id;
     row.dataset.center = req.center_name || '';
+
+    // ✨ highlight update
+    row.classList.add('bg-indigo-50');
+
+    row.animate([
+      { transform: 'scale(1.01)' },
+      { transform: 'scale(1)' }
+    ], {
+      duration: 280,
+      easing: 'ease-out'
+    });
+    setTimeout(() => {
+      row.classList.remove('bg-yellow-50');
+    }, 800);
     row.classList.add('hover:bg-gray-100', 'align-top');
 
     row.innerHTML = `

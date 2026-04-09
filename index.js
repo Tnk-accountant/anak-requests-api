@@ -675,6 +675,8 @@ app.patch('/requests/:request_id', authenticate, async (req, res) => {
     if (error) throw error;
     if (!data) return res.status(404).json({ error: 'Request not found.' });
 
+    notifyAdmins(data);
+
     res.json({ message: 'Request updated successfully.', data });
 
   } catch (err) {
@@ -748,6 +750,8 @@ app.patch('/requests/:request_id/received', authenticate, async (req, res) => {
     }
 
     if (!data || !data.length) return res.status(404).json({ error: 'Request not found after update.' });
+    // 🔥 TEMPS RÉEL
+    notifyAdmins(data[0]);
 
     console.log('Update successful:', data);
     res.json({ message: 'Receipt confirmed and status updated.', data });
@@ -832,20 +836,23 @@ app.patch('/requests/:request_id/liquidate', authenticate, async (req, res) => {
       });
     }
 
-    const { error: updateError } = await supabaseService
-      .from('Requests')
-      .update({
-        status: 'PendingValidation',
-        amount_spent,
-        returned_amount,
-        liquidation_note,
-        liquidated_at: new Date().toISOString(),
-        receipts_upload_status: 'pending',
-        receipts_upload_error: null
-      })
-      .eq('request_id', request_id);
+  const { data: updated, error: updateError } = await supabaseService
+    .from('Requests')
+    .update({
+      status: 'PendingValidation',
+      amount_spent,
+      returned_amount,
+      liquidation_note,
+      liquidated_at: new Date().toISOString(),
+      receipts_upload_status: 'pending',
+      receipts_upload_error: null
+    })
+    .eq('request_id', request_id)
+    .select()
+    .single();
 
     if (updateError) throw updateError;
+    notifyAdmins(updated);
 
     return res.json({
       success: true,
@@ -1182,6 +1189,7 @@ app.patch('/requests/:request_id/validate-cancel', authenticate, async (req, res
       .maybeSingle();
 
     if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Request not found.' });
 
     // 🔔 SSE update
     notifyAdmins(data);

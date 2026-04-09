@@ -76,15 +76,27 @@
   <div class="max-w-[1400px] mx-auto px-4">
 
     <!-- HEADER -->
-    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
-          Admin Dashboard
-        </h1>
-        <p class="text-gray-400 text-sm">
-          Manage and validate requests efficiently
-        </p>
+    <div class="mb-6 flex items-center justify-between">
+
+      <!-- LEFT -->
+      <div class="flex items-center gap-3">
+
+        <button onclick="goBack()"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm text-gray-600 transition shadow-sm">
+          ←
+        </button>
+
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+            Admin Dashboard
+          </h1>
+          <p class="text-gray-400 text-sm">
+            Manage and validate requests efficiently
+          </p>
+        </div>
+
       </div>
+
     </div>
 
     <!-- TABS -->
@@ -269,6 +281,10 @@
 
 const API_URL = 'https://anak-requests-api.onrender.com';
 
+    function goBack() {
+      window.location.href = '/select.html';
+    }
+
     function hideLoader() {
       const loader = document.getElementById('loader');
       if (!loader) return;
@@ -346,7 +362,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       Cancelled: 'bg-gray-400',
     };
 
-    function setRowActionState(req, row) {
+  function setRowActionState(req, row) {
   const input = row.querySelector('.approvedAmount');
   const approveBtn = row.querySelector('.approveBtn');
   const rejectBtn = row.querySelector('.rejectBtn');
