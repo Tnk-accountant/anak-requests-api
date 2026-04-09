@@ -662,7 +662,7 @@ button:active {
     </div>
 
     <div id="scanPreview"
-     class="flex-1 overflow-y-auto p-4 grid grid-cols-4 gap-2 bg-black">
+     class="flex-1 overflow-y-auto p-4 grid grid-cols-3 gap-2 px-1 bg-black">
     </div>
 
     <div class="p-4 border-t border-white/10">
@@ -1461,7 +1461,7 @@ function formatAmount(amount) {
   }
 
 
-  function renderScanPreview() {
+ function renderScanPreview() {
   const container = document.getElementById('scanPreview');
   if (!container) return;
 
@@ -1473,19 +1473,20 @@ function formatAmount(amount) {
     const wrapper = document.createElement('div');
     wrapper.className = "relative";
 
+    // 📸 IMAGE
     const img = document.createElement('img');
     img.src = url;
-    img.className = "w-full aspect-square object-cover rounded-lg border border-white/10";
+    img.className = "w-full aspect-square object-cover rounded-xl";
 
-    const badge = document.createElement('div');
-    badge.textContent = index + 1;
-    badge.className = "absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded";
-
-    wrapper.appendChild(badge);
-
+    // ❌ DELETE
     const del = document.createElement('button');
-    del.textContent = '✕';
-    del.className = "absolute top-1 right-1 bg-black/70 text-white text-xs w-6 h-6 rounded-full";
+    del.innerHTML = '✕';
+    del.className = `
+      absolute top-1 right-1
+      bg-black/60 text-white
+      w-7 h-7 rounded-full
+      text-sm flex items-center justify-center
+    `;
 
     del.onclick = () => {
       capturedPhotos.splice(index, 1);
@@ -1494,11 +1495,25 @@ function formatAmount(amount) {
       updateReceiptsUI();
     };
 
+    // 🔢 NUMÉRO (SUR L'IMAGE 🔥)
+    const badge = document.createElement('div');
+    badge.textContent = index + 1;
+    badge.className = `
+      absolute bottom-1 right-1
+      bg-black/70 text-white
+      text-xs px-2 py-0.5
+      rounded-md
+    `;
+
     wrapper.appendChild(img);
     wrapper.appendChild(del);
+    wrapper.appendChild(badge);
+
     container.appendChild(wrapper);
   });
 }
+
+
     function getAllPhotos() {
 
       const input = document.getElementById('liqReceipts');
