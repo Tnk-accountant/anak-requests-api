@@ -253,6 +253,10 @@ button:active {
 
     <!-- Left: titre -->
     <div class="flex items-center gap-4">
+    <button id="adminSwitchBtn"
+      class="hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white text-sm shadow hover:shadow-lg hover:scale-[1.02] transition">
+      ⚙️ <span>Admin</span>
+    </button>
       <div class="w-9 h-9 flex items-center justify-center bg-indigo-600 text-white font-bold rounded-xl shadow">
         AR
       </div>
@@ -765,6 +769,15 @@ async function displayUserProfile() {
     }
 
     const profile = await res.json();
+    const adminBtn = document.getElementById('adminSwitchBtn');
+
+    if (profile.role && profile.role.toLowerCase() === 'admin') {
+      adminBtn.classList.remove('hidden');
+
+      adminBtn.addEventListener('click', () => {
+        window.location.href = 'select.html';
+      });
+    }
 
     // -------------------------
     // Affichage UI
