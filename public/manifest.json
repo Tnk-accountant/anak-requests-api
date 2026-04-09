@@ -1,6 +1,6 @@
 {
   "name": "Anak Requests",
-  "short_name": "Anak",
+  "short_name": "Anak Requests",
   "start_url": "/login.html",
   "display": "standalone",
   "background_color": "#f3f4f6",
