@@ -178,7 +178,7 @@
     </div>
 
     <!-- TABLE -->
-    <div class="overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
+    <div class="overflow-x-auto overflow-y-visible bg-white rounded-2xl shadow-sm border border-gray-200">
       <table class="min-w-full text-left border-collapse">
         <thead class="bg-gray-50">
           <tr>
@@ -572,48 +572,25 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         </span>
       </td>
 
-    <td class="text-left">
-      ${req.description
-        ? `
-          <div class="relative group inline-block">
+    <td class="text-left relative">
+  ${req.description
+    ? `
+      <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
+        View description
+      </span>
 
-            <!-- CLICK -->
-            <span class="openDescription text-indigo-500 hover:text-indigo-700 text-sm cursor-pointer font-medium">
-              View
-            </span>
-
-            <!-- HOVER PREVIEW -->
-            <div class="
-              pointer-events-none
-              opacity-0 scale-95 translate-y-2
-              group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0
-              transition-all duration-200 ease-out
-
-              absolute left-0 mt-2 z-50 w-72
-              bg-white/95 backdrop-blur-xl
-              border border-gray-200
-              shadow-2xl rounded-xl p-4
-
-              text-sm text-gray-700 leading-relaxed
-              max-h-40 overflow-auto
-            ">
-
-              <div class="text-xs text-gray-400 mb-1">Description</div>
-
-              <div>
-                ${req.description}
-              </div>
-
-              <div class="text-[11px] text-indigo-500 mt-2">
-                Click to expand →
-              </div>
-
-            </div>
-          </div>
-        `
-        : `<span class="text-gray-300">—</span>`
-      }
-    </td>
+      <div class="
+        hidden group-hover:block
+        absolute z-50 mt-1 w-64
+        bg-white border border-gray-200 rounded-lg shadow-lg p-3
+        text-xs text-gray-700
+      ">
+        ${req.description}
+      </div>
+    `
+    : `<span class="text-gray-300">—</span>`
+  }
+</td>
 
       <td class="status-cell">
         <div class="flex items-center gap-2">
