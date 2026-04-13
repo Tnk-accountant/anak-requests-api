@@ -33,6 +33,34 @@ body {
   /* 🧠 UX mobile propre */
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+
+   background-size: 120% 120%, 120% 120%, 100% 100%;
+    animation: backgroundMove 20s ease-in-out infinite;
+}
+
+
+@media (min-width: 900px) {
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+    mix-blend-mode: overlay;
+  }
+}
+
+@keyframes backgroundMove {
+  0% {
+    background-position: 20% 20%, 80% 0%, 0% 0%;
+  }
+  50% {
+    background-position: 25% 25%, 75% 5%, 0% 0%;
+  }
+  100% {
+    background-position: 20% 20%, 80% 0%, 0% 0%;
+  }
 }
 
 .login-container {
@@ -149,6 +177,10 @@ body {
   .notification.success { background:#16a34a; }
   .notification.error { background:#b91c1c; }
   @keyframes fadein { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
+  *
+
+  
+  
 
   #loader {
     position: absolute;
