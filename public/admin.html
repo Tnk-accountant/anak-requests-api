@@ -574,9 +574,20 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
       <td class="text-left">
         ${req.description
-          ? `<button class="openDescription text-gray-400 hover:text-indigo-600 text-sm">
-              View description
-            </button>`
+          ? `
+            <div class="relative group inline-block">
+              <span class="text-gray-400 hover:text-indigo-600 text-sm cursor-pointer">
+                View description
+              </span>
+
+              <div class="pointer-events-none opacity-0 translate-y-2 
+                          group-hover:opacity-100 group-hover:translate-y-0 
+                          transition-all duration-200 ease-out
+                          absolute left-0 mt-2 z-50 w-64 bg-white shadow-xl rounded-xl p-3 text-sm text-gray-700">
+                ${req.description}
+              </div>
+            </div>
+          `
           : `<span class="text-gray-300">—</span>`
         }
       </td>
@@ -626,18 +637,6 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     `;
 
     requestsTableBody.appendChild(tr);
-
-      const openDescBtn = tr.querySelector('.openDescription');
-      if (openDescBtn) {
-        openDescBtn.addEventListener('click', () => {
-          document.getElementById('descriptionContent').textContent =
-            req.description || '';
-          const modal = document.getElementById('descriptionModal');
-          modal.classList.remove('hidden');
-          modal.classList.add('flex');
-
-        });
-      }
 
         const approveBtn = tr.querySelector('.approveBtn');
         const rejectBtn = tr.querySelector('.rejectBtn');
