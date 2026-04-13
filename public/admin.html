@@ -14,7 +14,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin – Anak Requests</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=line-clamp"></script>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
 
@@ -574,44 +574,33 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         </span>
       </td>
 
-    <td class="text-left">
-      ${req.description
-        ? `
-          <div class="inline-block relative">
+<td class="text-left">
+  ${req.description
+    ? `
+      <div class="relative inline-block group max-w-[200px]">
 
-            <!-- trigger -->
-            <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
-              View description
-            </span>
+        <!-- bouton -->
+        <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
+          View description
+        </span>
 
-            <!-- overlay centré écran -->
-            <div class="
-              hidden hoverBox
-              fixed inset-0 z-50 flex items-center justify-center
-            ">
-              
-              <!-- background -->
-              <div class="absolute inset-0 bg-black/20"></div>
+        <!-- preview hover -->
+        <div class="
+          hidden group-hover:block
+          absolute left-0 top-full mt-1 z-50 w-64
+          bg-white border border-gray-200 rounded-lg shadow-md p-3
+          text-xs text-gray-700
+          leading-relaxed
+          line-clamp-3
+        ">
+          ${req.description}
+        </div>
 
-              <!-- card -->
-              <div class="
-                relative bg-white rounded-2xl shadow-xl p-6
-                max-w-lg w-full text-sm text-gray-700
-                max-h-[60vh] overflow-auto
-              ">
-                <div class="font-semibold text-gray-800 mb-2">
-                  Description
-                </div>
-
-                ${req.description}
-              </div>
-            </div>
-
-          </div>
-        `
-        : `<span class="text-gray-300">—</span>`
-      }
-    </td>
+      </div>
+    `
+    : `<span class="text-gray-300">—</span>`
+  }
+</td>
 
       <td class="status-cell">
         <div class="flex items-center gap-2">
@@ -660,42 +649,20 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     requestsTableBody.appendChild(tr);
 
 
-    const trigger = tr.querySelector('.openDescription');
-    const hoverBox = tr.querySelector('.hoverBox');
-
-    if (trigger && hoverBox) {
-
-      // entrer → afficher
-      trigger.addEventListener('mouseenter', () => {
-        hoverBox.classList.remove('hidden');
-      });
-
-      // sortir du texte → cacher direct
-      trigger.addEventListener('mouseleave', () => {
-        hoverBox.classList.add('hidden');
-      });
-
-      // sortir de la popup → cacher direct
-      hoverBox.addEventListener('mouseleave', () => {
-        hoverBox.classList.add('hidden');
-      });
-
-    }
-
   // CLICK → ouvre modal
-  const openDescBtn = tr.querySelector('.openDescription');
-  if (openDescBtn) {
-    openDescBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
+    const openDescBtn = tr.querySelector('.openDescription');
+    if (openDescBtn) {
+      openDescBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
 
-      document.getElementById('descriptionContent').textContent =
-        req.description || '';
+        document.getElementById('descriptionContent').textContent =
+          req.description || '';
 
-      const modal = document.getElementById('descriptionModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    });
-  }
+        const modal = document.getElementById('descriptionModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      });
+    }
 
         const approveBtn = tr.querySelector('.approveBtn');
         const rejectBtn = tr.querySelector('.rejectBtn');
