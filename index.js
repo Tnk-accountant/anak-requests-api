@@ -327,11 +327,6 @@ app.get('/requests', authenticate, async (req, res) => {
         `created_by.eq.${req.user.id},status.eq.Approved`
       );
     }
-    else if (req.profile.role === 'ChefCentre' || req.profile.role === 'Chef de centre') {
-      query = query.or(
-        `created_by.eq.${req.user.id},center_id.eq.${req.profile.center_id}`
-      );
-    }
     else {
       // utilisateur normal
       query = query.eq('created_by', req.user.id);

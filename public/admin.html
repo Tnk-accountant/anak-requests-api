@@ -660,35 +660,27 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     requestsTableBody.appendChild(tr);
 
 
-  const trigger = tr.querySelector('.openDescription');
-  const hoverBox = tr.querySelector('.hoverBox');
+    const trigger = tr.querySelector('.openDescription');
+    const hoverBox = tr.querySelector('.hoverBox');
 
-  if (trigger && hoverBox) {
-    let timeout;
+    if (trigger && hoverBox) {
 
-    // HOVER → ouvrir
-    trigger.addEventListener('mouseenter', () => {
-      clearTimeout(timeout);
-      hoverBox.classList.remove('hidden');
-    });
+      // entrer → afficher
+      trigger.addEventListener('mouseenter', () => {
+        hoverBox.classList.remove('hidden');
+      });
 
-    // QUITTER LE TEXTE → fermer avec délai
-    trigger.addEventListener('mouseleave', () => {
-      timeout = setTimeout(() => {
+      // sortir du texte → cacher direct
+      trigger.addEventListener('mouseleave', () => {
         hoverBox.classList.add('hidden');
-      }, 150);
-    });
+      });
 
-    // SI ON ENTRE DANS LA POPUP → on annule fermeture
-    hoverBox.addEventListener('mouseenter', () => {
-      clearTimeout(timeout);
-    });
+      // sortir de la popup → cacher direct
+      hoverBox.addEventListener('mouseleave', () => {
+        hoverBox.classList.add('hidden');
+      });
 
-    // QUITTER LA POPUP → fermer
-    hoverBox.addEventListener('mouseleave', () => {
-      hoverBox.classList.add('hidden');
-    });
-  }
+    }
 
   // CLICK → ouvre modal
   const openDescBtn = tr.querySelector('.openDescription');
