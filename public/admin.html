@@ -572,25 +572,48 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         </span>
       </td>
 
-      <td class="text-left">
-        ${req.description
-          ? `
-            <div class="relative group inline-block">
-              <span class="text-gray-400 hover:text-indigo-600 text-sm cursor-pointer">
-                View description
-              </span>
+    <td class="text-left">
+      ${req.description
+        ? `
+          <div class="relative group inline-block">
 
-              <div class="pointer-events-none opacity-0 translate-y-2 
-                          group-hover:opacity-100 group-hover:translate-y-0 
-                          transition-all duration-200 ease-out
-                          absolute left-0 mt-2 z-50 w-64 bg-white shadow-xl rounded-xl p-3 text-sm text-gray-700">
+            <!-- CLICK -->
+            <span class="openDescription text-indigo-500 hover:text-indigo-700 text-sm cursor-pointer font-medium">
+              View
+            </span>
+
+            <!-- HOVER PREVIEW -->
+            <div class="
+              pointer-events-none
+              opacity-0 scale-95 translate-y-2
+              group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0
+              transition-all duration-200 ease-out
+
+              absolute left-0 mt-2 z-50 w-72
+              bg-white/95 backdrop-blur-xl
+              border border-gray-200
+              shadow-2xl rounded-xl p-4
+
+              text-sm text-gray-700 leading-relaxed
+              max-h-40 overflow-auto
+            ">
+
+              <div class="text-xs text-gray-400 mb-1">Description</div>
+
+              <div>
                 ${req.description}
               </div>
+
+              <div class="text-[11px] text-indigo-500 mt-2">
+                Click to expand →
+              </div>
+
             </div>
-          `
-          : `<span class="text-gray-300">—</span>`
-        }
-      </td>
+          </div>
+        `
+        : `<span class="text-gray-300">—</span>`
+      }
+    </td>
 
       <td class="status-cell">
         <div class="flex items-center gap-2">
@@ -637,6 +660,19 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     `;
 
     requestsTableBody.appendChild(tr);
+
+
+    const openDescBtn = tr.querySelector('.openDescription');
+    if (openDescBtn) {
+      openDescBtn.addEventListener('click', () => {
+        document.getElementById('descriptionContent').textContent =
+          req.description || '';
+
+        const modal = document.getElementById('descriptionModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      });
+    }
 
         const approveBtn = tr.querySelector('.approveBtn');
         const rejectBtn = tr.querySelector('.rejectBtn');
