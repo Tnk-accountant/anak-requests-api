@@ -17,26 +17,27 @@
       min-height:100vh; color:#1f2937;
     }
 
-  .login-container {
-    backdrop-filter: blur(14px);
-    background: rgba(255,255,255,0.75);
+.login-container {
+  backdrop-filter: blur(14px);
+  background: rgba(255,255,255,0.75);
 
-    padding:2.5rem 2rem;
-    border-radius:24px;
+  padding:2.5rem 2rem;
+  border-radius:24px;
 
-    border:1px solid rgba(255,255,255,0.6);
+  border:1px solid rgba(255,255,255,0.6);
 
-    box-shadow:
-      0 20px 60px rgba(0,0,0,0.12),
-      0 8px 20px rgba(0,0,0,0.08);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.12),
+    0 8px 20px rgba(0,0,0,0.08);
 
-    width:100%;
-    max-width:500px;
-    text-align:center;
-    position:relative;
+  width:100%;
+  max-width:500px; /* ✅ largeur normale */
 
-    transition: all 0.25s ease;
-  }
+  text-align:center;
+  position:relative;
+
+  transition: all 0.25s ease;
+}
 
 .login-container:hover {
   transform: translateY(-4px) scale(1.01);
