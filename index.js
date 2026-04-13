@@ -327,6 +327,14 @@ app.get('/requests', authenticate, async (req, res) => {
         `created_by.eq.${req.user.id},status.eq.Approved`
       );
     }
+    else if (req.profile.role === 'ChefCentre' || req.profile.role === 'Chef de centre') {
+      const centerId = req.profile.center_id;
+
+      query = query.or(`
+        created_by.eq.${req.user.id},
+        and(center_id.eq.${centerId},visibility_scope.eq.CENTER)
+      `);
+    }
     else {
       // utilisateur normal
       query = query.eq('created_by', req.user.id);
@@ -466,7 +474,6 @@ function notifyAdmins(newRequest) {
 
   sseClients.forEach(client => {
     try {
-      console.log('👤 client center:', client.center);
 
       // 🔵 Admin → tout
       if (client.role === 'Admin') {
@@ -475,13 +482,19 @@ function notifyAdmins(newRequest) {
         return;
       }
 
-      // 🟢 User → même centre
+      // 👁️ PRIVATE → seulement créateur
+      if (newRequest.visibility_scope === "PRIVATE") {
+        if (client.userId === newRequest.created_by) {
+          client.res.write(payload);
+          client.res.flush?.();
+        }
+        return;
+      }
+
+      // 🟢 CENTER → centre
       if (client.center && reqCenter === client.center) {
-        console.log('✅ MATCH → envoi SSE');
         client.res.write(payload);
         client.res.flush?.();
-      } else {
-        console.log('❌ NO MATCH');
       }
 
     } catch (err) {

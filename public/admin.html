@@ -574,33 +574,36 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         </span>
       </td>
 
-<td class="text-left">
-  ${req.description
-    ? `
-      <div class="relative inline-block group max-w-[200px]">
+    <td class="text-left">
+      ${req.description
+        ? `
+          <div class="relative inline-block group">
 
-        <!-- bouton -->
-        <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
-          View description
-        </span>
+            <!-- bouton -->
+            <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
+              View description
+            </span>
 
-        <!-- preview hover -->
-        <div class="
-          hidden group-hover:block
-          absolute left-0 top-full mt-1 z-50 w-64
-          bg-white border border-gray-200 rounded-lg shadow-md p-3
-          text-xs text-gray-700
-          leading-relaxed
-          line-clamp-3
-        ">
-          ${req.description}
-        </div>
+            <!-- preview hover -->
+            <div class="
+              hidden group-hover:block
+              absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50
+              
+              w-96 max-w-[90vw]
+              
+              bg-white border border-gray-200 rounded-xl shadow-xl p-4
+              
+              text-sm text-gray-700 leading-relaxed
+              line-clamp-3
+            ">
+              ${req.description}
+            </div>
 
-      </div>
-    `
-    : `<span class="text-gray-300">—</span>`
-  }
-</td>
+          </div>
+        `
+        : `<span class="text-gray-300">—</span>`
+      }
+    </td>
 
       <td class="status-cell">
         <div class="flex items-center gap-2">
