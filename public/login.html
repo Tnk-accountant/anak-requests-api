@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="/favicon_io/favicon.ico">
 
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon_io/favicon-16x16.png">
@@ -21,7 +22,7 @@
   backdrop-filter: blur(14px);
   background: rgba(255,255,255,0.75);
 
-  padding:2.5rem 2rem;
+  padding:2rem 1.8rem;
   border-radius:24px;
 
   border:1px solid rgba(255,255,255,0.6);
@@ -31,7 +32,12 @@
     0 8px 20px rgba(0,0,0,0.08);
 
   width:100%;
-  max-width:500px; /* ✅ largeur normale */
+  max-width:420px; /* ✅ largeur normale */
+
+    max-height:90vh; /* 🔥 clé */
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
 
   text-align:center;
   position:relative;
