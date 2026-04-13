@@ -550,7 +550,7 @@ app.post('/requests', authenticate, async (req, res) => {
     // 🔐 PERMISSIONS + VISIBILITY
     // ==============================
 
-    const SERVICE_CENTERS = ["CLINIC", "CYDW"];
+    const SERVICE_CENTERS = ["CLINIC", "CYDW", "ADM", "CARP"];
 
     const userCenter = req.profile.center;
     const isService = SERVICE_CENTERS.includes(userCenter);
