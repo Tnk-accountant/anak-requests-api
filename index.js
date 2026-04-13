@@ -328,11 +328,23 @@ app.get('/requests', authenticate, async (req, res) => {
       );
     }
     else if (req.profile.role === 'ChefCentre' || req.profile.role === 'Chef de centre') {
-      const centerId = req.profile.center_id;
+
+      const userCenters = req.profile.center.split(',').map(c => c.trim());
+
+      // convertir centers → IDs
+      const { data: centersData } = await supabaseService
+        .from('centers')
+        .select('id, code')
+        .in('code', userCenters);
+
+      const centerIds = centersData.map(c => c.id);
+
+      // construire filtre dynamique
+      const centerFilters = centerIds.map(id => `center_id.eq.${id}`).join(',');
 
       query = query.or(`
         created_by.eq.${req.user.id},
-        and(center_id.eq.${centerId},visibility_scope.eq.CENTER)
+        and(or(${centerFilters}),visibility_scope.eq.CENTER)
       `);
     }
     else {
@@ -552,11 +564,11 @@ app.post('/requests', authenticate, async (req, res) => {
 
     const SERVICE_CENTERS = ["CLINIC", "CYDW", "ADM", "CARP"];
 
-    const userCenter = req.profile.center;
+    const userCenters = req.profile.center.split(',').map(c => c.trim());
     const isService = SERVICE_CENTERS.includes(userCenter);
 
     // 🔒 restriction création
-    if (!isService && center_name !== userCenter) {
+    if (!isService && !userCenters.includes(center_name)) {
       return res.status(403).json({
         error: "You can only create for your own center"
       });
