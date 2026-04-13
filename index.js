@@ -537,6 +537,27 @@ app.post('/requests', authenticate, async (req, res) => {
       .trim()
       .toUpperCase();
 
+
+    // ==============================
+    // 🔐 PERMISSIONS + VISIBILITY
+    // ==============================
+
+    const SERVICE_CENTERS = ["CLINIC", "CYDW"];
+
+    const userCenter = req.profile.center;
+    const isService = SERVICE_CENTERS.includes(userCenter);
+
+    // 🔒 restriction création
+    if (!isService && center_name !== userCenter) {
+      return res.status(403).json({
+        error: "You can only create for your own center"
+      });
+    }
+
+    // 👁️ visibilité
+    const visibility_scope = isService ? "PRIVATE" : "CENTER";  
+
+
     if (!center_name) {
       return res.status(400).json({ error: 'center_name is required.' });
     }
@@ -578,6 +599,7 @@ app.post('/requests', authenticate, async (req, res) => {
       p_description: description,
       p_payment_method: payment_method,
       p_request_type: request_type,
+      p_visibility_scope: visibility_scope,
       p_created_by: req.user.id 
     });
 
