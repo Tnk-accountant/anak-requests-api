@@ -448,21 +448,24 @@ button:active {
   </div>
 
   <div class="overflow-x-auto">
-  <table class="min-w-[900px] w-full text-left border-collapse text-sm">
-    <thead>
-      <tr class="bg-indigo-100">
-        <th class="px-3 py-0.5 border cursor-pointer" data-column="request_id">ID</th>
-        <th class="px-3 py-0.5 border cursor-pointer" data-column="timestamp">Date</th>
-        <th class="px-3 py-0.5 border cursor-pointer" data-column="amount_requested">Amount requested</th>
-        <th class="px-3 py-0.5 border cursor-pointer" data-column="payment_method">Payment</th>
-        <th class="px-3 py-0.5 border cursor-pointer" data-column="status">Status</th>
-        <th class="px-3 py-0.5 border cursor-pointer" data-column="approved_amount">Amount approved</th>
-        <th class="px-3 py-0.5 border cursor-pointer" data-column="returned_amount">Amount returned</th>
-        <th class="px-3 py-0.5 border">Action</th>
-      </tr>
-    </thead>
-    <tbody id="myRequestsTable" class="divide-y divide-gray-200"></tbody>
-  </table>
+    <table class="min-w-[900px] w-full text-left text-sm border-separate border-spacing-0 rounded-xl overflow-hidden bg-white/80 backdrop-blur">
+
+      <thead>
+        <tr class="bg-indigo-100 text-gray-700">
+          <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide first:rounded-tl-xl">ID</th>
+          <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">Date</th>
+          <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amount requested</th>
+          <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">Payment</th>
+          <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+          <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amount approved</th>
+          <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amount returned</th>
+          <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide last:rounded-tr-xl">Action</th>
+        </tr>
+      </thead>
+
+      <tbody id="myRequestsTable" class="divide-y divide-gray-100"></tbody>
+
+    </table>
   </div>
 
   <!-- Conteneur pagination -->
@@ -1846,11 +1849,16 @@ async function refreshRequest(request_id) {
     setTimeout(() => {
       row.classList.remove('bg-indigo-50');
     }, 800);
-    row.classList.add('hover:bg-gray-100', 'align-top');
+
+    row.classList.add(
+      'hover:bg-indigo-50',
+      'transition',
+      'align-top'
+    );
 
     row.innerHTML = `
-      <td class="p-2 py-1 border align-top">${req.request_id}</td>
-      <td class="p-2 py-1 border align-top">
+      <td class="px-4 py-3 border-b border-gray-100" align-top">${req.request_id}</td>
+      <td class="px-4 py-3 border-b border-gray-100"align-top">
         ${req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : ''}
       </td>
       <td class="p-2 border align-top amount_requested">
