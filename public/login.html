@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="icon" href="/favicon_io/favicon.ico">
 
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon_io/favicon-16x16.png">
@@ -14,7 +14,7 @@
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
     body {
       background: radial-gradient(circle at top left, #eef2ff, #f8fafc);
-      display:flex; justify-content:center; align-items:center;
+      display:flex; justify-content:center; align-items:flex-start;
       min-height:100vh; color:#1f2937;
     }
 
@@ -184,12 +184,19 @@
   }
   .toggle-password svg { display:block; width:100%; height:100%; }
 
+  @media (min-width: 900px) {
+  .login-container {
+    max-width: 360px; /* 🔥 plus petit sur ordi */
+  }
+}
+
   /* ======================= MOBILE FIRST============================= */
 @media (max-width: 600px) {
 
   body {
     padding: 1rem;
-    align-items: flex-start;
+    align-items: center; /* ✅ centre vertical */
+    justify-content: center;
   }
 
   .login-container {
@@ -241,6 +248,11 @@
 
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden; /* 🔥 bloque le scroll bounce */
+}
+
 @media (hover: none) {
   .login-container:hover {
     transform: none;
@@ -274,11 +286,11 @@
 <div class="login-container">
   <div id="loader">⏳ Loading...</div>
 
-    <img
-      src="https://www.anak-tnk.org/images-ong-enfants-manille/2023/05/Logo-ANAK-Tnk-01-ombre-site-500x200-1.png"
-      alt="Logo Anak"
-      style="max-width:200px; width:100%; height:auto; margin-bottom:1.5rem;"
-    />
+<img
+  src="https://www.anak-tnk.org/images-ong-enfants-manille/2023/05/Logo-ANAK-Tnk-01-ombre-site-500x200-1.png"
+  alt="Logo Anak"
+  style="display:block; margin:0 auto 1.5rem auto; max-width:180px; width:100%; height:auto;"
+/>
 
 
   <h1 style="font-size:1.8rem; color:#004f9f; margin-bottom:2rem;">Special Requests</h1>
