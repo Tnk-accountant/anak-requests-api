@@ -1031,6 +1031,21 @@ let mobileAmountFilter = '';
   }
 
   populateCenters((profile.center_name || "").trim().toUpperCase());
+
+  const centerSelect = document.getElementById("center_name");
+
+    // 🔒 si pas autorisé multi-centres → bloquer
+    if (!profile.permissions?.can_create_for_other_centers) {
+
+      centerSelect.innerHTML = `
+        <option value="${profile.center_name}">
+          ${profile.center_name}
+        </option>
+      `;
+
+      centerSelect.disabled = true;
+    }
+    
   console.log("Centers populated, select options =", document.getElementById("center_name")?.options?.length);
   console.log("Selected center =", document.getElementById("center_name")?.value);
 
@@ -1038,12 +1053,10 @@ let mobileAmountFilter = '';
   // Stocker localement
   localStorage.setItem('user', JSON.stringify(profile));
 
-  // Auto-fill si ChefCentre (CC)
-  if (profile.role === 'CC') {
-    requestorInput.value = profile.email;
+// Auto-fill user (TOUS les users, pas juste CC)
+    requestorInput.value = profile.name || profile.email;
     requestorInput.readOnly = true;
     requestorInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-  }
 
   // Charger uniquement les demandes du centre connecté
   await fetchMyRequests();

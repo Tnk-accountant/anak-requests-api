@@ -258,6 +258,7 @@ app.get('/profile', authenticate, async (req, res) => {
       res.json({
         id: req.user.id,
         email: req.user.email,
+        name: req.profile.name,
         role: req.profile.role,
         center_name: req.profile.center,
         permissions: req.profile.permissions,
