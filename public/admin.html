@@ -262,6 +262,49 @@
     </div>
   </div>
 
+
+  <!-- CREATE USER MODAL -->
+    <div id="createUserModal"
+      class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+
+      <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
+
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-gray-800">Create User</h3>
+          <button id="closeUserModal" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+
+        <div class="flex flex-col gap-3">
+
+          <input id="newUserName" type="text" placeholder="Full name"
+            class="border border-gray-200 rounded-lg px-3 py-2">
+
+          <input id="newUserEmail" type="email" placeholder="Email"
+            class="border border-gray-200 rounded-lg px-3 py-2">
+
+          <input id="newUserPassword" type="password" placeholder="Password"
+            class="border border-gray-200 rounded-lg px-3 py-2">
+
+          <select id="newUserRole"
+            class="border border-gray-200 rounded-lg px-3 py-2">
+            <option value="Requester">Requester</option>
+            <option value="CC">CC</option>
+            <option value="Admin">Admin</option>
+          </select>
+
+          <input id="newUserCenter" type="text" placeholder="Center"
+            class="border border-gray-200 rounded-lg px-3 py-2">
+
+          <button id="submitUserBtn"
+            class="bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition mt-2">
+            Create User
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+
 </body>
 
   <script>
@@ -340,8 +383,8 @@
       activeTab = 'users';
 
       // style actif
-      tabUsers.classList.add('bg-gray-100', 'text-white');
-      tabUsers.classList.remove('bg-gray-100');
+    tabUsers.classList.add('bg-indigo-600', 'text-white');
+    tabUsers.classList.remove('bg-gray-100');
 
       tabAll.classList.remove('bg-indigo-600', 'text-white');
       tabAll.classList.add('bg-gray-100');
@@ -611,7 +654,9 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     async function loadUsers() {
       try {
         const res = await fetch(`${API_URL}/admin/users`, {
-          credentials: 'include'
+          headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+          }
         });
 
         if (res.status === 401) {
@@ -1308,11 +1353,37 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     }
 
 
-    // CREATE NEW USER
-    document.getElementById('addUserBtn').onclick = async () => {
-      const email = prompt("Email:");
-      const password = prompt("Password:");
-      const name = prompt("Name:");
+
+    // ==============================
+    // CREATE USER MODAL
+    // ==============================
+    const createUserModal = document.getElementById('createUserModal');
+    const openUserBtn = document.getElementById('addUserBtn');
+    const closeUserBtn = document.getElementById('closeUserModal');
+
+    openUserBtn.onclick = () => {
+      createUserModal.classList.remove('hidden');
+      createUserModal.classList.add('flex');
+    };
+
+    closeUserBtn.onclick = () => {
+      createUserModal.classList.add('hidden');
+      createUserModal.classList.remove('flex');
+    };
+
+    createUserModal.addEventListener('click', (e) => {
+      if (e.target === createUserModal) {
+        createUserModal.classList.add('hidden');
+        createUserModal.classList.remove('flex');
+      }
+    });
+
+    document.getElementById('submitUserBtn').onclick = async () => {
+      const name = document.getElementById('newUserName').value;
+      const email = document.getElementById('newUserEmail').value;
+      const password = document.getElementById('newUserPassword').value;
+      const role = document.getElementById('newUserRole').value;
+      const center = document.getElementById('newUserCenter').value;
 
       if (!email || !password) {
         notify("Missing fields", "error");
@@ -1330,22 +1401,37 @@ const API_URL = 'https://anak-requests-api.onrender.com';
             email,
             password,
             name,
-            role: 'Requester',
-            center_name: '',
-            permissions: { scope: 'OWN' }
+            role,
+            center_name: center,
+            permissions: {
+              scope:
+                role === 'Admin' ? 'ALL' :
+                role === 'CC' ? 'CENTER' : 'OWN',
+              can_create_for_other_centers:
+                role !== 'Requester'
+            }
           })
         });
 
         const result = await res.json();
 
         if (!res.ok) {
-          notify(result.error || "Error creating user", "error");
+          notify(result.error || "Error", "error");
           return;
         }
 
         notify("User created", "success");
 
-        // 🔄 recharge la liste
+        // reset form
+        document.getElementById('newUserName').value = '';
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPassword').value = '';
+        document.getElementById('newUserCenter').value = '';
+
+        // close modal
+        createUserModal.classList.add('hidden');
+        createUserModal.classList.remove('flex');
+
         loadUsers();
 
       } catch (err) {
@@ -1353,6 +1439,8 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         notify("Server error", "error");
       }
     };
+
+
     // -------------------------
     // Modal description (1 seule fois)
     // -------------------------
