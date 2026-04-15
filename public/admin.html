@@ -282,8 +282,25 @@
           <input id="newUserEmail" type="email" placeholder="Email"
             class="border border-gray-200 rounded-lg px-3 py-2">
 
+          <div class="relative">
           <input id="newUserPassword" type="password" placeholder="Password"
-            class="border border-gray-200 rounded-lg px-3 py-2">
+            class="border border-gray-200 rounded-lg px-3 py-2 w-full pr-10">
+
+          <button type="button" id="togglePassword"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            👁
+          </button>
+        </div>
+
+        <div class="relative">
+          <input id="confirmPassword" type="password" placeholder="Confirm password"
+            class="border border-gray-200 rounded-lg px-3 py-2 w-full pr-10">
+
+          <button type="button" id="toggleConfirmPassword"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            👁
+          </button>
+        </div>
 
           <select id="newUserRole"
             class="border border-gray-200 rounded-lg px-3 py-2">
@@ -1381,7 +1398,17 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     document.getElementById('submitUserBtn').onclick = async () => {
       const name = document.getElementById('newUserName').value;
       const email = document.getElementById('newUserEmail').value;
-      const password = document.getElementById('newUserPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (password !== confirmPassword) {
+        notify("Passwords do not match", "error");
+        return;
+      }
+
+      if (password.length < 6) {
+        notify("Password must be at least 6 characters", "error");
+        return;
+      }
       const role = document.getElementById('newUserRole').value;
       const center = document.getElementById('newUserCenter').value;
 
@@ -1427,7 +1454,8 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         document.getElementById('newUserEmail').value = '';
         document.getElementById('newUserPassword').value = '';
         document.getElementById('newUserCenter').value = '';
-
+        document.getElementById('confirmPassword').value = '';
+        
         // close modal
         createUserModal.classList.add('hidden');
         createUserModal.classList.remove('flex');
@@ -1440,6 +1468,22 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       }
     };
 
+
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('newUserPassword');
+
+    togglePassword.onclick = () => {
+      passwordInput.type =
+        passwordInput.type === 'password' ? 'text' : 'password';
+    };
+
+    const toggleConfirm = document.getElementById('toggleConfirmPassword');
+    const confirmInput = document.getElementById('confirmPassword');
+
+    toggleConfirm.onclick = () => {
+      confirmInput.type =
+        confirmInput.type === 'password' ? 'text' : 'password';
+    };
 
     // -------------------------
     // Modal description (1 seule fois)
