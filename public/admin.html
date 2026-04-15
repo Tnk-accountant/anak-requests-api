@@ -711,9 +711,9 @@ const API_URL = 'https://anak-requests-api.onrender.com';
               <option ${u.role==='Admin'?'selected':''}>Admin</option>
             </select>
 
-            <input class="centerInput border px-2 py-1 rounded text-sm"
-              value="${u.center_name || ''}"
-              placeholder="Center">
+
+            <select multiple class="centersSelect border px-2 py-1 rounded text-sm h-24">
+            </select>
 
             <div class="flex justify-between items-center mt-2">
               <button class="saveBtn bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 text-sm">
@@ -726,38 +726,86 @@ const API_URL = 'https://anak-requests-api.onrender.com';
             </div>
           `;
 
+
+          const centersList = [
+          "ADM","DIB","DIG","NURB","NURG","RB1","RB2","RB3","RB4","RB5","RB6",
+          "RB7","RB8","RB9","CARP","SJE","BH","CFH","RG3","RG4","RG5","RG6",
+          "JLH","OLG","SAH","SJB","OLMC","SSK","SMG","NBBS","MOB","CLINIC",
+          "SEDS","CYDW","ELD"
+        ];
+
+        const select = card.querySelector('.centersSelect');
+
+        // remplir options
+        select.innerHTML = centersList.map(c =>
+          `<option value="${c}">${c}</option>`
+        ).join('');
+
+        // pré-sélection
+        const allowed = u.permissions?.allowed_centers || [];
+
+        Array.from(select.options).forEach(opt => {
+          if (allowed.includes(opt.value)) {
+            opt.selected = true;
+          }
+        });
+
           const saveBtn = card.querySelector('.saveBtn');
           const deleteBtn = card.querySelector('.deleteBtn');
 
           saveBtn.onclick = async () => {
-            const name = card.querySelector('.nameInput').value;
-            const role = card.querySelector('.roleSelect').value;
-            const center = card.querySelector('.centerInput').value;
-            const active = card.querySelector('.activeToggle').checked;
+          const name = card.querySelector('.nameInput').value;
+          const role = card.querySelector('.roleSelect').value;
+          const active = card.querySelector('.activeToggle').checked;
 
-            const payload = {
-              name,
-              role,
-              center_name: center,
-              is_active: active,
-              permissions: {
-                scope:
-                  role === 'Admin' ? 'ALL' :
-                  role === 'CC' ? 'CENTER' : 'OWN',
-                can_create_for_other_centers:
-                  role !== 'Requester'
-              }
-            };
+          function updateUI() {
+          const role = roleSelect.value;
 
-            await fetch(`${API_URL}/admin/users/${u.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify(payload)
+          if (role === 'Requester' || role === 'Admin') {
+            select.disabled = true;
+
+            Array.from(select.options).forEach(opt => {
+              opt.selected = true;
             });
+          } else {
+            select.disabled = false;
+          }
+        }
 
-            notify("User updated", "success");
+        roleSelect.addEventListener('change', updateUI);
+        updateUI();
+
+          // ✅ IMPORTANT : AVANT le payload
+          const selectedCenters = Array.from(
+            card.querySelector('.centersSelect').selectedOptions
+          ).map(o => o.value);
+
+          const payload = {
+            name,
+            role,
+            is_active: active,
+            permissions: {
+              scope:
+                role === 'Admin' ? 'ALL' :
+                role === 'CC' ? 'CENTER' : 'OWN',
+
+              allowed_centers:
+                role === 'CC' ? selectedCenters : [],
+
+              can_create_for_other_centers:
+                role === 'Requester'
+            }
           };
+
+          await fetch(`${API_URL}/admin/users/${u.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+          });
+
+          notify("User updated", "success");
+        };
 
           deleteBtn.onclick = async () => {
             if (!confirm("Delete this user?")) return;
@@ -787,10 +835,9 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     refreshBtn.addEventListener('click', fetchRequests);
 
 
-  function renderTable(data) {
-
-
     
+
+  function renderTable(data) {   
   requestsTableBody.innerHTML = '';
   data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
@@ -1468,7 +1515,6 @@ submitUserBtn.onclick = async () => {
         password,
         name,
         role,
-        center_name: center,
         permissions: {
           scope:
             role === 'Admin' ? 'ALL' :
