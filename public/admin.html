@@ -360,62 +360,61 @@
     const usersSection = document.getElementById('usersSection');
     const tableSection = document.querySelector('.overflow-x-auto');
 
-    tabAll.addEventListener('click', () => {
+   function setActiveTab(active) {
+    const tabs = [
+      { el: tabAll, key: 'all' },
+      { el: tabLiquidation, key: 'liquidation' },
+      { el: tabUsers, key: 'users' }
+    ];
+
+    tabs.forEach(tab => {
+      if (tab.key === active) {
+        tab.el.classList.add('bg-indigo-600', 'text-white');
+        tab.el.classList.remove('bg-gray-100', 'text-gray-600');
+      } else {
+        tab.el.classList.remove('bg-indigo-600', 'text-white');
+        tab.el.classList.add('bg-gray-100', 'text-gray-600');
+      }
+    });
+  }
+
+
+    const filtersBar = document.querySelector('.bg-white\\/80'); // 👈 IMPORTANT
+
+    tabAll.onclick = () => {
       activeTab = 'all';
-
-      tabAll.classList.add('bg-indigo-600', 'text-white');
-      tabAll.classList.remove('bg-gray-200');
-
-      tabLiquidation.classList.remove('bg-indigo-600', 'text-white');
-      tabLiquidation.classList.add('bg-gray-200');
-
-      tabUsers.classList.remove('bg-indigo-600', 'text-white');
-      tabUsers.classList.add('bg-gray-100');
+      setActiveTab('all');
 
       usersSection.classList.add('hidden');
       tableSection.classList.remove('hidden');
+      filtersBar.classList.remove('hidden');
 
       applyAdvancedFilters();
-    });
+    };
 
-    tabLiquidation.addEventListener('click', () => {
+    tabLiquidation.onclick = () => {
       activeTab = 'liquidation';
-
-      tabLiquidation.classList.add('bg-indigo-600', 'text-white');
-      tabLiquidation.classList.remove('bg-gray-200');
-
-      tabAll.classList.remove('bg-indigo-600', 'text-white');
-      tabAll.classList.add('bg-gray-200');
-
-      tabUsers.classList.remove('bg-indigo-600', 'text-white');
-      tabUsers.classList.add('bg-gray-100');
+      setActiveTab('liquidation');
 
       usersSection.classList.add('hidden');
       tableSection.classList.remove('hidden');
+      filtersBar.classList.remove('hidden');
 
       applyAdvancedFilters();
-    });
+    };
 
-      tabUsers.addEventListener('click', () => {
+    tabUsers.onclick = () => {
       activeTab = 'users';
+      setActiveTab('users');
 
-      // style actif
-    tabUsers.classList.add('bg-indigo-600', 'text-white');
-    tabUsers.classList.remove('bg-gray-100');
-
-      tabAll.classList.remove('bg-indigo-600', 'text-white');
-      tabAll.classList.add('bg-gray-100');
-
-      tabLiquidation.classList.remove('bg-gray-100', 'text-white');
-      tabLiquidation.classList.add('bg-gray-100');
-
-      // affichage
       usersSection.classList.remove('hidden');
       tableSection.classList.add('hidden');
 
-      // 🔥 TRÈS IMPORTANT
+      filtersBar.classList.add('hidden'); // 🔥 C'EST ÇA QUE TU VOULAIS
+
       loadUsers();
-    });
+    };
+
 
 const API_URL = 'https://anak-requests-api.onrender.com';
 
