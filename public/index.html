@@ -1120,106 +1120,115 @@ form.addEventListener('submit', async (e) => {
     request_type
   };
 
-  console.log('POST /requests payload =>', payload);
+ console.log('POST /requests payload =>', payload);
+
+try {
+  const res = await fetchWithAuth(`${API_URL}/requests`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  // 🔒 token invalide
+  if (handleAuthError(res)) return;
+
+  // ------------------------------
+  // Parse réponse
+  // ------------------------------
+  let result = null;
 
   try {
-      const res = await fetchWithAuth(`${API_URL}/requests`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload) // 🔥 MANQUANT
-      });
+    result = await res.json();
+  } catch {
+    const text = await res.text();
+    console.warn('Réponse non-JSON du serveur:', text);
+    result = { error: 'Réponse non JSON', raw: text };
+  }
 
-    // 🔒 token invalide/expiré → redirect login
-    if (handleAuthError(res)) {
-      return; // ok : finally va quand même se déclencher
+  console.log('POST /requests response status:', res.status, 'body:', result);
+
+  // ------------------------------
+  // Succès
+  // ------------------------------
+  if (res.ok) {
+    notify("Request submitted", "success");
+
+    if (result?.data?.request_id) {
+      generatedIdEl.textContent = `ID created: ${result.data.request_id}`;
+      upsertRow(result.data);
     }
 
-    // ------------------------------
-    // Parse réponse
-    // ------------------------------
-    let result = null;
+    // 🔒 sauvegarde avant reset
+    const currentName = requestorInput.value;
 
-    try {
-      result = await res.json();
-    } catch {
-      const text = await res.text();
-      console.warn('Réponse non-JSON du serveur:', text);
-      result = { error: 'Réponse non JSON', raw: text };
-    }
+    // 🔄 reset form
+    form.reset();
 
-    console.log('POST /requests response status:', res.status, 'body:', result);
+    // 🔁 restore name
+    requestorInput.value = currentName;
+    requestorInput.readOnly = true;
 
-    // ------------------------------
-    // Succès
-    // ------------------------------
-    if (res.ok) {
-      notify("Request submitted", "success");
+    // 🔥 RELOAD CENTERS (IMPORTANT)
+    await populateCenters((profile.center_name || "").trim().toUpperCase());
 
+    const centerSelect = document.getElementById("center_name");
+    const role = (profile.role || '').toLowerCase();
+    const userCenter = (profile.center_name || '').trim().toUpperCase();
 
-      if (result?.data?.request_id) {
-        generatedIdEl.textContent = `ID created: ${result.data.request_id}`;
-        upsertRow(result.data);
+    // 👤 REQUESTER → libre
+    if (role === 'requester') {
+      centerSelect.disabled = false;
+
+      if (userCenter) {
+        centerSelect.value = userCenter;
       }
-
-      // 🔒 sauvegarder avant reset
-      const currentName = requestorInput.value;
-      const currentCenter = document.getElementById("center_name").value;
-
-      // 🔄 reset form
-      form.reset();
-
-      // 🔁 restaurer les valeurs
-      requestorInput.value = currentName;
-      const centerSelect = document.getElementById("center_name");
-
-      if (centerSelect.disabled) {
-        centerSelect.innerHTML = `
-          <option value="${currentCenter}">
-            ${currentCenter}
-          </option>
-        `;
-      } else {
-        centerSelect.value = currentCenter;
-      }
-
-      // 🔒 garder readonly si besoin
-      requestorInput.readOnly = true;
-
-      // Reset boutons UI
-      document.querySelectorAll('#paymentMethodButtons button')
-      .forEach(b => b.classList.remove('payment-active'));
-      paymentInput.value = '';
-
-      document.querySelectorAll('#requestTypeButtons button')
-      .forEach(b => b.classList.remove('payment-active'));
-      requestTypeInput.value = '';
-
-      // Refresh liste
-      await fetchMyRequests();
-
-      return;
     }
 
-    // ------------------------------
-    // Erreur serveur
-    // ------------------------------
+    // 🏠 CC → bloqué
+    else if (role === 'cc') {
+      centerSelect.innerHTML = `
+        <option value="${userCenter}">
+          ${userCenter}
+        </option>
+      `;
+      centerSelect.disabled = true;
+    }
+
+    // 👑 ADMIN → libre
+    else if (role === 'admin') {
+      centerSelect.disabled = false;
+    }
+
+    // 🔁 reset UI boutons
+    document.querySelectorAll('#paymentMethodButtons button')
+      .forEach(b => b.classList.remove('payment-active'));
+    paymentInput.value = '';
+
+    document.querySelectorAll('#requestTypeButtons button')
+      .forEach(b => b.classList.remove('payment-active'));
+    requestTypeInput.value = '';
+
+    // 🔄 refresh liste
+    await fetchMyRequests();
+
+    return;
+  }
+
+  // ------------------------------
+  // Erreur serveur
+  // ------------------------------
   notify(result?.error || "Server error", "error");
 
-  } catch (err) {
-    console.error(err);
+} catch (err) {
+  console.error(err);
+  notify("Unable to reach server", "error");
 
-    notify("Unable to reach server", "error");
-
-  } finally {
-    // ------------------------------
-    // Toujours unlock
-    // ------------------------------
-
-    unlockButton(submitBtn);
-  }
+} finally {
+  unlockButton(submitBtn);
+}
 });
 
 
