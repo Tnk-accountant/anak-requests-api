@@ -1030,21 +1030,53 @@ let mobileAmountFilter = '';
     });
   }
 
-  populateCenters((profile.center_name || "").trim().toUpperCase());
+await populateCenters((profile.center_name || "").trim().toUpperCase());
 
   const centerSelect = document.getElementById("center_name");
+  const role = (profile.role || '').toLowerCase();
+  const userCenter = (profile.center_name || '').trim().toUpperCase();
 
-    // 🔒 si pas autorisé multi-centres → bloquer
-    if (!profile.permissions?.can_create_for_other_centers) {
+  // 👤 REQUESTER → libre
+  if (role === 'requester') {
+    centerSelect.disabled = false;
 
+    if (userCenter && [...centerSelect.options].some(o => o.value === userCenter)) {
+      centerSelect.value = userCenter;
+    }
+  }
+
+  // 🏠 CC → logique centre
+  else if (role === 'cc') {
+    const allowedCenters = profile.permissions?.allowed_centers || [];
+
+    if (allowedCenters.length > 1) {
+      centerSelect.innerHTML = '';
+
+      allowedCenters.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+
+        if (c === userCenter) opt.selected = true;
+
+        centerSelect.appendChild(opt);
+      });
+
+      centerSelect.disabled = false;
+    } else {
       centerSelect.innerHTML = `
-        <option value="${profile.center_name}">
-          ${profile.center_name}
+        <option value="${userCenter}">
+          ${userCenter}
         </option>
       `;
-
       centerSelect.disabled = true;
     }
+  }
+
+// 👑 ADMIN
+else if (role === 'admin') {
+  centerSelect.disabled = false;
+}
 
   console.log("Centers populated, select options =", document.getElementById("center_name")?.options?.length);
   console.log("Selected center =", document.getElementById("center_name")?.value);
