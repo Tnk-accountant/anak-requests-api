@@ -348,27 +348,45 @@ app.get('/centers', async (req, res) => {
     // CREATE USER
     app.post('/admin/users', authenticate, async (req, res) => {
       try {
-        if (req.profile.role !== 'Admin') return res.status(403);
+        if (req.profile.role !== 'Admin') {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
 
         const { email, password, name, role, center_name, permissions } = req.body;
 
+        // =====================
+        // 1. CREATE AUTH USER
+        // =====================
         const { data: user, error } = await supabaseAuth.auth.admin.createUser({
           email,
           password,
           email_confirm: true
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("AUTH ERROR:", error);
+          return res.status(400).json({ error: error.message });
+        }
 
-        await supabaseService.from('profiles').insert({
-          id: user.user.id,
-          mail: email,
-          Name: name,
-          role,
-          center_name,
-          permissions,
-          is_active: true
-        });
+        // =====================
+        // 2. CREATE PROFILE
+        // =====================
+        const { error: profileError } = await supabaseService
+          .from('profiles')
+          .insert({
+            id: user.user.id,
+            mail: email,
+            Name: name || '',
+            role: role || 'Requester',
+            center_name: center_name || '',
+            permissions: permissions || { scope: 'OWN' },
+            is_active: true
+          });
+
+        if (profileError) {
+          console.error("PROFILE ERROR:", profileError);
+          return res.status(400).json({ error: profileError.message });
+        }
 
         res.json({ success: true });
 
