@@ -1370,35 +1370,72 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     }
 
 
-
     // ==============================
     // CREATE USER MODAL
     // ==============================
+
+    // ELEMENTS
     const createUserModal = document.getElementById('createUserModal');
     const openUserBtn = document.getElementById('addUserBtn');
     const closeUserBtn = document.getElementById('closeUserModal');
+    const submitUserBtn = document.getElementById('submitUserBtn');
 
-    openUserBtn.onclick = () => {
+    // -----------------------------
+    // OPEN / CLOSE MODAL
+    // -----------------------------
+    function openModal() {
       createUserModal.classList.remove('hidden');
       createUserModal.classList.add('flex');
-    };
+    }
 
-    closeUserBtn.onclick = () => {
+    function closeModal() {
       createUserModal.classList.add('hidden');
       createUserModal.classList.remove('flex');
-    };
+      resetForm();
+    }
+
+    openUserBtn.onclick = openModal;
+    closeUserBtn.onclick = closeModal;
 
     createUserModal.addEventListener('click', (e) => {
-      if (e.target === createUserModal) {
-        createUserModal.classList.add('hidden');
-        createUserModal.classList.remove('flex');
-      }
+      if (e.target === createUserModal) closeModal();
     });
 
-    document.getElementById('submitUserBtn').onclick = async () => {
-      const name = document.getElementById('newUserName').value;
-      const email = document.getElementById('newUserEmail').value;
+    // -----------------------------
+    // RESET FORM
+    // -----------------------------
+    function resetForm() {
+      document.getElementById('newUserName').value = '';
+      document.getElementById('newUserEmail').value = '';
+      document.getElementById('newUserPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+      document.getElementById('newUserCenter').value = '';
+    }
+
+    // -----------------------------
+    // BUTTON LOADING STATE
+    // -----------------------------
+    function setLoading(state) {
+      submitUserBtn.disabled = state;
+      submitUserBtn.textContent = state ? "Creating..." : "Create User";
+    }
+
+    // -----------------------------
+    // CREATE USER
+    // -----------------------------
+    submitUserBtn.onclick = async () => {
+      const name = document.getElementById('newUserName').value.trim();
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
+      const role = document.getElementById('newUserRole').value;
+      const center = document.getElementById('newUserCenter').value.trim();
+
+      // 🔒 VALIDATION
+      if (!email || !password) {
+        notify("Missing fields", "error");
+        return;
+      }
 
       if (password !== confirmPassword) {
         notify("Passwords do not match", "error");
@@ -1409,13 +1446,8 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         notify("Password must be at least 6 characters", "error");
         return;
       }
-      const role = document.getElementById('newUserRole').value;
-      const center = document.getElementById('newUserCenter').value;
 
-      if (!email || !password) {
-        notify("Missing fields", "error");
-        return;
-      }
+      setLoading(true);
 
       try {
         const res = await fetch(`${API_URL}/admin/users`, {
@@ -1443,32 +1475,26 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         const result = await res.json();
 
         if (!res.ok) {
-          notify(result.error || "Error", "error");
+          notify(result.error || "Error creating user", "error");
           return;
         }
 
         notify("User created", "success");
 
-        // reset form
-        document.getElementById('newUserName').value = '';
-        document.getElementById('newUserEmail').value = '';
-        document.getElementById('newUserPassword').value = '';
-        document.getElementById('newUserCenter').value = '';
-        document.getElementById('confirmPassword').value = '';
-        
-        // close modal
-        createUserModal.classList.add('hidden');
-        createUserModal.classList.remove('flex');
-
-        loadUsers();
+        closeModal();   // 💎 reset + fermeture clean
+        loadUsers();    // refresh UI
 
       } catch (err) {
         console.error(err);
         notify("Server error", "error");
+      } finally {
+        setLoading(false); // 🔥 TOUJOURS reset bouton
       }
     };
 
-
+    // -----------------------------
+    // TOGGLE PASSWORD VISIBILITY
+    // -----------------------------
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('newUserPassword');
 
@@ -1484,27 +1510,6 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       confirmInput.type =
         confirmInput.type === 'password' ? 'text' : 'password';
     };
-
-    // -------------------------
-    // Modal description (1 seule fois)
-    // -------------------------
-    const modal = document.getElementById('descriptionModal');
-    const closeBtn = document.getElementById('closeDescription');
-
-    function closeModal() {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-
-    closeBtn.addEventListener('click', closeModal);
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
-    });
 
 
   </script>
