@@ -4,7 +4,7 @@ const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const cookieParser = require('cookie-parser'); //
-const { supabaseAuth, supabaseService } = require('./supabase');
+const { supabaseAuth, supabaseAdmin, supabaseService } = require('./supabase');
 
 
 // ✅ api drive
