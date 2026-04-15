@@ -89,12 +89,23 @@ async function getUserFromAuthHeader(req) {
   }
 }
 
+
 // ==============================
-// 🔐 MIDDLEWARE AUTH
+// 🔐 MIDDLEWARE AUTH (FIX)
 // ==============================
 async function authenticate(req, res, next) {
   try {
-    const token = req.cookies?.access_token;
+    let token = null;
+
+    // ✅ 1. COOKIE
+    if (req.cookies?.access_token) {
+      token = req.cookies.access_token;
+    }
+
+    // ✅ 2. BEARER TOKEN (IMPORTANT)
+    else if (req.headers.authorization?.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
 
     if (!token) {
       return res.status(401).json({ error: 'Non authentifié' });

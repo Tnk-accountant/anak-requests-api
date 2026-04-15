@@ -1307,6 +1307,52 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       };
     }
 
+
+    // CREATE NEW USER
+    document.getElementById('addUserBtn').onclick = async () => {
+      const email = prompt("Email:");
+      const password = prompt("Password:");
+      const name = prompt("Name:");
+
+      if (!email || !password) {
+        notify("Missing fields", "error");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/admin/users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            name,
+            role: 'Requester',
+            center_name: '',
+            permissions: { scope: 'OWN' }
+          })
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          notify(result.error || "Error creating user", "error");
+          return;
+        }
+
+        notify("User created", "success");
+
+        // 🔄 recharge la liste
+        loadUsers();
+
+      } catch (err) {
+        console.error(err);
+        notify("Server error", "error");
+      }
+    };
     // -------------------------
     // Modal description (1 seule fois)
     // -------------------------
