@@ -110,7 +110,7 @@ async function authenticate(req, res, next) {
 
     const { data: profile, error: profErr } = await supabaseService
       .from('profiles')
-      .select('role, center_name, center_id, mail, "Name"')
+      .select('role, center_name, center_id, mail, "Name", permissions, is_active')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -255,12 +255,14 @@ app.post('/refresh', async (req, res) => {
 // ==============================
 app.get('/profile', authenticate, async (req, res) => {
   try {
-    res.json({
-      id: req.user.id,
-      email: req.user.email,
-      role: req.profile.role,
-      center_name: req.profile.center
-    });
+      res.json({
+        id: req.user.id,
+        email: req.user.email,
+        role: req.profile.role,
+        center_name: req.profile.center,
+        permissions: req.profile.permissions,
+        is_active: req.profile.is_active
+      });
   } catch (err) {
     console.error('GET /profile error:', err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -295,22 +297,27 @@ app.get('/centers', async (req, res) => {
     }
 
     res.json(data);
+
   } catch (err) {
     console.error('GET /centers catch error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
+
 // =====================
-// GET REQUESTS (PAGINATED)
+// GET REQUESTS (PAGINATED + PERMISSIONS)
 // =====================
 app.get('/requests', authenticate, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
     const offset = Math.max(parseInt(req.query.offset || '0', 10), 0);
 
+    const perms = req.profile.permissions || {};
+
     console.log(
       '🔹 GET /requests | role=', req.profile.role,
+      '| scope=', perms.scope,
       '| center=', req.profile.center,
       '| status=', req.query.status || 'none',
       '| limit=', limit,
@@ -323,53 +330,38 @@ app.get('/requests', authenticate, async (req, res) => {
       .order('timestamp', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // 🔥 LOGIQUE MULTI-CENTRES CORRIGÉE
+    // ==============================
+    // 🔐 PERMISSIONS LOGIC (CLEAN)
+    // ==============================
 
-    if (req.profile.role === 'Admin') {
-      // voit tout
+    if (perms.scope === 'ALL') {
+      // ✅ voit tout
     }
-    else if (req.profile.role === 'Purchaser') {
+
+    else if (perms.scope === 'CENTER') {
+      // 👁️ voit son centre + ses propres demandes
       query = query.or(
-        `created_by.eq.${req.user.id},status.eq.Approved`
+        `center_id.eq.${req.profile.center_id},created_by.eq.${req.user.id}`
       );
     }
 
-    else if (req.profile.role === 'Requester') {
-    // 👁️ voit uniquement ses demandes
-    query = query.eq('created_by', req.user.id);
-      }
-
-    else if (req.profile.role === 'CC' || req.profile.role === 'Center coordinator') {
-
-      const userCenters = req.profile.center.split(',').map(c => c.trim());
-
-      // convertir centers → IDs
-      const { data: centersData } = await supabaseService
-        .from('centers')
-        .select('id, code')
-        .in('code', userCenters);
-
-      const centerIds = centersData.map(c => c.id);
-
-      // construire filtre dynamique
-      const centerFilters = centerIds.map(id => `center_id.eq.${id}`).join(',');
-
-      query = query.or(`
-        created_by.eq.${req.user.id},
-        and(or(${centerFilters}),visibility_scope.eq.CENTER)
-      `);
-    }
     else {
-      // utilisateur normal
+      // 👁️ OWN → uniquement ses demandes
       query = query.eq('created_by', req.user.id);
     }
 
-    // filtre status optionnel
+    // ==============================
+    // 🔎 FILTRE STATUS
+    // ==============================
     if (req.query.status) {
       query = query.eq('status', req.query.status);
     }
 
+    // ==============================
+    // 🚀 EXECUTION
+    // ==============================
     const { data, error, count } = await query;
+
     if (error) throw error;
 
     return res.json({
@@ -535,7 +527,7 @@ function notifyAdmins(newRequest) {
 // Création d'une demande (protected : CC ou Admin)
 app.post('/requests', authenticate, async (req, res) => {
   try {
-    const requestor_name = (req.body.requestor_name || '').toString().trim();
+    const requestor_name = req.profile.name || req.profile.email;
     const amount_requested = Number(req.body.amount_requested);
     const description = (req.body.description || '').toString().trim();
     const payment_method = (req.body.payment_method || '').toString().trim();
@@ -570,26 +562,28 @@ app.post('/requests', authenticate, async (req, res) => {
       .toUpperCase();
 
 
+
     // ==============================
-    // 🔐 PERMISSIONS + VISIBILITY
+    // 🔐 PERMISSIONS + VISIBILITY (CLEAN)
     // ==============================
 
-    const userCenters = (req.profile.center || '').split(',').map(c => c.trim());
-    const userCenter = userCenters[0]; // 🔥 important
-
-    const SERVICE_CENTERS = ["CLINIC", "CYDW", "ADM", "CARP"];
-
-    const isService = SERVICE_CENTERS.includes(userCenter);
+    const perms = req.profile.permissions || {};
 
     // 🔒 restriction création
-    if (!isService && !userCenters.includes(center_name)) {
-      return res.status(403).json({
-        error: "You can only create for your own center"
-      });
+    if (!perms.can_create_for_other_centers) {
+      if (center_name !== req.profile.center) {
+        return res.status(403).json({
+          error: "Not allowed to create for this center"
+        });
+      }
     }
 
-    // 👁️ visibilité
-    const visibility_scope = isService ? "PRIVATE" : "CENTER";  
+    // 👁️ visibilité (simple et cohérent)
+    let visibility_scope = "CENTER";
+
+    if (perms.scope === "OWN") {
+      visibility_scope = "PRIVATE";
+    }
 
 
     if (!center_name) {
