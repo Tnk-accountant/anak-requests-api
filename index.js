@@ -357,7 +357,7 @@ app.get('/centers', async (req, res) => {
         // =====================
         // 1. CREATE AUTH USER
         // =====================
-        const { data: user, error } = await supabaseAuth.auth.admin.createUser({
+        const { data: user, error } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
           email_confirm: true

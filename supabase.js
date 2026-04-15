@@ -17,10 +17,17 @@ if (!serviceKey) {
   throw new Error('❌ SUPABASE_SERVICE_ROLE_KEY manquant dans .env');
 }
 
-// 🔹 Client AUTH (login + getUser(token))
+// 🔹 Client AUTH (login uniquement)
 const supabaseAuth = createClient(supabaseUrl, anonKey);
 
-// 🔹 Client SERVICE (DB + RPC)
+// 🔹 Client ADMIN (auth admin + DB)
+const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+
+// 🔹 Client SERVICE (DB)
 const supabaseService = createClient(supabaseUrl, serviceKey);
 
-module.exports = { supabaseAuth, supabaseService };
+module.exports = {
+  supabaseAuth,
+  supabaseAdmin,
+  supabaseService
+};
