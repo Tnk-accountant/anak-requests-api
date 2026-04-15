@@ -306,6 +306,116 @@ app.get('/centers', async (req, res) => {
 });
 
 
+  
+  // =====================
+  // ADMIN USERS
+  // =====================
+
+    // GET USERS
+    app.get('/admin/users', authenticate, async (req, res) => {
+      try {
+        if (req.profile.role !== 'Admin') {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        const { data, error } = await supabaseService
+          .from('profiles')
+          .select('id, mail, "Name", role, center_name, permissions, is_active')
+          .order('"Name"');
+
+        if (error) throw error;
+
+        res.json(data);
+
+      } catch (err) {
+        console.error('GET USERS error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    });
+
+
+    // CREATE USER
+    app.post('/admin/users', authenticate, async (req, res) => {
+      try {
+        if (req.profile.role !== 'Admin') return res.status(403);
+
+        const { email, password, name, role, center_name, permissions } = req.body;
+
+        const { data: user, error } = await supabaseAuth.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true
+        });
+
+        if (error) throw error;
+
+        await supabaseService.from('profiles').insert({
+          id: user.user.id,
+          mail: email,
+          Name: name,
+          role,
+          center_name,
+          permissions,
+          is_active: true
+        });
+
+        res.json({ success: true });
+
+      } catch (err) {
+        console.error('CREATE USER error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    });
+
+
+    // UPDATE USER
+    app.patch('/admin/users/:id', authenticate, async (req, res) => {
+      try {
+        if (req.profile.role !== 'Admin') return res.status(403);
+
+        const { role, center_name, permissions, is_active, name } = req.body;
+
+        const { error } = await supabaseService
+          .from('profiles')
+          .update({
+            role,
+            center_name,
+            permissions,
+            is_active,
+            Name: name
+          })
+          .eq('id', req.params.id);
+
+        if (error) throw error;
+
+        res.json({ success: true });
+
+      } catch (err) {
+        console.error('UPDATE USER error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    });
+
+
+    // DELETE (soft)
+    app.delete('/admin/users/:id', authenticate, async (req, res) => {
+      try {
+        if (req.profile.role !== 'Admin') return res.status(403);
+
+        await supabaseService
+          .from('profiles')
+          .update({ is_active: false })
+          .eq('id', req.params.id);
+
+        res.json({ success: true });
+
+      } catch (err) {
+        console.error('DELETE USER error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    });
+
+
 // =====================
 // GET REQUESTS (PAGINATED + PERMISSIONS)
 // =====================

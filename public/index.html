@@ -1045,7 +1045,7 @@ let mobileAmountFilter = '';
 
       centerSelect.disabled = true;
     }
-    
+
   console.log("Centers populated, select options =", document.getElementById("center_name")?.options?.length);
   console.log("Selected center =", document.getElementById("center_name")?.value);
 
@@ -1164,8 +1164,29 @@ form.addEventListener('submit', async (e) => {
         upsertRow(result.data);
       }
 
-      // Reset form
+      // 🔒 sauvegarder avant reset
+      const currentName = requestorInput.value;
+      const currentCenter = document.getElementById("center_name").value;
+
+      // 🔄 reset form
       form.reset();
+
+      // 🔁 restaurer les valeurs
+      requestorInput.value = currentName;
+      const centerSelect = document.getElementById("center_name");
+
+      if (centerSelect.disabled) {
+        centerSelect.innerHTML = `
+          <option value="${currentCenter}">
+            ${currentCenter}
+          </option>
+        `;
+      } else {
+        centerSelect.value = currentCenter;
+      }
+
+      // 🔒 garder readonly si besoin
+      requestorInput.readOnly = true;
 
       // Reset boutons UI
       document.querySelectorAll('#paymentMethodButtons button')

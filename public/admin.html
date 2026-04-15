@@ -109,8 +109,9 @@
 
     </div>
 
-    <!-- TABS -->
+    <!-- TABS/ONGLETS -->
     <div class="flex gap-2 mb-6">
+
       <button id="tabAll"
         class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-sm hover:shadow-md active:scale-95">
         All Requests
@@ -120,6 +121,13 @@
         class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95">
         Liquidations / Cancellation
       </button>
+
+      <!-- ✅ AJOUT ICI -->
+      <button id="tabUsers"
+        class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95">
+        Users
+      </button>
+
     </div>
 
     <!-- FILTER CARD -->
@@ -215,7 +223,29 @@
       </button>
     </div>
 
+    <!-- ✅ USERS SECTION ICI -->
+      <div id="usersSection" class="hidden mt-6">
+
+        <!-- HEADER -->
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-gray-800">Users Management</h2>
+
+          <button id="addUserBtn"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-xl shadow hover:bg-indigo-700 transition">
+            + Add User
+          </button>
+        </div>
+
+        <!-- GRID -->
+        <div id="usersGrid"
+          class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        </div>
+
+      </div>
+
   </div>
+
+
 
   <!-- MODAL -->
   <div id="descriptionModal"
@@ -266,27 +296,65 @@
 
     const tabAll = document.getElementById('tabAll');
     const tabLiquidation = document.getElementById('tabLiquidation');
+    const tabUsers = document.getElementById('tabUsers');
+    const usersSection = document.getElementById('usersSection');
+    const tableSection = document.querySelector('.overflow-x-auto');
 
     tabAll.addEventListener('click', () => {
       activeTab = 'all';
+
       tabAll.classList.add('bg-indigo-600', 'text-white');
       tabAll.classList.remove('bg-gray-200');
 
       tabLiquidation.classList.remove('bg-indigo-600', 'text-white');
       tabLiquidation.classList.add('bg-gray-200');
 
+      tabUsers.classList.remove('bg-indigo-600', 'text-white');
+      tabUsers.classList.add('bg-gray-100');
+
+      usersSection.classList.add('hidden');
+      tableSection.classList.remove('hidden');
+
       applyAdvancedFilters();
     });
 
     tabLiquidation.addEventListener('click', () => {
       activeTab = 'liquidation';
+
       tabLiquidation.classList.add('bg-indigo-600', 'text-white');
       tabLiquidation.classList.remove('bg-gray-200');
 
       tabAll.classList.remove('bg-indigo-600', 'text-white');
       tabAll.classList.add('bg-gray-200');
 
+      tabUsers.classList.remove('bg-indigo-600', 'text-white');
+      tabUsers.classList.add('bg-gray-100');
+
+      usersSection.classList.add('hidden');
+      tableSection.classList.remove('hidden');
+
       applyAdvancedFilters();
+    });
+
+      tabUsers.addEventListener('click', () => {
+      activeTab = 'users';
+
+      // style actif
+      tabUsers.classList.add('bg-gray-100', 'text-white');
+      tabUsers.classList.remove('bg-gray-100');
+
+      tabAll.classList.remove('bg-indigo-600', 'text-white');
+      tabAll.classList.add('bg-gray-100');
+
+      tabLiquidation.classList.remove('bg-gray-100', 'text-white');
+      tabLiquidation.classList.add('bg-gray-100');
+
+      // affichage
+      usersSection.classList.remove('hidden');
+      tableSection.classList.add('hidden');
+
+      // 🔥 TRÈS IMPORTANT
+      loadUsers();
     });
 
 const API_URL = 'https://anak-requests-api.onrender.com';
@@ -535,6 +603,120 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     notify("Unable to fetch requests", "error");
     }
     }
+
+    // ==============================
+    // USERS UI
+    // ==============================
+
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${API_URL}/admin/users`, {
+          credentials: 'include'
+        });
+
+        if (res.status === 401) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const users = await res.json();
+        const grid = document.getElementById('usersGrid');
+        grid.innerHTML = '';
+
+        users.forEach(u => {
+
+          const card = document.createElement('div');
+          card.className = `
+            bg-white border border-gray-200 rounded-2xl p-4 shadow-sm
+            hover:shadow-md transition flex flex-col gap-3
+          `;
+
+          card.innerHTML = `
+            <div class="flex justify-between items-center">
+              <input class="nameInput font-semibold text-gray-800 text-sm w-full"
+                value="${u.Name || ''}">
+              <input type="checkbox" class="activeToggle ml-2"
+                ${u.is_active ? 'checked' : ''}>
+            </div>
+
+            <div class="text-xs text-gray-400">${u.mail}</div>
+
+            <select class="roleSelect border px-2 py-1 rounded text-sm">
+              <option ${u.role==='Requester'?'selected':''}>Requester</option>
+              <option ${u.role==='CC'?'selected':''}>CC</option>
+              <option ${u.role==='Admin'?'selected':''}>Admin</option>
+            </select>
+
+            <input class="centerInput border px-2 py-1 rounded text-sm"
+              value="${u.center_name || ''}"
+              placeholder="Center">
+
+            <div class="flex justify-between items-center mt-2">
+              <button class="saveBtn bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 text-sm">
+                Save
+              </button>
+
+              <button class="deleteBtn text-red-500 text-sm hover:underline">
+                Delete
+              </button>
+            </div>
+          `;
+
+          const saveBtn = card.querySelector('.saveBtn');
+          const deleteBtn = card.querySelector('.deleteBtn');
+
+          saveBtn.onclick = async () => {
+            const name = card.querySelector('.nameInput').value;
+            const role = card.querySelector('.roleSelect').value;
+            const center = card.querySelector('.centerInput').value;
+            const active = card.querySelector('.activeToggle').checked;
+
+            const payload = {
+              name,
+              role,
+              center_name: center,
+              is_active: active,
+              permissions: {
+                scope:
+                  role === 'Admin' ? 'ALL' :
+                  role === 'CC' ? 'CENTER' : 'OWN',
+                can_create_for_other_centers:
+                  role !== 'Requester'
+              }
+            };
+
+            await fetch(`${API_URL}/admin/users/${u.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(payload)
+            });
+
+            notify("User updated", "success");
+          };
+
+          deleteBtn.onclick = async () => {
+            if (!confirm("Delete this user?")) return;
+
+            await fetch(`${API_URL}/admin/users/${u.id}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+
+            card.remove();
+            notify("User disabled", "info");
+          };
+
+          grid.appendChild(card);
+        });
+
+      } catch (err) {
+        console.error(err);
+        notify("Error loading users", "error");
+      }
+    }
+
+
 
     // Écoute des changements pour filtrage et rafraîchissement
     filterStatus.addEventListener('change', fetchRequests);
