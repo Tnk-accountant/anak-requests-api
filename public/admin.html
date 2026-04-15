@@ -1420,96 +1420,107 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       submitUserBtn.textContent = state ? "Creating..." : "Create User";
     }
 
-    // -----------------------------
-    // CREATE USER
-    // -----------------------------
-    submitUserBtn.onclick = async () => {
-      const name = document.getElementById('newUserName').value.trim();
-      const email = document.getElementById('newUserEmail').value.trim();
-      const password = document.getElementById('newUserPassword').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
-      const role = document.getElementById('newUserRole').value;
-      const center = document.getElementById('newUserCenter').value.trim();
+   // -----------------------------
+// CREATE USER
+// -----------------------------
+submitUserBtn.onclick = async () => {
+  const name = document.getElementById('newUserName')?.value.trim();
+  const email = document.getElementById('newUserEmail')?.value.trim();
+  const password = document.getElementById('newUserPassword')?.value;
+  const confirmPassword = document.getElementById('confirmPassword')?.value;
+  const role = document.getElementById('newUserRole')?.value;
+  const center = document.getElementById('newUserCenter')?.value.trim();
 
-      // 🔒 VALIDATION
-      if (!email || !password) {
-        notify("Missing fields", "error");
-        return;
-      }
+  // 🔒 VALIDATION
+  if (!email || !password) {
+    notify("Missing fields", "error");
+    return;
+  }
 
-      if (password !== confirmPassword) {
-        notify("Passwords do not match", "error");
-        return;
-      }
+  if (password !== confirmPassword) {
+    notify("Passwords do not match", "error");
+    return;
+  }
 
-      if (password.length < 6) {
-        notify("Password must be at least 6 characters", "error");
-        return;
-      }
+  if (password.length < 6) {
+    notify("Password must be at least 6 characters", "error");
+    return;
+  }
 
-      setLoading(true);
+  setLoading(true);
 
-      try {
-        const res = await fetch(`${API_URL}/admin/users`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('access_token')
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            name,
-            role,
-            center_name: center,
-            permissions: {
-              scope:
-                role === 'Admin' ? 'ALL' :
-                role === 'CC' ? 'CENTER' : 'OWN',
-              can_create_for_other_centers:
-                role !== 'Requester'
-            }
-          })
-        });
+  try {
+    // ✅ SAFE HEADERS (évite Bearer null)
+    const token = localStorage.getItem('access_token');
 
-        const result = await res.json();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {})
+    };
 
-        if (!res.ok) {
-          notify(result.error || "Error creating user", "error");
-          return;
+    const res = await fetch(`${API_URL}/admin/users`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        email,
+        password,
+        name,
+        role,
+        center_name: center,
+        permissions: {
+          scope:
+            role === 'Admin' ? 'ALL' :
+            role === 'CC' ? 'CENTER' : 'OWN',
+          can_create_for_other_centers:
+            role !== 'Requester'
         }
+      })
+    });
 
-        notify("User created", "success");
+    const result = await res.json();
 
-        closeModal();   // 💎 reset + fermeture clean
-        loadUsers();    // refresh UI
+    if (!res.ok) {
+      notify(result.error || "Error creating user", "error");
+      return;
+    }
 
-      } catch (err) {
-        console.error(err);
-        notify("Server error", "error");
-      } finally {
-        setLoading(false); // 🔥 TOUJOURS reset bouton
-      }
-    };
+    notify("User created", "success");
 
-    // -----------------------------
-    // TOGGLE PASSWORD VISIBILITY
-    // -----------------------------
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('newUserPassword');
+    closeModal();   // reset + close
+    loadUsers();    // refresh
 
-    togglePassword.onclick = () => {
-      passwordInput.type =
-        passwordInput.type === 'password' ? 'text' : 'password';
-    };
+  } catch (err) {
+    console.error("CREATE USER ERROR:", err);
+    notify("Server error", "error");
 
-    const toggleConfirm = document.getElementById('toggleConfirmPassword');
-    const confirmInput = document.getElementById('confirmPassword');
+  } finally {
+    setLoading(false); // 🔥 toujours reset
+  }
+};
 
-    toggleConfirm.onclick = () => {
-      confirmInput.type =
-        confirmInput.type === 'password' ? 'text' : 'password';
-    };
+
+// -----------------------------
+// TOGGLE PASSWORD VISIBILITY
+// -----------------------------
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('newUserPassword');
+
+if (togglePassword && passwordInput) {
+  togglePassword.onclick = () => {
+    passwordInput.type =
+      passwordInput.type === 'password' ? 'text' : 'password';
+  };
+}
+
+const toggleConfirm = document.getElementById('toggleConfirmPassword');
+const confirmInput = document.getElementById('confirmPassword');
+
+if (toggleConfirm && confirmInput) {
+  toggleConfirm.onclick = () => {
+    confirmInput.type =
+      confirmInput.type === 'password' ? 'text' : 'password';
+  };
+}
 
 
   </script>
