@@ -663,11 +663,10 @@ function notifyAdmins(newRequest) {
   });
 }
 
-/* =========================================
-   ROUTES DEMANDES
-========================================= */
+// =========================================
+// ROUTES DEMANDES
+// =========================================
 
-// Création d'une demande (protected : CC ou Admin)
 app.post('/requests', authenticate, async (req, res) => {
   try {
     const requestor_name = req.profile.name || req.profile.email;
@@ -676,16 +675,22 @@ app.post('/requests', authenticate, async (req, res) => {
     const payment_method = (req.body.payment_method || '').toString().trim();
     const request_type = (req.body.request_type || '').toString().trim();
 
-    // Validation
+    // ==============================
+    // 🔍 VALIDATION
+    // ==============================
+
     const missing = [];
     if (!requestor_name) missing.push('requestor_name');
     if (!Number.isFinite(amount_requested) || amount_requested <= 0)
-      missing.push('amount_requested (doit être > 0)');
+      missing.push('amount_requested (> 0)');
     if (!description) missing.push('description');
     if (!request_type) missing.push('request_type');
 
     if (missing.length > 0) {
-      return res.status(400).json({ error: 'Champs obligatoires manquants.', missing });
+      return res.status(400).json({
+        error: 'Champs obligatoires manquants.',
+        missing
+      });
     }
 
     const allowedMethods = ['cash', 'cheque', 'card'];
@@ -698,40 +703,67 @@ app.post('/requests', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Type de demande invalide.' });
     }
 
-    // centre (vient du formulaire, pas du profil)
+    // ==============================
+    // 📍 CENTER (depuis le front)
+    // ==============================
+
     let center_name = (req.body.center_name || '')
       .toString()
       .trim()
       .toUpperCase();
 
-    // 🔐 BLOQUER CC
-    if (req.profile.role === 'CC') {
-      // force son centre (anti hack frontend)
-      center_name = req.profile.center;
-    }
-
     // ==============================
-    // 🔐 PERMISSIONS + VISIBILITY (CLEAN)
+    // 🔐 PERMISSIONS (CLEAN)
     // ==============================
 
+    const role = (req.profile.role || '').toLowerCase();
     const perms = req.profile.permissions || {};
 
-    // 🔒 restriction création
-    if (!perms.can_create_for_other_centers) {
-      if (center_name !== req.profile.center) {
+    // 👤 REQUESTER → libre
+    if (role === 'requester') {
+      // ✅ autorisé partout
+    }
+
+    // 🏠 CC → limité
+    else if (role === 'cc') {
+      const allowedCenters = req.profile.permissions?.allowed_centers;
+
+      const centers = (Array.isArray(allowedCenters) && allowedCenters.length > 0)
+        ? allowedCenters.map(c => c.toUpperCase())
+        : [req.profile.center];
+
+      if (!centers.includes(center_name)) {
         return res.status(403).json({
           error: "Not allowed to create for this center"
         });
       }
     }
 
-    // 👁️ visibilité (simple et cohérent)
+    // 👑 ADMIN → libre
+    else if (role === 'admin') {
+      // ✅ autorisé
+    }
+
+    // 🔒 fallback sécurité
+    else {
+      return res.status(403).json({
+        error: "User not allowed"
+      });
+    }
+
+    // ==============================
+    // 👁️ VISIBILITY
+    // ==============================
+
     let visibility_scope = "CENTER";
 
     if (perms.scope === "OWN") {
       visibility_scope = "PRIVATE";
     }
 
+    // ==============================
+    // 🔎 VALIDATION CENTRE
+    // ==============================
 
     if (!center_name) {
       return res.status(400).json({ error: 'center_name is required.' });
@@ -752,7 +784,7 @@ app.post('/requests', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid center_name.' });
     }
 
-    // sécurité : empêcher centre inventé
+    // 🔒 whitelist centres
     const CENTERS = [
       "ADM","DIB","DIG","NURB","NURG","RB1","RB2","RB3","RB4","RB5","RB6","RB7","RB8","RB9",
       "CARP","SJE","BH","CFH","RG3","RG4","RG5","RG6","JLH","OLG","SAH","SJB","OLMC","SSK",
@@ -763,51 +795,51 @@ app.post('/requests', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid center_name.' });
     }
 
+    // ==============================
+    // 🚀 INSERT (RPC)
+    // ==============================
 
-
-    // ✅ RPC Supabase (atomique, anti-doublon)
     const { data: insertedRow, error } = await supabaseService.rpc("create_request", {
       p_requestor_name: requestor_name,
       p_center_name: center_name,
-      p_center_id: center.id, // ✅ AJOUT ICI
+      p_center_id: center.id,
       p_amount_requested: amount_requested,
       p_description: description,
       p_payment_method: payment_method,
       p_request_type: request_type,
       p_visibility_scope: visibility_scope,
-      p_created_by: req.user.id 
+      p_created_by: req.user.id
     });
 
-    // 1) Toujours gérer l'erreur en premier
     if (error) {
       console.error("RPC create_request error:", error);
       return res.status(500).json({ error: error.message });
     }
 
-    // 2) Normaliser la réponse (parfois Supabase renvoie un tableau)
     const created = Array.isArray(insertedRow) ? insertedRow[0] : insertedRow;
 
-    // 3) Sécurité si rien n'a été renvoyé
     if (!created) {
       return res.status(500).json({
         error: "RPC create_request did not return a row."
       });
     }
 
-    // 4) SSE : envoyer un objet propre
+    // ==============================
+    // 🔔 SSE + RESPONSE
+    // ==============================
+
     notifyAdmins(created);
 
-    // 5) Réponse HTTP : renvoyer un objet propre
     return res.status(201).json({
       message: "Demande ajoutée avec succès",
       data: created
     });
 
-    } catch (err) {
-      console.error('POST /requests error:', err);
-      return res.status(500).json({ error: err.message || err.toString() });
-    }
-    });
+  } catch (err) {
+    console.error('POST /requests error:', err);
+    return res.status(500).json({ error: err.message || err.toString() });
+  }
+});
 
 
 /* =========================================
