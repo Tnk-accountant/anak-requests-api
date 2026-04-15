@@ -471,23 +471,26 @@ app.get('/requests', authenticate, async (req, res) => {
       .range(offset, offset + limit - 1);
 
     // ==============================
-    // 🔐 PERMISSIONS LOGIC (CLEAN)
+    // 🔐 NEW ROLE-BASED LOGIC
     // ==============================
 
-    if (perms.scope === 'ALL') {
-      // ✅ voit tout
+    const role = req.profile.role;
+    const userId = req.user.id;
+    const userCenter = req.profile.center;
+
+    // 👑 ADMIN → voit tout
+    if (role === 'Admin') {
+      // no filter
     }
 
-    else if (perms.scope === 'CENTER') {
-      // 👁️ voit son centre + ses propres demandes
-      query = query.or(
-        `center_id.eq.${req.profile.center_id},created_by.eq.${req.user.id}`
-      );
+    // 🏠 CC → voit son centre uniquement
+    else if (role === 'CC') {
+      query = query.eq('center_name', userCenter);
     }
 
+    // 👤 REQUESTER → voit uniquement ses demandes
     else {
-      // 👁️ OWN → uniquement ses demandes
-      query = query.eq('created_by', req.user.id);
+      query = query.eq('created_by', userId);
     }
 
     // ==============================
@@ -696,12 +699,16 @@ app.post('/requests', authenticate, async (req, res) => {
     }
 
     // centre (vient du formulaire, pas du profil)
-    const center_name = (req.body.center_name || '')
+    let center_name = (req.body.center_name || '')
       .toString()
       .trim()
       .toUpperCase();
 
-
+    // 🔐 BLOQUER CC
+    if (req.profile.role === 'CC') {
+      // force son centre (anti hack frontend)
+      center_name = req.profile.center;
+    }
 
     // ==============================
     // 🔐 PERMISSIONS + VISIBILITY (CLEAN)
