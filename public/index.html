@@ -1038,8 +1038,8 @@ let mobileAmountFilter = '';
   // Stocker localement
   localStorage.setItem('user', JSON.stringify(profile));
 
-  // Auto-fill si ChefCentre
-  if (profile.role === 'ChefCentre') {
+  // Auto-fill si ChefCentre (CC)
+  if (profile.role === 'CC') {
     requestorInput.value = profile.email;
     requestorInput.readOnly = true;
     requestorInput.classList.add('bg-gray-100', 'cursor-not-allowed');

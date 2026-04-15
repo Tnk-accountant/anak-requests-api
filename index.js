@@ -327,7 +327,13 @@ app.get('/requests', authenticate, async (req, res) => {
         `created_by.eq.${req.user.id},status.eq.Approved`
       );
     }
-    else if (req.profile.role === 'ChefCentre' || req.profile.role === 'Chef de centre') {
+
+    else if (req.profile.role === 'Requester') {
+    // 👁️ voit uniquement ses demandes
+    query = query.eq('created_by', req.user.id);
+      }
+
+    else if (req.profile.role === 'CC' || req.profile.role === 'Center coordinator') {
 
       const userCenters = req.profile.center.split(',').map(c => c.trim());
 
@@ -819,7 +825,7 @@ app.patch('/requests/:request_id/liquidate', authenticate, async (req, res) => {
 
       const role = (req.profile.role || '').toLowerCase();
 
-      if (!role.includes('admin') && !role.includes('chef')) {
+      if (!role.includes('admin') && !role.includes('CC')) {
         return res.status(403).json({ error: 'Not allowed' });
       }
 
