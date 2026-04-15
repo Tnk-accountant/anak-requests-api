@@ -122,6 +122,10 @@ async function authenticate(req, res, next) {
       return res.status(403).json({ error: 'Profil introuvable' });
     }
 
+    if (profile.is_active === false) {
+      return res.status(403).json({ error: 'User disabled' });
+    }
+
     req.user = user;
     req.profile = {
       userId: user.id,
@@ -129,14 +133,16 @@ async function authenticate(req, res, next) {
       center: (profile.center_name || '').trim().toUpperCase(),
       center_id: profile.center_id,
       name: profile.Name,
-      email: profile.mail
+      email: profile.mail,
+      permissions: profile.permissions || {},
+      is_active: profile.is_active !== false
     };
 
     next();
 
   } catch (err) {
     console.error('authenticate error:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Error serveur' });
   }
 }
 
@@ -568,9 +574,11 @@ app.post('/requests', authenticate, async (req, res) => {
     // 🔐 PERMISSIONS + VISIBILITY
     // ==============================
 
+    const userCenters = (req.profile.center || '').split(',').map(c => c.trim());
+    const userCenter = userCenters[0]; // 🔥 important
+
     const SERVICE_CENTERS = ["CLINIC", "CYDW", "ADM", "CARP"];
 
-    const userCenters = req.profile.center.split(',').map(c => c.trim());
     const isService = SERVICE_CENTERS.includes(userCenter);
 
     // 🔒 restriction création
