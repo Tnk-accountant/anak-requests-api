@@ -841,7 +841,7 @@ button:active {
 }
 
 // =============================
-// Affichage du profil utilisateur
+// USER PROFILE DISPLAY (CLEAN)
 // =============================
 async function displayUserProfile() {
   try {
@@ -849,53 +849,119 @@ async function displayUserProfile() {
       credentials: 'include'
     });
 
-    // 🔒 non authentifié → retour null (le checkSession gère la redirection)
-    if (!res.ok) {
-      return null;
-    }
+    // 🔒 Not authenticated
+    if (!res.ok) return null;
 
     const profile = await res.json();
+
+    // -------------------------
+    // NORMALISATION DATA
+    // -------------------------
+    const role = (profile.role || '').toLowerCase();
+    const allowedCenters = profile.permissions?.allowed_centers || [];
+
+    // fallback sécurité si vide
+    if (role === 'cc' && allowedCenters.length === 0) {
+      console.warn("⚠️ CC sans centers");
+      centerSelect.innerHTML = `<option value="">No centers assigned</option>`;
+      centerSelect.disabled = true;
+      return;
+    }
+
+    const primaryCenter = (profile.center_name || '').trim();
+
+    // -------------------------
+    // ADMIN ACCESS
+    // -------------------------
     const adminBtn = document.getElementById('adminSwitchBtn');
 
-    if (profile.role && profile.role.toLowerCase() === 'admin') {
+    if (adminBtn && role === 'admin') {
       adminBtn.classList.remove('hidden');
 
-      adminBtn.addEventListener('click', () => {
-        window.location.href = 'select.html';
-      });
+      // 🔥 évite double event listener
+      if (!adminBtn.dataset.bound) {
+        adminBtn.addEventListener('click', () => {
+          window.location.href = 'select.html';
+        });
+        adminBtn.dataset.bound = 'true';
+      }
     }
 
     // -------------------------
-    // Affichage UI
+    // UI DISPLAY
     // -------------------------
     const userCenterEl = document.getElementById('userCenter');
     const userEmailEl = document.getElementById('userEmail');
 
     if (userCenterEl) {
-      userCenterEl.textContent = profile.center_name
-        ? `Center - ${profile.center_name}`
-        : 'Center - —';
+      if (allowedCenters.length > 1) {
+        userCenterEl.textContent = `Centers - ${allowedCenters.join(', ')}`;
+      } else if (primaryCenter) {
+        userCenterEl.textContent = `Center - ${primaryCenter}`;
+      } else {
+        userCenterEl.textContent = 'Center - —';
+      }
     }
 
     if (userEmailEl) {
       userEmailEl.textContent = profile.email || '';
     }
 
+    // -------------------------
+    // SHOW HEADER
+    // -------------------------
     const userDisplay = document.getElementById('userDisplay');
     if (userDisplay) {
       userDisplay.classList.remove('hidden');
     }
 
     // -------------------------
-    // Retour du profil
+    // RETURN PROFILE
     // -------------------------
     return profile;
 
   } catch (err) {
-    console.error('Erreur displayUserProfile:', err);
+    console.error('displayUserProfile error:', err);
     return null;
   }
 }
+
+  function setupCenterSelect(profile) {
+    const centerSelect = document.getElementById("center_name");
+    if (!centerSelect) return;
+
+    const role = (profile.role || '').toLowerCase();
+    const userCenter = (profile.center_name || '').trim().toUpperCase();
+    const allowedCenters = profile.permissions?.allowed_centers || [];
+
+    // 👤 REQUESTER
+    if (role === 'requester') {
+      centerSelect.disabled = false;
+      if (userCenter) centerSelect.value = userCenter;
+    }
+
+    // 🏠 CC
+    else if (role === 'cc') {
+      centerSelect.innerHTML = '';
+
+      allowedCenters.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+
+        if (c === userCenter) opt.selected = true;
+
+        centerSelect.appendChild(opt);
+      });
+
+      centerSelect.disabled = allowedCenters.length === 1;
+    }
+
+    // 👑 ADMIN
+    else if (role === 'admin') {
+      centerSelect.disabled = false;
+    }
+  }
 
 
 // ---------------------------
@@ -1031,52 +1097,8 @@ let mobileAmountFilter = '';
   }
 
 await populateCenters((profile.center_name || "").trim().toUpperCase());
+setupCenterSelect(profile);
 
-  const centerSelect = document.getElementById("center_name");
-  const role = (profile.role || '').toLowerCase();
-  const userCenter = (profile.center_name || '').trim().toUpperCase();
-
-  // 👤 REQUESTER → libre
-  if (role === 'requester') {
-    centerSelect.disabled = false;
-
-    if (userCenter && [...centerSelect.options].some(o => o.value === userCenter)) {
-      centerSelect.value = userCenter;
-    }
-  }
-
-  // 🏠 CC → logique centre
-  else if (role === 'cc') {
-    const allowedCenters = profile.permissions?.allowed_centers || [];
-
-    if (allowedCenters.length > 1) {
-      centerSelect.innerHTML = '';
-
-      allowedCenters.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-
-        if (c === userCenter) opt.selected = true;
-
-        centerSelect.appendChild(opt);
-      });
-
-      centerSelect.disabled = false;
-    } else {
-      centerSelect.innerHTML = `
-        <option value="${userCenter}">
-          ${userCenter}
-        </option>
-      `;
-      centerSelect.disabled = true;
-    }
-  }
-
-// 👑 ADMIN
-else if (role === 'admin') {
-  centerSelect.disabled = false;
-}
 
   console.log("Centers populated, select options =", document.getElementById("center_name")?.options?.length);
   console.log("Selected center =", document.getElementById("center_name")?.value);
@@ -1103,8 +1125,24 @@ form.addEventListener('submit', async (e) => {
   // Récupération des champs
   // ------------------------------
   const requestor_name = requestorInput.value.trim();
-  const center_name = document.getElementById('center_name').value.trim();
+  let center_name = document.getElementById('center_name').value.trim();
+  if (!center_name) {
+  notify("Select a center", "error");
+  return;
+}
+  const lastCenter = center_name;
+
+    if ((profile.role || '').toLowerCase() === 'cc') {
+      const allowed = profile.permissions?.allowed_centers || [];
+
+      if (!allowed.includes(center_name)) {
+        notify("Unauthorized center", "error");
+        return;
+      }
+    }
+    
   const amount_requested = Number(document.getElementById('amount_requested').value);
+
   const description = document.getElementById('description').value.trim();
   const payment_method = document.getElementById('payment_method').value;
   const request_type = document.getElementById('request_type').value;
@@ -1137,7 +1175,9 @@ form.addEventListener('submit', async (e) => {
   // ------------------------------
     const submitBtn = document.getElementById('submitRequestBtn');
 
-    if (submitBtn?.disabled) return;
+    if (submitBtn?.disabled || form.dataset.loading === "true") return;
+
+    form.dataset.loading = "true";
     lockButton(submitBtn, "Submitting...");
 
   // ------------------------------
@@ -1205,35 +1245,13 @@ try {
 
     // 🔥 RELOAD CENTERS (IMPORTANT)
     await populateCenters((profile.center_name || "").trim().toUpperCase());
+    setupCenterSelect(profile);
 
-    const centerSelect = document.getElementById("center_name");
-    const role = (profile.role || '').toLowerCase();
-    const userCenter = (profile.center_name || '').trim().toUpperCase();
-
-    // 👤 REQUESTER → libre
-    if (role === 'requester') {
-      centerSelect.disabled = false;
-
-      if (userCenter) {
-        centerSelect.value = userCenter;
-      }
+    if (lastCenter) {
+  document.getElementById("center_name").value = lastCenter;
     }
 
-    // 🏠 CC → bloqué
-    else if (role === 'cc') {
-      centerSelect.innerHTML = `
-        <option value="${userCenter}">
-          ${userCenter}
-        </option>
-      `;
-      centerSelect.disabled = true;
-    }
-
-    // 👑 ADMIN → libre
-    else if (role === 'admin') {
-      centerSelect.disabled = false;
-    }
-
+    
     // 🔁 reset UI boutons
     document.querySelectorAll('#paymentMethodButtons button')
       .forEach(b => b.classList.remove('payment-active'));
@@ -1244,7 +1262,7 @@ try {
     requestTypeInput.value = '';
 
     // 🔄 refresh liste
-    await fetchMyRequests();
+    //await fetchMyRequests();
 
     return;
   }
@@ -1260,6 +1278,7 @@ try {
 
 } finally {
   unlockButton(submitBtn);
+form.dataset.loading = "false";
 }
 });
 
@@ -1445,7 +1464,10 @@ setupSSE();
 // 📸 Capture photo + scan loop (clean)
 // ==============================
     const camInput = getCameraInput();
-
+    if (!camInput) {
+      console.warn("cameraInput not found");
+    }
+    
     if (camInput) {
       camInput.addEventListener('change', (e) => {
         const file = e.target.files?.[0];
@@ -2011,55 +2033,90 @@ async function refreshRequest(request_id) {
 
 
 
-/* ==============================
-   Récupérer mes demandes (centre connecté)
-============================== */
+// ==============================
+// FETCH MY REQUESTS (CLEAN + SAFE)
+// ==============================
 async function fetchMyRequests() {
   try {
-
     const limit = 200;
     let offset = 0;
     let all = [];
     let hasMore = true;
 
-    while (hasMore) {
-      const res = await fetchWithAuth(`${API_URL}/requests?limit=${limit}&offset=${offset}`, {
-    credentials: 'include'
-      });
+    // 🔒 sécurité anti boucle infinie
+    let safety = 0;
+    const MAX_ITERATIONS = 20;
+
+    while (hasMore && safety < MAX_ITERATIONS) {
+      safety++;
+
+      const res = await fetchWithAuth(
+        `${API_URL}/requests?limit=${limit}&offset=${offset}`,
+        { credentials: 'include' }
+      );
 
       if (handleAuthError(res)) return;
 
-      const result = await res.json();
-      if (!res.ok) throw new Error(result?.error || 'Erreur serveur');
+      let result;
+      try {
+        result = await res.json();
+      } catch (e) {
+        console.error("Invalid JSON response", e);
+        break;
+      }
+
+      if (!res.ok) {
+        throw new Error(result?.error || 'Erreur serveur');
+      }
 
       const batch = result.data || [];
+
+      // 🔄 concat safe
       all = all.concat(batch);
 
+      // pagination
       hasMore = result.pagination?.hasMore === true;
       offset += limit;
 
-      // sécurité anti boucle infinie
+      // 🛑 sécurité supplémentaire
       if (batch.length === 0) break;
     }
 
-    // Reset DOM + mémoire
-    requestsMap.clear();
-    myTableBody.innerHTML = '';
+    // ⚠️ log si sécurité déclenchée
+    if (safety >= MAX_ITERATIONS) {
+      console.warn("⚠️ fetchMyRequests stopped by safety limit");
+    }
 
+    // ------------------------------
+    // RESET STATE
+    // ------------------------------
+    requestsMap.clear();
+
+    if (myTableBody) {
+      myTableBody.innerHTML = '';
+    }
+
+    // ------------------------------
+    // RENDER DATA
+    // ------------------------------
     all.forEach(req => upsertRow(req));
 
-    renderTable();
+    // Desktop table
+    if (typeof renderTable === 'function') {
+      renderTable();
+    }
 
+    // Mobile cards
     if (window.innerWidth < 768) {
       mobilePage = 1;
       renderMobileCards();
     }
 
   } catch (err) {
-    console.error('Erreur fetchMyRequests:', err);
+    console.error('❌ fetchMyRequests error:', err);
+    notify("Failed to load requests", "error");
   }
 }
-
 
 /* ==============================
    Modal actions — CLEAN VERSION
