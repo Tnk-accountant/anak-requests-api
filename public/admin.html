@@ -715,7 +715,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
           <div class="centersContainer hidden">
             <input
               class="centersInput border px-2 py-1 rounded text-sm w-full"
-              placeholder="RB1, RB5"
+              placeholder="Ex: RB1, RB5"
             >
           </div>
 
@@ -725,17 +725,54 @@ const API_URL = 'https://anak-requests-api.onrender.com';
             </button>
 
             <button class="deleteBtn text-red-500 text-sm hover:underline">
-              Delete
+              Desactivate
             </button>
           </div>
         `;
 
-                
+
+      const roleSelect = card.querySelector('.roleSelect');
+      const centersContainer = card.querySelector('.centersContainer');
+      const centersInput = card.querySelector('.centersInput');
+
+      // -----------------------------
+      // UI: show / hide centers
+      // -----------------------------
+      function updateCentersVisibility() {
+        const isCC = roleSelect.value === 'CC';
+
+        centersContainer.classList.toggle('hidden', !isCC);
+
+        // reset si pas CC
+        if (!isCC) {
+          centersInput.value = '';
+        }
+      }
+
+      // -----------------------------
+      // INIT (affichage + data)
+      // -----------------------------
+      updateCentersVisibility();
+
+      // 🔥 pré-remplissage (UNE SEULE FOIS)
+      if (u.permissions?.allowed_centers?.length) {
+        centersInput.value = u.permissions.allowed_centers.join(', ');
+      }
+
+      // -----------------------------
+      // EVENTS
+      // -----------------------------
+      roleSelect.addEventListener('change', updateCentersVisibility);
+                      
 
           const saveBtn = card.querySelector('.saveBtn');
           const deleteBtn = card.querySelector('.deleteBtn');
 
           saveBtn.onclick = async () => {
+          saveBtn.textContent = "Saving...";
+          saveBtn.disabled = true;
+
+          try {
             const name = card.querySelector('.nameInput').value;
             const role = card.querySelector('.roleSelect').value;
             const active = card.querySelector('.activeToggle').checked;
@@ -765,26 +802,42 @@ const API_URL = 'https://anak-requests-api.onrender.com';
               }
             };
 
-            await fetch(`${API_URL}/admin/users/${u.id}`, {
+            const res = await fetch(`${API_URL}/admin/users/${u.id}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
               body: JSON.stringify(payload)
             });
 
+            if (!res.ok) {
+              throw new Error("Update failed");
+            }
+
             notify("User updated", "success");
-          };
+
+          } catch (err) {
+            console.error(err);
+            notify("Error updating user", "error");
+
+          } finally {
+            // 🔥 TOUJOURS exécuté (succès OU erreur)
+            saveBtn.textContent = "Save";
+            saveBtn.disabled = false;
+          }
+        };
 
           deleteBtn.onclick = async () => {
-            if (!confirm("Delete this user?")) return;
+            if (!confirm("Deactivate this user?")) return;
 
             await fetch(`${API_URL}/admin/users/${u.id}`, {
-              method: 'DELETE',
-              credentials: 'include'
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ is_active: false })
             });
 
             card.remove();
-            notify("User disabled", "info");
+            notify("User deactivated", "info");
           };
 
           grid.appendChild(card);
@@ -1438,7 +1491,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     }
 
    // -----------------------------
-// CREATE USER
+// CREATE USER (CLEAN + SAFE + UX)
 // -----------------------------
 submitUserBtn.onclick = async () => {
   const name = document.getElementById('newUserName')?.value.trim();
@@ -1446,11 +1499,18 @@ submitUserBtn.onclick = async () => {
   const password = document.getElementById('newUserPassword')?.value;
   const confirmPassword = document.getElementById('confirmPassword')?.value;
   const role = document.getElementById('newUserRole')?.value;
-  const center = document.getElementById('newUserCenter')?.value.trim();
+  const centerRaw = document.getElementById('newUserCenter')?.value.trim();
 
+  // -----------------------------
   // 🔒 VALIDATION
+  // -----------------------------
   if (!email || !password) {
-    notify("Missing fields", "error");
+    notify("Email and password required", "error");
+    return;
+  }
+
+  if (!name) {
+    notify("Name is required", "error");
     return;
   }
 
@@ -1464,10 +1524,43 @@ submitUserBtn.onclick = async () => {
     return;
   }
 
+  // -----------------------------
+  // 🧠 PARSE CENTERS (CC only)
+  // -----------------------------
+  const allowedCenters =
+    role === 'CC'
+      ? centerRaw
+          .split(',')
+          .map(c => c.trim().toUpperCase())
+          .filter(c => c)
+      : [];
+
+  if (role === 'CC' && allowedCenters.length === 0) {
+    notify("CC must have at least 1 center", "error");
+    return;
+  }
+
+  // -----------------------------
+  // ⚙️ PERMISSIONS LOGIC
+  // -----------------------------
+  const permissions = {
+    scope:
+      role === 'Admin' ? 'ALL' :
+      role === 'CC' ? 'CENTER' :
+      'OWN',
+
+    allowed_centers: allowedCenters,
+
+    can_create_for_other_centers:
+      role === 'Admin' || role === 'Requester'
+  };
+
+  // -----------------------------
+  // 🔄 LOADING STATE
+  // -----------------------------
   setLoading(true);
 
   try {
-    // ✅ SAFE HEADERS (évite Bearer null)
     const token = localStorage.getItem('access_token');
 
     const headers = {
@@ -1483,34 +1576,34 @@ submitUserBtn.onclick = async () => {
         password,
         name,
         role,
-        permissions: {
-          scope:
-            role === 'Admin' ? 'ALL' :
-            role === 'CC' ? 'CENTER' : 'OWN',
-          can_create_for_other_centers:
-            role !== 'Requester'
-        }
+        permissions
       })
     });
 
     const result = await res.json();
 
+    // -----------------------------
+    // ❌ ERROR HANDLING
+    // -----------------------------
     if (!res.ok) {
       notify(result.error || "Error creating user", "error");
       return;
     }
 
-    notify("User created", "success");
+    // -----------------------------
+    // ✅ SUCCESS
+    // -----------------------------
+    notify("User created successfully", "success");
 
-    closeModal();   // reset + close
-    loadUsers();    // refresh
+    closeModal();
+    loadUsers();
 
   } catch (err) {
     console.error("CREATE USER ERROR:", err);
     notify("Server error", "error");
 
   } finally {
-    setLoading(false); // 🔥 toujours reset
+    setLoading(false);
   }
 };
 
@@ -1537,6 +1630,26 @@ if (toggleConfirm && confirmInput) {
       confirmInput.type === 'password' ? 'text' : 'password';
   };
 }
+
+// -----------------------------
+// TOGGLE CENTER INPUT (ROLE BASED)
+// -----------------------------
+const roleSelectCreate = document.getElementById('newUserRole');
+const centerInputCreate = document.getElementById('newUserCenter');
+
+function toggleCenterInput() {
+  if (roleSelectCreate.value === 'CC') {
+    centerInputCreate.disabled = false;
+    centerInputCreate.placeholder = "Ex: RB1, RB5";
+  } else {
+    centerInputCreate.disabled = true;
+    centerInputCreate.value = '';
+    centerInputCreate.placeholder = "Not required";
+  }
+}
+
+roleSelectCreate.addEventListener('change', toggleCenterInput);
+toggleCenterInput();
 
 
   </script>
