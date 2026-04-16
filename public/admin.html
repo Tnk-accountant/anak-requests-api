@@ -247,50 +247,53 @@
 
 
 
-    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl p-5">
+ <div id="descriptionModal"
+  class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
 
-      <!-- HEADER -->
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-sm font-semibold text-gray-800">Request Details</h3>
-        <button id="closeDescription"
-                class="text-gray-400 hover:text-gray-600">✕</button>
+  <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl p-5">
+
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="text-sm font-semibold text-gray-800">Request Details</h3>
+      <button id="closeDescription"
+              class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+
+    <!-- DESCRIPTION -->
+    <div id="descriptionContent"
+        class="text-sm text-gray-700 whitespace-pre-wrap mb-4 max-h-[50vh] overflow-auto">
+    </div>
+
+    <!-- ACTION -->
+    <div class="border-t pt-3">
+
+      <div class="text-xs text-gray-400 mb-2">
+        Need more info from requester?
       </div>
-
-      <!-- DESCRIPTION -->
-      <div id="descriptionContent"
-          class="text-sm text-gray-700 whitespace-pre-wrap mb-4 max-h-[50vh] overflow-auto">
-      </div>
-
-      <!-- 🔥 ACTION AREA -->
-      <div class="border-t pt-3">
-
-        <div class="text-xs text-gray-400 mb-2">
-          Need more info from requester?
-        </div>
 
       <button id="openFeedbackBox"
         class="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-indigo-700 transition shadow-sm">
-        
         <span>Request clarification</span>
       </button>
 
-        <!-- FORM -->
-        <div id="feedbackBox" class="hidden mt-3 flex flex-col gap-2">
+      <div id="feedbackBox" class="hidden mt-3 flex flex-col gap-2">
 
-          <textarea id="feedbackInput"
-            placeholder="Ask for clarification..."
-            class="border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500"></textarea>
+        <textarea id="feedbackInput"
+          rows="3"
+          placeholder="Ask for clarification..."
+          class="border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
 
-          <button id="sendFeedbackBtn"
-            class="self-end bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-indigo-700 transition">
-            Send
-          </button>
-
-        </div>
+        <button id="sendFeedbackBtn"
+          class="ml-auto bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700 transition shadow-sm">
+          Send
+        </button>
 
       </div>
 
     </div>
+
+  </div>
+</div>
 
 
   <!-- CREATE USER MODAL -->
@@ -1763,6 +1766,18 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
 
 };
 
+    document.getElementById('closeDescription').onclick = () => {
+      const modal = document.getElementById('descriptionModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    document.getElementById('descriptionModal').addEventListener('click', (e) => {
+      if (e.target.id === 'descriptionModal') {
+        e.currentTarget.classList.add('hidden');
+        e.currentTarget.classList.remove('flex');
+      }
+    });
 
   </script>
 
