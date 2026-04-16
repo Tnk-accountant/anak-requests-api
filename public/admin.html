@@ -247,20 +247,50 @@
 
 
 
-  <!-- MODAL -->
-  <div id="descriptionModal"
-       class="fixed inset-0 bg-black/30 hidden flex items-center justify-center z-50">
     <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl p-5">
+
+      <!-- HEADER -->
       <div class="flex justify-between items-center mb-3">
-        <h3 class="text-sm font-semibold text-gray-800">Description</h3>
+        <h3 class="text-sm font-semibold text-gray-800">Request Details</h3>
         <button id="closeDescription"
                 class="text-gray-400 hover:text-gray-600">✕</button>
       </div>
+
+      <!-- DESCRIPTION -->
       <div id="descriptionContent"
-           class="text-sm text-gray-700 whitespace-pre-wrap max-h-[60vh] overflow-auto">
+          class="text-sm text-gray-700 whitespace-pre-wrap mb-4 max-h-[50vh] overflow-auto">
       </div>
+
+      <!-- 🔥 ACTION AREA -->
+      <div class="border-t pt-3">
+
+        <div class="text-xs text-gray-400 mb-2">
+          Need more info from requester?
+        </div>
+
+      <button id="openFeedbackBox"
+        class="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-indigo-700 transition shadow-sm">
+        
+        <span>Request clarification</span>
+      </button>
+
+        <!-- FORM -->
+        <div id="feedbackBox" class="hidden mt-3 flex flex-col gap-2">
+
+          <textarea id="feedbackInput"
+            placeholder="Ask for clarification..."
+            class="border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500"></textarea>
+
+          <button id="sendFeedbackBtn"
+            class="self-end bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-indigo-700 transition">
+            Send
+          </button>
+
+        </div>
+
+      </div>
+
     </div>
-  </div>
 
 
   <!-- CREATE USER MODAL -->
@@ -325,6 +355,8 @@
 </body>
 
   <script>
+
+    let currentRequestId = null;
 
   function notify(message, type = "info") {
   const container = document.getElementById("notificationContainer");
@@ -893,29 +925,9 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     <td class="text-left">
       ${req.description
         ? `
-          <div class="relative inline-block group">
-
-            <!-- bouton -->
-            <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
-              View description
-            </span>
-
-            <!-- preview hover -->
-            <div class="
-              hidden group-hover:block
-              absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50
-              
-              w-96 max-w-[90vw]
-              
-              bg-white border border-gray-200 rounded-xl shadow-xl p-4
-              
-              text-sm text-gray-700 leading-relaxed
-              line-clamp-3
-            ">
-              ${req.description}
-            </div>
-
-          </div>
+          <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
+            View description
+          </span>
         `
         : `<span class="text-gray-300">—</span>`
       }
@@ -1014,8 +1026,14 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       openDescBtn.addEventListener('click', (e) => {
         e.stopPropagation();
 
+        currentRequestId = req.request_id; // 🔥 IMPORTANT
+
         document.getElementById('descriptionContent').textContent =
           req.description || '';
+
+        // reset UI
+        document.getElementById('feedbackBox').classList.add('hidden');
+        document.getElementById('feedbackInput').value = '';
 
         const modal = document.getElementById('descriptionModal');
         modal.classList.remove('hidden');
@@ -1693,52 +1711,58 @@ function toggleCenterInput() {
 roleSelectCreate.addEventListener('change', toggleCenterInput);
 toggleCenterInput();
 
+document.getElementById('openFeedbackBox').onclick = () => {
+  document.getElementById('feedbackBox').classList.toggle('hidden');
+};
 
-// ==============================
-// 💬 ADMIN FEEDBACK ACTION
-// ==============================
+document.getElementById('sendFeedbackBtn').onclick = async () => {
 
-document.addEventListener('click', async (e) => {
+  const message = document.getElementById('feedbackInput').value.trim();
+  if (!message) {
+    notify("Please enter a message", "error");
+    return;
+  }
 
-  const btn = e.target.closest('.feedbackBtn');
-  if (!btn) return;
+  const btn = document.getElementById('sendFeedbackBtn');
 
-  const requestId = btn.dataset.id;
+  // 🔒 UX loading
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
 
-  const message = prompt("Ask for clarification (be specific):");
+  try {
+    const res = await fetch(`${API_URL}/requests/${currentRequestId}/feedback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      },
+      body: JSON.stringify({ message })
+    });
 
-  if (!message) return;
-
-    try {
-      const res = await fetch(`${API_URL}/requests/${requestId}/feedback`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify({ message })
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed");
-      }
-
-      notify("Feedback sent", "success");
-
-      // 🔄 refresh propre
-      fetchRequests();
-
-    } catch (err) {
-      console.error(err);
-      notify("Error sending feedback", "error");
-
-    } finally {
-      // 🔥 TRÈS IMPORTANT
-      btn.disabled = false;
-      btn.classList.remove('opacity-50');
+    if (!res.ok) {
+      throw new Error("Failed");
     }
 
-});
+    notify("Feedback sent", "success");
+
+    // 🔄 reset UI
+    document.getElementById('feedbackInput').value = '';
+    document.getElementById('feedbackBox').classList.add('hidden');
+
+    // 🔄 refresh data
+    fetchRequests();
+
+  } catch (err) {
+    console.error(err);
+    notify("Error sending feedback", "error");
+
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send';
+  }
+
+};
+
 
   </script>
 
