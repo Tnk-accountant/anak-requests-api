@@ -695,117 +695,85 @@ const API_URL = 'https://anak-requests-api.onrender.com';
             hover:shadow-md transition flex flex-col gap-3
           `;
 
-          card.innerHTML = `
-            <div class="flex justify-between items-center">
-              <input class="nameInput font-semibold text-gray-800 text-sm w-full"
-                value="${u.Name || ''}">
-              <input type="checkbox" class="activeToggle ml-2"
-                ${u.is_active ? 'checked' : ''}>
-            </div>
+        card.innerHTML = `
+          <div class="flex justify-between items-center">
+            <input class="nameInput font-semibold text-gray-800 text-sm w-full"
+              value="${u.Name || ''}">
+            <input type="checkbox" class="activeToggle ml-2"
+              ${u.is_active ? 'checked' : ''}>
+          </div>
 
-            <div class="text-xs text-gray-400">${u.mail}</div>
+          <div class="text-xs text-gray-400">${u.mail}</div>
 
-            <select class="roleSelect border px-2 py-1 rounded text-sm">
-              <option ${u.role==='Requester'?'selected':''}>Requester</option>
-              <option ${u.role==='CC'?'selected':''}>CC</option>
-              <option ${u.role==='Admin'?'selected':''}>Admin</option>
-            </select>
+          <select class="roleSelect border px-2 py-1 rounded text-sm">
+            <option ${u.role==='Requester'?'selected':''}>Requester</option>
+            <option ${u.role==='CC'?'selected':''}>CC</option>
+            <option ${u.role==='Admin'?'selected':''}>Admin</option>
+          </select>
 
+          <!-- 👇 UNIQUEMENT POUR CC -->
+          <div class="centersContainer hidden">
+            <input
+              class="centersInput border px-2 py-1 rounded text-sm w-full"
+              placeholder="RB1, RB5"
+            >
+          </div>
 
-            <select multiple class="centersSelect border px-2 py-1 rounded text-sm h-24">
-            </select>
+          <div class="flex justify-between items-center mt-2">
+            <button class="saveBtn bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 text-sm">
+              Save
+            </button>
 
-            <div class="flex justify-between items-center mt-2">
-              <button class="saveBtn bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 text-sm">
-                Save
-              </button>
+            <button class="deleteBtn text-red-500 text-sm hover:underline">
+              Delete
+            </button>
+          </div>
+        `;
 
-              <button class="deleteBtn text-red-500 text-sm hover:underline">
-                Delete
-              </button>
-            </div>
-          `;
-
-
-          const centersList = [
-          "ADM","DIB","DIG","NURB","NURG","RB1","RB2","RB3","RB4","RB5","RB6",
-          "RB7","RB8","RB9","CARP","SJE","BH","CFH","RG3","RG4","RG5","RG6",
-          "JLH","OLG","SAH","SJB","OLMC","SSK","SMG","NBBS","MOB","CLINIC",
-          "SEDS","CYDW","ELD"
-        ];
-
-        const select = card.querySelector('.centersSelect');
-
-        // remplir options
-        select.innerHTML = centersList.map(c =>
-          `<option value="${c}">${c}</option>`
-        ).join('');
-
-        // pré-sélection
-        const allowed = u.permissions?.allowed_centers || [];
-
-        Array.from(select.options).forEach(opt => {
-          if (allowed.includes(opt.value)) {
-            opt.selected = true;
-          }
-        });
+                
 
           const saveBtn = card.querySelector('.saveBtn');
           const deleteBtn = card.querySelector('.deleteBtn');
 
           saveBtn.onclick = async () => {
-          const name = card.querySelector('.nameInput').value;
-          const role = card.querySelector('.roleSelect').value;
-          const active = card.querySelector('.activeToggle').checked;
+            const name = card.querySelector('.nameInput').value;
+            const role = card.querySelector('.roleSelect').value;
+            const active = card.querySelector('.activeToggle').checked;
 
-          function updateUI() {
-          const role = roleSelect.value;
+            const centersRaw = card.querySelector('.centersInput').value;
 
-          if (role === 'Requester' || role === 'Admin') {
-            select.disabled = true;
+            const selectedCenters = centersRaw
+              .split(',')
+              .map(c => c.trim().toUpperCase())
+              .filter(c => c);
 
-            Array.from(select.options).forEach(opt => {
-              opt.selected = true;
+            const payload = {
+              name,
+              role,
+              is_active: active,
+              permissions: {
+                scope:
+                  role === 'Admin' ? 'ALL' :
+                  role === 'CC' ? 'CENTER' :
+                  'OWN',
+
+                allowed_centers:
+                  role === 'CC' ? selectedCenters : [],
+
+                can_create_for_other_centers:
+                  role === 'Admin' || role === 'Requester'
+              }
+            };
+
+            await fetch(`${API_URL}/admin/users/${u.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(payload)
             });
-          } else {
-            select.disabled = false;
-          }
-        }
 
-        roleSelect.addEventListener('change', updateUI);
-        updateUI();
-
-          // ✅ IMPORTANT : AVANT le payload
-          const selectedCenters = Array.from(
-            card.querySelector('.centersSelect').selectedOptions
-          ).map(o => o.value);
-
-          const payload = {
-            name,
-            role,
-            is_active: active,
-            permissions: {
-              scope:
-                role === 'Admin' ? 'ALL' :
-                role === 'CC' ? 'CENTER' : 'OWN',
-
-              allowed_centers:
-                role === 'CC' ? selectedCenters : [],
-
-              can_create_for_other_centers:
-                role === 'Requester'
-            }
+            notify("User updated", "success");
           };
-
-          await fetch(`${API_URL}/admin/users/${u.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(payload)
-          });
-
-          notify("User updated", "success");
-        };
 
           deleteBtn.onclick = async () => {
             if (!confirm("Delete this user?")) return;
