@@ -476,7 +476,7 @@ button:active {
       <!-- Body -->
       <tbody
         id="myRequestsTable"
-        class="divide-y divide-gray-100 bg-white">
+        class="bg-white">
 
         <!-- rows injectées ici -->
 
@@ -1467,7 +1467,7 @@ setupSSE();
     if (!camInput) {
       console.warn("cameraInput not found");
     }
-    
+
     if (camInput) {
       camInput.addEventListener('change', (e) => {
         const file = e.target.files?.[0];
@@ -1966,29 +1966,44 @@ async function refreshRequest(request_id) {
       row.classList.remove('bg-indigo-50');
     }, 800);
 
-    row.classList.add(
-      'hover:bg-indigo-50',
-      'transition',
-      'align-top'
-    );
+        row.classList.add(
+          'hover:bg-indigo-50',
+          'transition',
+          'align-top',
+          'even:bg-gray-50'
+        );
+
 
     row.innerHTML = `
-      <td class="px-4 py-3 border-b border-gray-100" align-top">${req.request_id}</td>
-      <td class="px-4 py-3 border-b border-gray-100"align-top">
+      <td class="px-4 py-3 align-top border-b border-gray-100">
+        ${req.request_id}
+      </td>
+
+      <td class="px-4 py-3 align-top border-b border-gray-100">
         ${req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : ''}
       </td>
-      <td class="p-2 border align-top amount_requested">
+
+      <td class="px-4 py-3 align-top border-b border-gray-100 amount_requested">
         ${formatAmount(req.amount_requested)}
       </td>
-      <td class="p-2 border align-top payment_method">${paymentText}</td>
-      <td class="p-2 border align-top status">${statusHtml}</td>
-      <td class="p-2 border align-top approved_amount">
+
+      <td class="px-4 py-3 align-top border-b border-gray-100 payment_method">
+        ${paymentText}
+      </td>
+
+      <td class="px-4 py-3 align-top border-b border-gray-100 status">
+        ${statusHtml}
+      </td>
+
+      <td class="px-4 py-3 align-top border-b border-gray-100 approved_amount">
         ${formatAmount(req.approved_amount)}
       </td>
-      <td class="p-2 border align-top returned_amount">
+
+      <td class="px-4 py-3 align-top border-b border-gray-100 returned_amount">
         ${formatAmount(req.returned_amount)}
       </td>
-      <td class="p-2 border align-top text-right">
+
+      <td class="px-4 py-3 align-top border-b border-gray-100 text-right">
         <button class="voirBtn
           bg-white
           border border-indigo-600
@@ -1997,9 +2012,13 @@ async function refreshRequest(request_id) {
           rounded-lg
           text-sm
           hover:bg-indigo-50
-          transition">View</button>
+          transition">
+          View
+        </button>
       </td>
     `;
+
+
 
     myTableBody.appendChild(row);
 

@@ -500,6 +500,8 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       Closed: 'bg-green-600',
       PendingCancel: 'bg-red-400',
       Cancelled: 'bg-gray-400',
+      NeedsInfo: 'bg-orange-500',
+      Resubmitted: 'bg-indigo-400',
     };
 
   function setRowActionState(req, row) {
@@ -936,31 +938,71 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       </td>
 
 
-      <td class="approved-amount-cell">
-        ${req.approved_amount != null ? formatAmount(req.approved_amount) : ''}
-      </td>
+<td class="approved-amount-cell text-center">
+  ${req.approved_amount != null ? formatAmount(req.approved_amount) : ''}
+</td>
 
-      <td class="approved-by-cell">${req.approved_by || ''}</td>
+<td class="approved-by-cell text-center">
+  ${req.approved_by || ''}
+</td>
 
-      <td class="actions-cell flex justify-center items-center gap-1 p-1 cursor-pointer">
-          <input type="text" class="approvedAmount w-20 p-1 border rounded" />
+<td class="actions-cell">
+  <div class="flex justify-center items-center gap-2 flex-wrap">
 
-          <button class="approveBtn bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">✅</button>
-          <button class="rejectBtn bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">❌</button>
+    <!-- Amount input -->
+    <input 
+      type="text" 
+      class="approvedAmount w-20 p-1 border border-gray-200 rounded-md text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+    />
 
-      ${
-        activeTab === 'liquidation' && req.status === 'PendingValidation'
-          ? `<button class="validateBtn bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Validate</button>`
-          : ''
-        }
-        ${
-          activeTab === 'liquidation' && req.status === 'PendingCancel'
-            ? `<button class="validateCancelBtn bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
-                Validate Cancel
-              </button>`
-            : ''
-        }
-      </td>
+    <!-- Approve -->
+    <button class="approveBtn bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 transition text-xs">
+      ✅
+    </button>
+
+    <!-- Reject -->
+    <button class="rejectBtn bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600 transition text-xs">
+      ❌
+    </button>
+
+    <!-- 💬 Feedback (NEW) -->
+    ${
+      req.status === 'Pending' || req.status === 'Resubmitted'
+        ? `
+        <button 
+          class="feedbackBtn bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-xs hover:bg-indigo-200 transition"
+          data-id="${req.request_id}"
+          title="Ask for clarification">
+          💬
+        </button>
+        `
+        : ''
+    }
+
+    <!-- Validate liquidation -->
+    ${
+      activeTab === 'liquidation' && req.status === 'PendingValidation'
+        ? `
+        <button class="validateBtn bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 transition text-xs">
+          ✔
+        </button>
+        `
+        : ''
+    }
+
+    <!-- Validate cancel -->
+    ${
+      activeTab === 'liquidation' && req.status === 'PendingCancel'
+        ? `
+        <button class="validateCancelBtn bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition text-xs">
+          ✖
+        </button>
+        `
+        : ''
+    }
+
+  </div>
+</td>
     `;
 
     requestsTableBody.appendChild(tr);
@@ -1651,6 +1693,52 @@ function toggleCenterInput() {
 roleSelectCreate.addEventListener('change', toggleCenterInput);
 toggleCenterInput();
 
+
+// ==============================
+// 💬 ADMIN FEEDBACK ACTION
+// ==============================
+
+document.addEventListener('click', async (e) => {
+
+  const btn = e.target.closest('.feedbackBtn');
+  if (!btn) return;
+
+  const requestId = btn.dataset.id;
+
+  const message = prompt("Ask for clarification (be specific):");
+
+  if (!message) return;
+
+    try {
+      const res = await fetch(`${API_URL}/requests/${requestId}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({ message })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed");
+      }
+
+      notify("Feedback sent", "success");
+
+      // 🔄 refresh propre
+      fetchRequests();
+
+    } catch (err) {
+      console.error(err);
+      notify("Error sending feedback", "error");
+
+    } finally {
+      // 🔥 TRÈS IMPORTANT
+      btn.disabled = false;
+      btn.classList.remove('opacity-50');
+    }
+
+});
 
   </script>
 
