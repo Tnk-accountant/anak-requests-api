@@ -1083,58 +1083,7 @@ let mobileAmountFilter = '';
       // reset input
       e.target.value = '';
 
-      document.getElementById('clarificationBack')?.addEventListener('click', () => {
-      hideAllPanels();
-    });
-
-    document.getElementById('clarificationSubmitBtn')?.addEventListener('click', async () => {
-
-  const textarea = document.getElementById('clarificationInput');
-  const message = textarea?.value?.trim();
-
-  if (!message) {
-    notify("Please write something", "error");
-    return;
-  }
-
-  const btn = document.getElementById('clarificationSubmitBtn');
-
-  try {
-    // 🔒 lock button
-    lockButton(btn, "Sending...");
-
-    const res = await fetchWithAuth(`${API_URL}/requests/${currentRequestId}/respond`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include",
-      body: JSON.stringify({ message })
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed");
-    }
-
-    notify("Response sent", "success");
-
-    // reset input
-    textarea.value = "";
-
-    // 🔄 refresh UNE SEULE request
-    await refreshRequest(currentRequestId);
-
-    // 🔄 ferme panel
-    hideAllPanels();
-
-  } catch (err) {
-    console.error("Submit clarification error:", err);
-    notify("Error sending response", "error");
-  } finally {
-    unlockButton(btn);
-  }
-
-});
+    
     });
 
       
@@ -1628,6 +1577,61 @@ const debouncedRenderTable = debounce(() => {
 if (amountSearchInput) {
   amountSearchInput.addEventListener('input', debouncedRenderTable);
 }
+
+// ==============================
+// 🔥 CLARIFICATION ACTIONS (BON ENDROIT)
+// ==============================
+
+// bouton BACK
+document.getElementById('clarificationBack')?.addEventListener('click', () => {
+  hideAllPanels();
+});
+
+// bouton RESUBMIT
+document.getElementById('clarificationSubmitBtn')?.addEventListener('click', async () => {
+
+  const textarea = document.getElementById('clarificationInput');
+  const message = textarea?.value?.trim();
+
+  if (!message) {
+    notify("Please write something", "error");
+    return;
+  }
+
+  const btn = document.getElementById('clarificationSubmitBtn');
+
+  try {
+    lockButton(btn, "Sending...");
+
+    const res = await fetchWithAuth(`${API_URL}/requests/${currentRequestId}/respond`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({ message })
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed");
+    }
+
+    notify("Response sent", "success");
+
+    textarea.value = "";
+
+    await refreshRequest(currentRequestId);
+
+    hideAllPanels();
+
+  } catch (err) {
+    console.error("Submit clarification error:", err);
+    notify("Error sending response", "error");
+  } finally {
+    unlockButton(btn);
+  }
+
+});
 
 });
 
