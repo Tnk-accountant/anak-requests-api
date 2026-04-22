@@ -687,44 +687,48 @@ button:active {
             <button type="button" id="cancelBack" class="bg-gray-100 px-4 py-2 rounded">Back</button>
           </div>
         </div>
+
+
+            <!-- Panel Clarification -->
+      <div id="panel-clarification" class="action-panel hidden mt-2">
+
+        <h4 class="font-semibold text-orange-600 mb-2">
+          ⚠️ Clarification required
+        </h4>
+
+        <!-- MESSAGE ADMIN -->
+        <div id="clarificationMessage"
+          class="bg-orange-50 border border-orange-200 p-3 rounded mb-3 text-sm text-gray-700">
+        </div>
+
+        <!-- INPUT USER -->
+        <textarea id="clarificationInput"
+          class="w-full border rounded px-3 py-2 mb-3"
+          rows="4"
+          placeholder="Write your clarification..."></textarea>
+
+        <!-- ACTION -->
+        <div class="flex gap-3">
+          <button type="button"
+            id="clarificationSubmitBtn"
+            class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+            🔄 Resubmit
+          </button>
+
+          <button type="button"
+            id="clarificationBack"
+            class="bg-gray-100 px-4 py-2 rounded">
+            Back
+          </button>
+        </div>
+
+      </div>
+
       </div>
       </div>
     </div>
 
-    <!-- Panel Clarification -->
-<div id="panel-clarification" class="action-panel hidden mt-2">
 
-  <h4 class="font-semibold text-orange-600 mb-2">
-    ⚠️ Clarification required
-  </h4>
-
-  <!-- MESSAGE ADMIN -->
-  <div id="clarificationMessage"
-    class="bg-orange-50 border border-orange-200 p-3 rounded mb-3 text-sm text-gray-700">
-  </div>
-
-  <!-- INPUT USER -->
-  <textarea id="clarificationInput"
-    class="w-full border rounded px-3 py-2 mb-3"
-    rows="4"
-    placeholder="Write your clarification..."></textarea>
-
-  <!-- ACTION -->
-  <div class="flex gap-3">
-    <button type="button"
-      id="clarificationSubmitBtn"
-      class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-      🔄 Resubmit
-    </button>
-
-    <button type="button"
-      id="clarificationBack"
-      class="bg-gray-100 px-4 py-2 rounded">
-      Back
-    </button>
-  </div>
-
-</div>
 
     <!-- 📸 SCAN MODAL -->
 <div id="scanModal"
