@@ -691,6 +691,41 @@ button:active {
       </div>
     </div>
 
+    <!-- Panel Clarification -->
+<div id="panel-clarification" class="action-panel hidden mt-2">
+
+  <h4 class="font-semibold text-orange-600 mb-2">
+    ⚠️ Clarification required
+  </h4>
+
+  <!-- MESSAGE ADMIN -->
+  <div id="clarificationMessage"
+    class="bg-orange-50 border border-orange-200 p-3 rounded mb-3 text-sm text-gray-700">
+  </div>
+
+  <!-- INPUT USER -->
+  <textarea id="clarificationInput"
+    class="w-full border rounded px-3 py-2 mb-3"
+    rows="4"
+    placeholder="Write your clarification..."></textarea>
+
+  <!-- ACTION -->
+  <div class="flex gap-3">
+    <button type="button"
+      id="clarificationSubmitBtn"
+      class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+      🔄 Resubmit
+    </button>
+
+    <button type="button"
+      id="clarificationBack"
+      class="bg-gray-100 px-4 py-2 rounded">
+      Back
+    </button>
+  </div>
+
+</div>
+
     <!-- 📸 SCAN MODAL -->
 <div id="scanModal"
      class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-sm transition-opacity duration-200">
@@ -1047,6 +1082,59 @@ let mobileAmountFilter = '';
 
       // reset input
       e.target.value = '';
+
+      document.getElementById('clarificationBack')?.addEventListener('click', () => {
+      hideAllPanels();
+    });
+
+    document.getElementById('clarificationSubmitBtn')?.addEventListener('click', async () => {
+
+  const textarea = document.getElementById('clarificationInput');
+  const message = textarea?.value?.trim();
+
+  if (!message) {
+    notify("Please write something", "error");
+    return;
+  }
+
+  const btn = document.getElementById('clarificationSubmitBtn');
+
+  try {
+    // 🔒 lock button
+    lockButton(btn, "Sending...");
+
+    const res = await fetchWithAuth(`${API_URL}/requests/${currentRequestId}/respond`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({ message })
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed");
+    }
+
+    notify("Response sent", "success");
+
+    // reset input
+    textarea.value = "";
+
+    // 🔄 refresh UNE SEULE request
+    await refreshRequest(currentRequestId);
+
+    // 🔄 ferme panel
+    hideAllPanels();
+
+  } catch (err) {
+    console.error("Submit clarification error:", err);
+    notify("Error sending response", "error");
+  } finally {
+    unlockButton(btn);
+  }
+
+});
     });
 
       
@@ -2173,6 +2261,7 @@ const ACTION_BY_STATUS = {
   Approved: 'received',
   ToLiquidate: 'liquidate',
   Pending: 'cancel',
+  NeedsInfo: 'clarification',   // 🔥 AJOUT
 };
 
 /**
@@ -2243,6 +2332,13 @@ function openModalFor(request_id) {
     notify("Request not found", "error");
     return;
   }
+
+  // 🔥 inject message admin
+const clarifBox = document.getElementById('clarificationMessage');
+if (clarifBox) {
+  clarifBox.textContent =
+    req.admin_feedback || "Admin requested clarification";
+}
 
   // Gestion affichage bouton validate
 const validateCard = document.querySelector('[data-action="validate"]');
