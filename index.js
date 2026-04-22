@@ -523,6 +523,50 @@ app.get('/requests', authenticate, async (req, res) => {
   }
 });
 
+// ===============
+// RETOUR clarification ADMIN 
+//================
+
+app.post('/requests/:id/feedback', authenticate, async (req, res) => {
+  try {
+    const { message } = req.body;
+    const { id } = req.params;
+
+    if (!message) {
+      return res.status(400).json({ error: "Message required" });
+    }
+
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .update({
+        status: 'NeedsInfo',
+        admin_feedback: message,
+        feedback_at: new Date().toISOString()
+      })
+      .eq('request_id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (!data) {
+      return res.status(404).json({ error: "Request not found" });
+    }
+
+    // 🔥 IMPORTANT → update temps réel
+    notifyAdmins(data);
+
+    res.json({ success: true, data });
+
+  } catch (err) {
+    console.error('Feedback error:', err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 // =====================
 // TEST BASE DE DONNÉES
