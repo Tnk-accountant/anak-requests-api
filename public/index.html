@@ -2352,7 +2352,15 @@ function autoSelectMobileAction(req) {
 function openModalFor(request_id) {
   console.log("Opening modal for request_id:", request_id);
 
-  const req = requestsMap.get(request_id);
+  currentRequestId = request_id;
+
+  const req = requestsMap.get(request_id); // 🔥 AVANT
+
+  const clarificationBox = document.getElementById('clarificationMessage');
+
+  if (req?.admin_feedback) {
+    clarificationBox.textContent = req.admin_feedback;
+  }
 
   const clarificationBtn = document.getElementById("clarificationActionBtn");
 

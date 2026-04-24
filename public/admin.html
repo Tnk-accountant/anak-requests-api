@@ -66,6 +66,23 @@
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInUp 0.2s ease;
+}
+
+
 </style>
 
 </head>
@@ -260,39 +277,50 @@
     </div>
 
     <!-- DESCRIPTION -->
+     <div class="text-xs text-gray-400 mb-1">Clarification</div>
+    <div id="adminConversation"
+      class="hidden bg-gray-50 border border-gray-200 p-3 rounded-xl mb-3 max-h-60 overflow-y-auto text-sm space-y-2">
+    </div>
+    <div class="text-xs text-gray-400 mb-1">Description</div>
+    <div id="descriptionContent"
+      class="text-sm text-gray-700 whitespace-pre-wrap mb-4 max-h-[50vh] overflow-auto">
+    </div>
 
-      <div id="descriptionContent"
-        class="text-sm text-gray-700 whitespace-pre-wrap mb-4 max-h-[50vh] overflow-auto">
-      </div>
-            <div id="adminClarificationBox"
-        class="hidden bg-orange-50 border border-orange-200 p-3 rounded-xl leading-relaxed text-gray-800">
-      </div>
+
 
     <!-- ACTION -->
-    <div class="border-t pt-3">
+    <div class="border-t pt-4 mt-2">
 
-      <div class="text-xs text-gray-400 mb-2">
-        Need more info from requester?
+      <!-- LABEL -->
+      <div class="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wide">
+        Clarification
       </div>
 
+      <!-- CTA BUTTON -->
       <button id="openFeedbackBox"
-        class="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-indigo-700 transition shadow-sm">
+        class="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 transition shadow-sm active:scale-[0.98]">
+        
         <span>Request clarification</span>
       </button>
 
+      <!-- INPUT BOX -->
       <div id="feedbackBox" class="hidden mt-3 flex flex-col gap-2">
 
         <textarea id="feedbackInput"
           rows="3"
-          placeholder="Ask for clarification..."
-          class="border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+          placeholder="Type your message..."
+          class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none outline-none transition"></textarea>
 
-        <button id="sendFeedbackBtn"
-          class="ml-auto bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-700 transition shadow-sm">
-          Send
-        </button>
+        <div class="flex justify-end">
+          <button id="sendFeedbackBtn"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-indigo-700 transition shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+            Send message
+          </button>
+        </div>
 
       </div>
+
+    </div>
 
     </div>
 
@@ -1015,35 +1043,126 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     requestsTableBody.appendChild(tr);
 
 
-  // CLICK → ouvre modal
-    const openDescBtn = tr.querySelector('.openDescription');
-    if (openDescBtn) {
-      openDescBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
+ // CLICK → ouvre modal
+const openDescBtn = tr.querySelector('.openDescription');
 
-        currentRequestId = req.request_id; // 🔥 IMPORTANT
+if (openDescBtn) {
+  openDescBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
 
-        document.getElementById('descriptionContent').textContent =
-          req.description || '';
+    // ==============================
+    // SET CONTEXT
+    // ==============================
+    currentRequestId = req.request_id;
 
-          const clarifBox = document.getElementById('adminClarificationBox');
-          if (req.status === "NeedsInfo" || req.admin_feedback) {
-            clarifBox.classList.remove('hidden');
-            clarifBox.textContent = req.admin_feedback || "Clarification requested";
-          } else {
-            clarifBox.classList.add('hidden');
-            clarifBox.textContent = '';
-          }
+    // ==============================
+    // DESCRIPTION
+    // ==============================
+    const descriptionEl = document.getElementById('descriptionContent');
+    descriptionEl.textContent = req.description || 'No description';
 
-        // reset UI
-        document.getElementById('feedbackBox').classList.add('hidden');
-        document.getElementById('feedbackInput').value = '';
+    // ==============================
+    // CONVERSATION / CLARIFICATION
+    // ==============================
+    const convoBox = document.getElementById('adminConversation');
 
-        const modal = document.getElementById('descriptionModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-      });
+    // reset
+    convoBox.innerHTML = '';
+
+// ==============================
+// CONVERSATION (future-proof)
+// ==============================
+if (req.conversation?.length) {
+
+  convoBox.classList.remove('hidden');
+  convoBox.innerHTML = '';
+
+  req.conversation.forEach((msg) => {
+
+    // ------------------------------
+    // CREATE BUBBLE
+    // ------------------------------
+    const bubble = document.createElement('div');
+
+    const isAdmin = msg.sender === 'admin';
+
+    bubble.className = `
+      px-3 py-2 rounded-2xl max-w-[75%] text-sm leading-relaxed shadow-sm
+      ${isAdmin
+        ? 'bg-indigo-600 text-white ml-auto'
+        : 'bg-white border text-gray-800'}
+    `;
+
+    // ------------------------------
+    // CONTENT
+    // ------------------------------
+    bubble.innerHTML = `
+      <div class="text-[10px] opacity-70 mb-1">
+        ${isAdmin ? 'Admin' : 'User'}
+      </div>
+      <div>${msg.message}</div>
+    `;
+
+    // ------------------------------
+    // MICRO ANIMATION
+    // ------------------------------
+    bubble.classList.add('animate-fade-in');
+
+    // ------------------------------
+    // APPEND
+    // ------------------------------
+    convoBox.appendChild(bubble);
+  });
+
+  // ------------------------------
+  // AUTO SCROLL (une seule fois)
+  // ------------------------------
+  convoBox.scrollTop = convoBox.scrollHeight;
+}
+
+    // 🔥 CAS 2 — ancien système (fallback)
+    else if (req.admin_feedback) {
+
+      convoBox.classList.remove('hidden');
+
+      const bubble = document.createElement('div');
+      bubble.className =
+        "bg-orange-50 border border-orange-200 px-3 py-2 rounded text-gray-800";
+
+      bubble.textContent = req.admin_feedback;
+
+      convoBox.appendChild(bubble);
+
     }
+
+    // 🔥 CAS 3 — rien
+    else {
+        convoBox.classList.remove('hidden');
+        convoBox.innerHTML = `
+          <div class="text-xs text-gray-400 text-center py-4">
+            No conversation yet
+          </div>
+        `;
+      }
+
+    // ==============================
+    // RESET INPUT / UI
+    // ==============================
+    const feedbackBox = document.getElementById('feedbackBox');
+    const feedbackInput = document.getElementById('feedbackInput');
+
+    feedbackBox.classList.add('hidden');
+    feedbackInput.value = '';
+
+    // ==============================
+    // OPEN MODAL
+    // ==============================
+    const modal = document.getElementById('descriptionModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+  });
+}
 
         const approveBtn = tr.querySelector('.approveBtn');
         const rejectBtn = tr.querySelector('.rejectBtn');
@@ -1748,6 +1867,17 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
     }
 
     notify("Feedback sent", "success");
+
+    // 🔥 AJOUT ICI (exactement ici)
+    const convoBox = document.getElementById('adminConversation');
+
+    const bubble = document.createElement('div');
+    bubble.className = "bg-indigo-600 text-white px-3 py-2 rounded-lg max-w-[80%] ml-auto";
+    bubble.textContent = message;
+
+    convoBox.classList.remove('hidden');
+    convoBox.appendChild(bubble);
+    convoBox.scrollTop = convoBox.scrollHeight;
 
     // 🔄 reset UI
     document.getElementById('feedbackInput').value = '';

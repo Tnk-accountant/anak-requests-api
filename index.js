@@ -527,6 +527,59 @@ app.get('/requests', authenticate, async (req, res) => {
 // RETOUR clarification ADMIN 
 //================
 
+// =====================
+// USER RESPONSE TO CLARIFICATION
+// =====================
+app.post('/requests/:id/respond', authenticate, async (req, res) => {
+  try {
+    const { message } = req.body;
+    const { id } = req.params;
+
+    if (!message) {
+      return res.status(400).json({ error: "Message required" });
+    }
+
+    // 🔥 1. récupérer conversation
+    const { data: existing, error: fetchError } = await supabaseService
+      .from('Requests')
+      .select('conversation')
+      .eq('request_id', id)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    const conversation = existing?.conversation || [];
+
+    // 🔥 2. ajouter message user
+    conversation.push({
+      sender: "user",
+      message,
+      created_at: new Date().toISOString()
+    });
+
+    // 🔥 3. update
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .update({
+        conversation,
+        status: 'Resubmitted'
+      })
+      .eq('request_id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+
+    notifyAdmins(data);
+
+    res.json({ success: true, data });
+
+  } catch (err) {
+    console.error('Respond error:', err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.post('/requests/:id/feedback', authenticate, async (req, res) => {
   try {
     const { message } = req.body;
@@ -536,27 +589,37 @@ app.post('/requests/:id/feedback', authenticate, async (req, res) => {
       return res.status(400).json({ error: "Message required" });
     }
 
+    // 🔥 1. récupérer conversation actuelle
+    const { data: existing, error: fetchError } = await supabaseService
+      .from('Requests')
+      .select('conversation')
+      .eq('request_id', id)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    const conversation = existing?.conversation || [];
+
+    // 🔥 2. ajouter message admin
+    conversation.push({
+      sender: "admin",
+      message,
+      created_at: new Date().toISOString()
+    });
+
+    // 🔥 3. update
     const { data, error } = await supabaseService
       .from('Requests')
       .update({
-        status: 'NeedsInfo',
-        admin_feedback: message,
-        feedback_at: new Date().toISOString()
+        conversation,
+        status: 'NeedsInfo'
       })
       .eq('request_id', id)
       .select()
       .maybeSingle();
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return res.status(500).json({ error: error.message });
-    }
+    if (error) throw error;
 
-    if (!data) {
-      return res.status(404).json({ error: "Request not found" });
-    }
-
-    // 🔥 IMPORTANT → update temps réel
     notifyAdmins(data);
 
     res.json({ success: true, data });
