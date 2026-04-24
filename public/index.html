@@ -1638,7 +1638,7 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
     notify("Response sent", "success");
 
     await refreshRequest(currentRequestId);
-    
+
     textarea.value = "";
 
     await refreshRequest(currentRequestId);
@@ -2038,7 +2038,7 @@ async function refreshRequest(request_id) {
 if (req.status === "NeedsInfo") {
   statusHtml = `
     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500 text-white">
-      ⚠️ Needs info
+      NeedsInfo
     </span>
   `;
 }
@@ -2347,68 +2347,92 @@ function autoSelectMobileAction(req) {
 function openModalFor(request_id) {
   console.log("Opening modal for request_id:", request_id);
 
+  // ==============================
+  // CONTEXT
+  // ==============================
   currentRequestId = request_id;
 
-  const req = requestsMap.get(request_id); // 🔥 AVANT
+  const req = requestsMap.get(request_id);
 
-  const clarificationBox = document.getElementById('clarificationMessage');
+  if (!req) {
+    notify("Request not found", "error");
+    return;
+  }
 
+  // ==============================
+  // CONVERSATION
+  // ==============================
   const convoBox = document.getElementById('clarificationConversation');
   convoBox.innerHTML = '';
 
-  if (req.conversation && req.conversation.length > 0) {
+  if (req.conversation?.length) {
 
     convoBox.classList.remove('hidden');
 
-    req.conversation.forEach(msg => {
+    req.conversation.forEach((msg) => {
 
       const bubble = document.createElement('div');
+      const isAdmin = msg.sender === 'admin';
 
       bubble.className = `
-        px-3 py-2 rounded-lg max-w-[80%] text-sm
-        ${msg.sender === 'admin'
+        px-3 py-2 rounded-2xl max-w-[75%] text-sm leading-relaxed shadow-sm
+        ${isAdmin
           ? 'bg-orange-100 text-gray-800'
           : 'bg-indigo-600 text-white ml-auto'}
       `;
 
       bubble.innerHTML = `
         <div class="text-[10px] opacity-60 mb-1">
-          ${msg.sender === 'admin' ? 'Father' : 'You'}
+          ${isAdmin ? 'Father' : 'You'}
         </div>
         <div>${msg.message}</div>
       `;
 
+      // micro animation
+      bubble.classList.add('animate-fade-in');
+
       convoBox.appendChild(bubble);
     });
 
+    // scroll en bas
     convoBox.scrollTop = convoBox.scrollHeight;
 
   } else {
-    convoBox.classList.add('hidden');
+    // empty state propre
+    convoBox.classList.remove('hidden');
+    convoBox.innerHTML = `
+      <div class="text-xs text-gray-400 text-center py-4">
+        No conversation yet
+      </div>
+    `;
   }
 
+  // ==============================
+  // ACTION BUTTON
+  // ==============================
   const clarificationBtn = document.getElementById("clarificationActionBtn");
 
-    if (req.status === "NeedsInfo") {
-      clarificationBtn?.classList.remove("hidden");
-    } else {
-      clarificationBtn?.classList.add("hidden");
-    }
-  if (!req) {
-    notify("Request not found", "error");
-    return;
+  if (req.status === "NeedsInfo") {
+    clarificationBtn?.classList.remove("hidden");
+  } else {
+    clarificationBtn?.classList.add("hidden");
   }
+
+  // ==============================
+  // PANEL LOGIC
+  // ==============================
   if (req.status === "NeedsInfo") {
     showPanel("clarification");
+  } else {
+    showPanel("default"); // adapte si besoin
   }
 
-  // 🔥 inject message admin
-const clarifBox = document.getElementById("clarificationMessage");
+  // ==============================
+  // RESET INPUT
+  // ==============================
+  const input = document.getElementById('clarificationInput');
+  if (input) input.value = '';
 
-if (clarifBox) {
-  clarifBox.textContent =
-    req.admin_feedback || "Admin requested clarification";
-}
 
   // Gestion affichage bouton validate
 const validateCard = document.querySelector('[data-action="validate"]');
