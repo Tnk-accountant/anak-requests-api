@@ -708,10 +708,8 @@ button:active {
         <h4 class="font-semibold text-orange-600 mb-2">
           ⚠️ Clarification required
         </h4>
-
-        <!-- MESSAGE ADMIN -->
-        <div id="clarificationMessage"
-          class="bg-orange-50 border border-orange-200 p-3 rounded mb-3 text-sm text-gray-700">
+        <div id="clarificationConversation"
+          class="hidden flex flex-col gap-2 mb-3 max-h-[200px] overflow-y-auto">
         </div>
 
         <!-- INPUT USER -->
@@ -1639,6 +1637,8 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
 
     notify("Response sent", "success");
 
+    await refreshRequest(currentRequestId);
+    
     textarea.value = "";
 
     await refreshRequest(currentRequestId);
@@ -2035,18 +2035,13 @@ async function refreshRequest(request_id) {
 
     let statusHtml = '';
 
-    if (req.status === "NeedsInfo") {
-      statusHtml = `
-        <div>
-          <div class="px-2 py-1 rounded-full text-white text-sm bg-orange-500 inline-block">
-            Needs info
-          </div>
-          <div class="text-xs text-gray-500 mt-1 max-w-[200px]">
-            ${req.admin_feedback || "Admin requested clarification"}
-          </div>
-        </div>
-      `;
-    }
+if (req.status === "NeedsInfo") {
+  statusHtml = `
+    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500 text-white">
+      ⚠️ Needs info
+    </span>
+  `;
+}
 
     else if (req.status === "Resubmitted") {
       statusHtml = `
@@ -2358,8 +2353,38 @@ function openModalFor(request_id) {
 
   const clarificationBox = document.getElementById('clarificationMessage');
 
-  if (req?.admin_feedback) {
-    clarificationBox.textContent = req.admin_feedback;
+  const convoBox = document.getElementById('clarificationConversation');
+  convoBox.innerHTML = '';
+
+  if (req.conversation && req.conversation.length > 0) {
+
+    convoBox.classList.remove('hidden');
+
+    req.conversation.forEach(msg => {
+
+      const bubble = document.createElement('div');
+
+      bubble.className = `
+        px-3 py-2 rounded-lg max-w-[80%] text-sm
+        ${msg.sender === 'admin'
+          ? 'bg-orange-100 text-gray-800'
+          : 'bg-indigo-600 text-white ml-auto'}
+      `;
+
+      bubble.innerHTML = `
+        <div class="text-[10px] opacity-60 mb-1">
+          ${msg.sender === 'admin' ? 'Father' : 'You'}
+        </div>
+        <div>${msg.message}</div>
+      `;
+
+      convoBox.appendChild(bubble);
+    });
+
+    convoBox.scrollTop = convoBox.scrollHeight;
+
+  } else {
+    convoBox.classList.add('hidden');
   }
 
   const clarificationBtn = document.getElementById("clarificationActionBtn");
