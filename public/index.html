@@ -559,6 +559,19 @@ button:active {
             </div>
           </button>
 
+
+          <button type="button" data-action="clarification"
+            class="action-card w-full text-left p-3 rounded-lg border hover:shadow-sm transition flex items-start gap-3 hidden"
+            id="clarificationActionBtn">
+
+            <div class="flex-1">
+              <strong class="text-orange-600">⚠️ Clarification required</strong>
+              <div class="text-xs text-gray-500 mt-1">
+                View admin message
+              </div>
+            </div>
+
+          </button>
         </div>
       </div>
 
@@ -1087,7 +1100,11 @@ let mobileAmountFilter = '';
       // reset input
       e.target.value = '';
 
-    
+    document.querySelector('[data-action="clarification"]')
+        ?.addEventListener('click', () => {
+          showPanel('clarification');
+      });
+      
     });
 
       
@@ -2336,13 +2353,25 @@ function openModalFor(request_id) {
   console.log("Opening modal for request_id:", request_id);
 
   const req = requestsMap.get(request_id);
+
+  const clarificationBtn = document.getElementById("clarificationActionBtn");
+
+    if (req.status === "NeedsInfo") {
+      clarificationBtn?.classList.remove("hidden");
+    } else {
+      clarificationBtn?.classList.add("hidden");
+    }
   if (!req) {
     notify("Request not found", "error");
     return;
   }
+  if (req.status === "NeedsInfo") {
+    showPanel("clarification");
+  }
 
   // 🔥 inject message admin
-const clarifBox = document.getElementById('clarificationMessage');
+const clarifBox = document.getElementById("clarificationMessage");
+
 if (clarifBox) {
   clarifBox.textContent =
     req.admin_feedback || "Admin requested clarification";
