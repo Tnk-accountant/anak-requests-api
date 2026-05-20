@@ -597,11 +597,34 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     input.dataset.raw = '';
   }
 
-  // Pending => editable + boutons actifs
-  if (req.status === 'Pending') {
-    input.readOnly = false;    
+
+  // Pending OU Resubmitted => editable + boutons actifs
+  if (
+    req.status === 'Pending' ||
+    req.status === 'Resubmitted'
+  ) {
+
+    input.readOnly = false;
+
     approveBtn.disabled = false;
     rejectBtn.disabled = false;
+
+    input.classList.remove(
+      'opacity-50',
+      'cursor-not-allowed',
+      'pointer-events-none'
+    );
+
+    approveBtn.classList.remove(
+      'opacity-50',
+      'cursor-not-allowed'
+    );
+
+    rejectBtn.classList.remove(
+      'opacity-50',
+      'cursor-not-allowed'
+    );
+
     return;
   }
 
@@ -1119,21 +1142,6 @@ if (req.conversation?.length) {
   // ------------------------------
   convoBox.scrollTop = convoBox.scrollHeight;
 }
-
-    // 🔥 CAS 2 — ancien système (fallback)
-    else if (req.admin_feedback) {
-
-      convoBox.classList.remove('hidden');
-
-      const bubble = document.createElement('div');
-      bubble.className =
-        "bg-orange-50 border border-orange-200 px-3 py-2 rounded text-gray-800";
-
-      bubble.textContent = req.admin_feedback;
-
-      convoBox.appendChild(bubble);
-
-    }
 
     // 🔥 CAS 3 — rien
     else {
