@@ -207,17 +207,17 @@
       <table class="min-w-full text-left border-collapse">
         <thead class="bg-gray-50">
           <tr>
-            <th class="py-2 pl-6 pr-4 text-gray-500 font-medium text-xs uppercase">ID</th>
-            <th class="py-2 px-4 text-gray-500 font-medium text-xs uppercase">Date</th>
-            <th class="py-2 px-4 text-gray-500 font-medium text-xs uppercase">Requested by</th>
-            <th class="py-2 px-4 text-gray-500 font-medium text-xs uppercase">Center</th>
-            <th class="py-2 px-4 text-gray-500 font-medium text-xs uppercase">Amount</th>
-            <th class="py-2 px-4 text-gray-500 font-medium text-xs uppercase">Payment</th>
-            <th class="py-2 px-4 text-gray-500 font-medium text-xs uppercase">Description</th>
-            <th class="py-2 px-4 text-gray-500 font-medium text-xs uppercase">Status</th>
-            <th class="py-2 px-4 text-gray-500 font-medium text-xs uppercase">Approved</th>
-            <th class="py-2 px-4 text-gray-500 font-medium text-xs uppercase">By</th>
-            <th class="py-2 px-2 text-gray-500 font-medium text-xs uppercase text-center">Actions</th>
+            <th class="py-3 pl-6 pr-4 text-gray-500 font-medium text-xs uppercase">ID</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Date</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Requested by</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Center</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Amount</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Payment</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Description</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Status</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Approved</th>
+            <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">By</th>
+            <th class="py-3 px-2 text-gray-500 font-medium text-xs uppercase text-center">Actions</th>
           </tr>
         </thead>
 
@@ -362,98 +362,118 @@ CHAT LAYOUT
     </div>
 
 
-    <!-- =========================================
-    MESSAGES AREA
-    ========================================= -->
+   <!-- =========================================
+UNIFIED CHAT CONTAINER
+========================================= -->
 
-    <div
-      id="adminConversation"
-      class="flex-1 overflow-y-auto
-             px-2 py-3
-             space-y-4
-             bg-gradient-to-b from-gray-50/80 to-white
-             border border-gray-200
-             rounded-3xl
-             shadow-inner
-             scroll-smooth">
+<div
+  class="flex-1 flex flex-col
+         border border-gray-200
+         rounded-3xl
+         overflow-hidden
+         bg-white
+         shadow-inner
+         min-h-0">
 
-      <!-- messages injectés ici -->
+  <!-- =========================================
+  MESSAGES
+  ========================================= -->
+
+  <div
+    id="adminConversation"
+    class="flex-1 overflow-y-auto
+           px-4 py-4
+           space-y-4
+           bg-gradient-to-b
+           from-gray-50/70
+           to-white
+           scroll-smooth">
+
+    <!-- messages injectés ici -->
+
+  </div>
+
+
+  <!-- =========================================
+  INPUT BAR
+  ========================================= -->
+
+  <div
+    class="border-t border-gray-100
+           bg-white
+           px-4 py-3">
+
+    <div class="flex items-end gap-3">
+
+      <!-- textarea -->
+      <textarea
+        id="feedbackInput"
+        rows="1"
+        placeholder="Write a clarification request..."
+        class="flex-1
+               resize-none
+               bg-gray-50
+               border border-gray-200
+               rounded-2xl
+               px-4 py-3
+               outline-none
+               text-sm
+               text-gray-700
+               leading-relaxed
+               max-h-[120px]
+               overflow-y-auto
+               focus:ring-2
+               focus:ring-indigo-500
+               focus:border-indigo-500"></textarea>
+
+      <!-- send -->
+      <button
+        id="sendFeedbackBtn"
+        class="shrink-0
+               w-12 h-12
+               rounded-2xl
+               bg-indigo-600
+               hover:bg-indigo-700
+               active:scale-95
+               text-white
+               flex items-center justify-center
+               transition-all
+               shadow-md hover:shadow-lg">
+
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-5 h-5"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 12h14M12 5l7 7-7 7" />
+
+        </svg>
+
+      </button>
 
     </div>
 
+    <!-- footer -->
+    <div class="flex justify-between mt-2 px-1">
 
-    <!-- =========================================
-    CHAT INPUT
-    ========================================= -->
-
-    <div
-      class="mt-4 shrink-0">
-
-      <div
-        class="flex items-end gap-3
-               bg-white
-               border border-gray-200
-               rounded-3xl
-               px-4 py-3
-               shadow-lg">
-
-        <!-- textarea -->
-        <textarea
-          id="feedbackInput"
-          rows="1"
-          placeholder="Write a clarification request..."
-          class="flex-1
-                 resize-none
-                 bg-transparent
-                 outline-none
-                 text-sm
-                 text-gray-700
-                 max-h-[140px]
-                 overflow-y-auto
-                 leading-relaxed"></textarea>
-
-        <!-- send -->
-        <button
-          id="sendFeedbackBtn"
-          class="shrink-0
-                 w-12 h-12
-                 rounded-2xl
-                 bg-indigo-600
-                 hover:bg-indigo-700
-                 active:scale-95
-                 text-white
-                 flex items-center justify-center
-                 transition-all
-                 shadow-md hover:shadow-xl">
-
-          <svg xmlns="http://www.w3.org/2000/svg"
-               class="w-5 h-5"
-               fill="none"
-               viewBox="0 0 24 24"
-               stroke="currentColor">
-
-            <path stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 12h14M12 5l7 7-7 7" />
-
-          </svg>
-
-        </button>
-
+      <div class="text-[11px] text-gray-400">
+        Messages are saved automatically
       </div>
 
-      <div class="flex items-center justify-between px-2 mt-2">
-
-        <div class="text-[11px] text-gray-400">
-          Messages are saved automatically
-        </div>
-
-        <div class="text-[11px] text-gray-300">
-          Press Enter to send
-        </div>
-
+      <div class="text-[11px] text-gray-300">
+        Press Enter to send
       </div>
+
+    </div>
+
+  </div>
+
+</div>
 
     </div>
 
@@ -1800,6 +1820,24 @@ if (req.conversation?.length) {
     createUserModal.addEventListener('click', (e) => {
       if (e.target === createUserModal) closeModal();
     });
+
+    // =====================================
+      // CLOSE MODAL ON BACKDROP CLICK
+      // =====================================
+
+      const descriptionModal =
+        document.getElementById('descriptionModal');
+
+      descriptionModal?.addEventListener('click', (e) => {
+
+        // uniquement le fond noir
+        if (e.target === descriptionModal) {
+
+          descriptionModal.classList.add('hidden');
+          descriptionModal.classList.remove('flex');
+        }
+
+      });
 
     // -----------------------------
     // RESET FORM
