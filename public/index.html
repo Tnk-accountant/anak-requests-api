@@ -2281,7 +2281,8 @@ const ACTION_BY_STATUS = {
   Approved: 'received',
   ToLiquidate: 'liquidate',
   Pending: 'cancel',
-  NeedsInfo: 'clarification',   // 🔥 AJOUT
+  NeedsInfo: 'clarification',
+  Resubmitted: 'clarification',
 };
 
 /**
@@ -2410,22 +2411,32 @@ function openModalFor(request_id) {
   // ==============================
   // ACTION BUTTON
   // ==============================
-  const clarificationBtn = document.getElementById("clarificationActionBtn");
+    const clarificationBtn =
+      document.getElementById('clarificationActionBtn');
 
-  if (req.status === "NeedsInfo") {
-    clarificationBtn?.classList.remove("hidden");
-  } else {
-    clarificationBtn?.classList.add("hidden");
-  }
+    if (
+      req.status === 'NeedsInfo' ||
+      req.status === 'Resubmitted'
+    ) {
+
+      clarificationBtn.classList.remove('hidden');
+
+    } else {
+
+      clarificationBtn.classList.add('hidden');
+    }
 
   // ==============================
   // PANEL LOGIC
   // ==============================
-  if (req.status === "NeedsInfo") {
-    showPanel("clarification");
-  } else {
-    showPanel("default"); // adapte si besoin
-  }
+    if (
+      req.status === "NeedsInfo" ||
+      req.status === "Resubmitted"
+    ) {
+      showPanel("clarification");
+    } else {
+      hideAllPanels();
+    }
 
   // ==============================
   // RESET INPUT
@@ -2433,6 +2444,22 @@ function openModalFor(request_id) {
   const input = document.getElementById('clarificationInput');
   if (input) input.value = '';
 
+
+  const clarificationSubmitBtn =
+  document.getElementById('clarificationSubmitBtn');
+
+  if (req.status === 'Resubmitted') {
+
+    input?.classList.add('hidden');
+
+    clarificationSubmitBtn?.classList.add('hidden');
+
+  } else {
+
+    input?.classList.remove('hidden');
+
+    clarificationSubmitBtn?.classList.remove('hidden');
+  }
 
   // Gestion affichage bouton validate
 const validateCard = document.querySelector('[data-action="validate"]');
