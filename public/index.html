@@ -1379,7 +1379,19 @@ function setupSSE() {
         const payload = JSON.parse(event.data);
         const requests = Array.isArray(payload) ? payload : [payload];
 
-        requests.forEach(upsertRow);
+        requests.forEach(req => {
+
+        upsertRow(req);
+
+        // 🔥 refresh modal live si ouvert
+        if (
+          currentRequestId &&
+          req.request_id === currentRequestId
+        ) {
+          openModalFor(currentRequestId);
+        }
+
+      });
 
         if (window.innerWidth < 768) renderMobileCards();
 
@@ -1637,13 +1649,14 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
 
     notify("Response sent", "success");
 
+    // refresh data depuis serveur
     await refreshRequest(currentRequestId);
 
+    // reset textarea
     textarea.value = "";
 
-    await refreshRequest(currentRequestId);
-
-    hideAllPanels();
+    // 🔥 recharger le modal COMPLET
+    openModalFor(currentRequestId);
 
   } catch (err) {
     console.error("Submit clarification error:", err);

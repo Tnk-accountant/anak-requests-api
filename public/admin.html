@@ -276,140 +276,184 @@
               class="text-gray-400 hover:text-gray-600">✕</button>
     </div>
 
-  <!-- =========================
-REQUEST SUMMARY
-========================= -->
+ <!-- =========================================
+CHAT LAYOUT
+========================================= -->
 
-<div class="mb-5">
+<div class="flex flex-col h-[75vh]">
 
-  <div class="flex items-center gap-2 mb-2">
+  <!-- =========================================
+  REQUEST DESCRIPTION
+  ========================================= -->
 
-    <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+  <div class="mb-4 shrink-0">
 
-    <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">
-      Request Summary
-    </div>
+    <div class="flex items-center gap-2 mb-2">
 
-  </div>
+      <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
 
-  <div
-    id="descriptionContent"
-    class="bg-gradient-to-br from-gray-50 to-white
-           border border-gray-200
-           rounded-2xl
-           p-4
-           text-sm
-           text-gray-700
-           whitespace-pre-wrap
-           leading-relaxed
-           shadow-sm
-           max-h-[220px]
-           overflow-y-auto">
-
-  </div>
-
-</div>
-
-
-<!-- =========================
-CONVERSATION
-========================= -->
-
-<div class="mb-5">
-
-  <div class="flex items-center justify-between mb-2">
-
-    <div class="flex items-center gap-2">
-
-      <div class="w-2 h-2 rounded-full bg-orange-400"></div>
-
-      <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">
-        Clarification Thread
+      <div class="text-xs font-semibold uppercase tracking-wider text-gray-400">
+        Request description
       </div>
 
     </div>
 
-    <div class="text-[11px] text-gray-400">
-      Live conversation
+    <div
+      id="descriptionContent"
+      class="bg-gradient-to-br from-gray-50 to-white
+             border border-gray-200
+             rounded-3xl
+             px-5 py-4
+             text-[15px]
+             text-gray-700
+             whitespace-pre-wrap
+             leading-relaxed
+             shadow-sm
+             max-h-[180px]
+             overflow-y-auto">
+
     </div>
 
   </div>
 
-  <div
-    id="adminConversation"
-    class="bg-gradient-to-b from-gray-50 to-white
-           border border-gray-200
-           rounded-2xl
-           p-4
-           max-h-[300px]
-           overflow-y-auto
-           space-y-3
-           shadow-inner">
 
-  </div>
+  <!-- =========================================
+  CHAT THREAD
+  ========================================= -->
 
-</div>
+  <div class="flex-1 flex flex-col min-h-0">
+
+    <!-- HEADER -->
+    <div class="flex items-center justify-between mb-3 shrink-0">
+
+      <div class="flex items-center gap-3">
+
+        <div class="relative">
+
+          <div class="w-10 h-10 rounded-full bg-orange-100
+                      flex items-center justify-center
+                      text-orange-600 font-semibold">
+
+            💬
+
+          </div>
+
+          <div class="absolute bottom-0 right-0
+                      w-3 h-3 rounded-full
+                      bg-green-500 border-2 border-white">
+          </div>
+
+        </div>
+
+        <div>
+
+          <div class="text-sm font-semibold text-gray-800">
+            Clarification thread
+          </div>
+
+          <div class="text-xs text-gray-400">
+            Live conversation with center
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
 
 
-<!-- =========================
-MESSAGE ACTION
-========================= -->
+    <!-- =========================================
+    MESSAGES AREA
+    ========================================= -->
 
-<div class="border-t border-gray-100 pt-4">
-
-  <button
-    id="openFeedbackBox"
-    class="w-full
-           flex items-center justify-center gap-2
-           bg-indigo-600 hover:bg-indigo-700
-           text-white
-           px-4 py-3
-           rounded-2xl
-           text-sm font-medium
-           transition
-           shadow-sm hover:shadow-md">
-
-    <span>Request clarification</span>
-
-  </button>
-
-  <div
-    id="feedbackBox"
-    class="hidden mt-3 flex flex-col gap-3">
-
-    <textarea
-      id="feedbackInput"
-      rows="4"
-      placeholder="Ask for missing information..."
-      class="w-full
+    <div
+      id="adminConversation"
+      class="flex-1 overflow-y-auto
+             px-2 py-3
+             space-y-4
+             bg-gradient-to-b from-gray-50/80 to-white
              border border-gray-200
-             rounded-2xl
-             p-4
-             text-sm
-             bg-gray-50
-             focus:bg-white
-             focus:ring-2
-             focus:ring-indigo-500
-             focus:border-indigo-500
-             resize-none
-             outline-none
-             transition"></textarea>
+             rounded-3xl
+             shadow-inner
+             scroll-smooth">
 
-    <div class="flex justify-end">
+      <!-- messages injectés ici -->
 
-      <button
-        id="sendFeedbackBtn"
-        class="bg-indigo-600 hover:bg-indigo-700
-               text-white
-               px-5 py-2.5
-               rounded-xl
-               text-sm font-medium
-               transition
-               shadow-sm">
+    </div>
 
-        Send Message
 
-      </button>
+    <!-- =========================================
+    CHAT INPUT
+    ========================================= -->
+
+    <div
+      class="mt-4 shrink-0">
+
+      <div
+        class="flex items-end gap-3
+               bg-white
+               border border-gray-200
+               rounded-3xl
+               px-4 py-3
+               shadow-lg">
+
+        <!-- textarea -->
+        <textarea
+          id="feedbackInput"
+          rows="1"
+          placeholder="Write a clarification request..."
+          class="flex-1
+                 resize-none
+                 bg-transparent
+                 outline-none
+                 text-sm
+                 text-gray-700
+                 max-h-[140px]
+                 overflow-y-auto
+                 leading-relaxed"></textarea>
+
+        <!-- send -->
+        <button
+          id="sendFeedbackBtn"
+          class="shrink-0
+                 w-12 h-12
+                 rounded-2xl
+                 bg-indigo-600
+                 hover:bg-indigo-700
+                 active:scale-95
+                 text-white
+                 flex items-center justify-center
+                 transition-all
+                 shadow-md hover:shadow-xl">
+
+          <svg xmlns="http://www.w3.org/2000/svg"
+               class="w-5 h-5"
+               fill="none"
+               viewBox="0 0 24 24"
+               stroke="currentColor">
+
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 12h14M12 5l7 7-7 7" />
+
+          </svg>
+
+        </button>
+
+      </div>
+
+      <div class="flex items-center justify-between px-2 mt-2">
+
+        <div class="text-[11px] text-gray-400">
+          Messages are saved automatically
+        </div>
+
+        <div class="text-[11px] text-gray-300">
+          Press Enter to send
+        </div>
+
+      </div>
 
     </div>
 
@@ -1249,13 +1293,13 @@ if (req.conversation?.length) {
       }
 
     // ==============================
-    // RESET INPUT / UI
+    // RESET INPUT
     // ==============================
-    const feedbackBox = document.getElementById('feedbackBox');
-    const feedbackInput = document.getElementById('feedbackInput');
+    const feedbackInput =
+      document.getElementById('feedbackInput');
 
-    feedbackBox.classList.add('hidden');
     feedbackInput.value = '';
+    feedbackInput.style.height = 'auto';
 
     // ==============================
     // OPEN MODAL
@@ -1937,81 +1981,154 @@ function toggleCenterInput() {
 roleSelectCreate.addEventListener('change', toggleCenterInput);
 toggleCenterInput();
 
-document.getElementById('openFeedbackBox').onclick = () => {
-  document.getElementById('feedbackBox').classList.remove('hidden');
-};
+
+// =====================================
+// CHAT AUTO RESIZE + ENTER TO SEND
+// =====================================
+
+const feedbackTextarea =
+  document.getElementById('feedbackInput');
+
+if (feedbackTextarea) {
+
+  // auto resize
+  feedbackTextarea.addEventListener('input', () => {
+
+    feedbackTextarea.style.height = 'auto';
+
+    feedbackTextarea.style.height =
+      feedbackTextarea.scrollHeight + 'px';
+  });
+
+  // ENTER = SEND
+  feedbackTextarea.addEventListener('keydown', (e) => {
+
+    if (
+      e.key === 'Enter' &&
+      !e.shiftKey
+    ) {
+
+      e.preventDefault();
+
+      document
+        .getElementById('sendFeedbackBtn')
+        ?.click();
+    }
+  });
+}
+
 
 document.getElementById('sendFeedbackBtn').onclick = async () => {
 
-  const message = document.getElementById('feedbackInput').value.trim();
+  const input =
+    document.getElementById('feedbackInput');
+
+  const convoBox =
+    document.getElementById('adminConversation');
+
+  const message = input.value.trim();
+
   if (!message) {
-    notify("Please enter a message", "error");
     return;
   }
 
-  const btn = document.getElementById('sendFeedbackBtn');
+  const btn =
+    document.getElementById('sendFeedbackBtn');
 
-  // 🔒 UX loading
+  // loading
   btn.disabled = true;
-  btn.textContent = 'Sending...';
+  btn.classList.add('opacity-50');
 
   try {
-    const res = await fetch(`${API_URL}/requests/${currentRequestId}/feedback`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      },
-      body: JSON.stringify({ message })
-    });
+
+    const res = await fetch(
+      `${API_URL}/requests/${currentRequestId}/feedback`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization':
+            `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({ message })
+      }
+    );
 
     if (!res.ok) {
-      throw new Error("Failed");
+      throw new Error('Failed');
     }
 
-    notify("Feedback sent", "success");
+    // =====================================
+    // INSTANT UI MESSAGE
+    // =====================================
 
-    // 🔥 AJOUT ICI (exactement ici)
-    const convoBox = document.getElementById('adminConversation');
+    const bubble =
+      document.createElement('div');
 
-    const bubble = document.createElement('div');
-    bubble.className = "bg-indigo-600 text-white px-3 py-2 rounded-lg max-w-[80%] ml-auto";
-    bubble.textContent = message;
+    bubble.className = `
+      ml-auto
+      max-w-[82%]
+      bg-indigo-600
+      text-white
+      rounded-3xl
+      rounded-br-md
+      px-4 py-3
+      shadow-sm
+      animate-fade-in
+    `;
 
-    convoBox.classList.remove('hidden');
+    bubble.innerHTML = `
+      <div class="text-[10px] opacity-70 mb-1 flex justify-between gap-3">
+
+        <span>
+          Father
+        </span>
+
+        <span>
+          ${new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </span>
+
+      </div>
+
+      <div class="text-sm leading-relaxed whitespace-pre-wrap">
+        ${message}
+      </div>
+    `;
+
     convoBox.appendChild(bubble);
-    convoBox.scrollTop = convoBox.scrollHeight;
 
-    // 🔄 reset UI
-    document.getElementById('feedbackInput').value = '';
-    document.getElementById('feedbackBox').classList.add('hidden');
+    // auto scroll
+    convoBox.scrollTop =
+      convoBox.scrollHeight;
 
-    // 🔄 refresh data
-    fetchRequests();
+    // reset input
+    input.value = '';
+    input.style.height = 'auto';
+
+    // refresh backend sync
+    await fetchRequests();
 
   } catch (err) {
+
     console.error(err);
-    notify("Error sending feedback", "error");
+
+    notify(
+      "Error sending message",
+      "error"
+    );
 
   } finally {
+
     btn.disabled = false;
-    btn.textContent = 'Send';
+    btn.classList.remove('opacity-50');
+
+    input.focus();
   }
 
 };
-
-    document.getElementById('closeDescription').onclick = () => {
-      const modal = document.getElementById('descriptionModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    };
-
-    document.getElementById('descriptionModal').addEventListener('click', (e) => {
-      if (e.target.id === 'descriptionModal') {
-        e.currentTarget.classList.add('hidden');
-        e.currentTarget.classList.remove('flex');
-      }
-    });
 
   </script>
 
