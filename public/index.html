@@ -257,6 +257,25 @@ button:active {
       background: rgba(99,102,241,0.08);
     }
 
+    /* =========================
+        CHAT BUBBLES
+      ========================= */
+
+      .chat-bubble {
+        width: fit-content;
+        max-width: 82%;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+
+      .chat-bubble.me {
+        align-self: flex-end;
+      }
+
+      .chat-bubble.other {
+        align-self: flex-start;
+      }
+
 </style>
 
 </head>
@@ -755,18 +774,17 @@ MESSENGER STYLE CLARIFICATION PANEL
     <div
       id="clarificationConversation"
       class="flex-1
-       min-h-0
-       overflow-y-auto
-       overflow-x-hidden
-       px-4 py-4
-       flex flex-col
-       gap-3
-       bg-gradient-to-b
-       from-gray-50/70
-       to-white
-       scroll-smooth
-       overscroll-contain
-       items-start">
+      min-h-0
+      overflow-y-auto
+      overflow-x-hidden
+      px-4 py-4
+      flex flex-col
+      gap-3
+      bg-gradient-to-b
+      from-gray-50/70
+      to-white
+      scroll-smooth
+      overscroll-contain">
 
       <!-- messages injectés ici -->
 
@@ -2542,9 +2560,9 @@ if (req.conversation?.length) {
     const bubble = document.createElement('div');
 
     bubble.className = `
-      inline-block
+      chat-bubble
+      ${isAdmin ? 'other' : 'me'}
       h-auto
-      max-w-[78%]
       px-4 py-2.5
       rounded-3xl
       text-sm
