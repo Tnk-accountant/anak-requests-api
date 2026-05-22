@@ -702,38 +702,158 @@ button:active {
         </div>
 
 
-            <!-- Panel Clarification -->
-      <div id="panel-clarification" class="action-panel hidden mt-2">
+<!-- =========================================
+MESSENGER STYLE CLARIFICATION PANEL
+========================================= -->
 
-        <h4 class="font-semibold text-orange-600 mb-2">
-          ⚠️ Clarification required
-        </h4>
-        <div id="clarificationConversation"
-          class="hidden flex flex-col gap-2 mb-3 max-h-[200px] overflow-y-auto">
+<div
+  id="panel-clarification"
+  class="action-panel hidden h-full">
+
+  <!-- CHAT CONTAINER -->
+  <div
+    class="flex flex-col h-full
+           border border-gray-200
+           rounded-3xl
+           overflow-hidden
+           bg-white
+           shadow-inner">
+
+    <!-- HEADER -->
+    <div
+      class="shrink-0
+             px-4 py-3
+             border-b border-gray-100
+             bg-gradient-to-r
+             from-orange-50
+             to-white">
+
+      <div class="flex items-center gap-3">
+
+        <div
+          class="w-10 h-10 rounded-full
+                 bg-orange-100
+                 flex items-center justify-center
+                 text-lg">
+          ⚠️
         </div>
 
-        <!-- INPUT USER -->
-        <textarea id="clarificationInput"
-          class="w-full border rounded px-3 py-2 mb-3"
-          rows="4"
-          placeholder="Write your clarification..."></textarea>
+        <div>
+          <div class="font-semibold text-orange-700">
+            Clarification required
+          </div>
 
-        <!-- ACTION -->
-        <div class="flex gap-3">
-          <button type="button"
-            id="clarificationSubmitBtn"
-            class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-            🔄 Resubmit
-          </button>
-
-          <button type="button"
-            id="clarificationBack"
-            class="bg-gray-100 px-4 py-2 rounded">
-            Back
-          </button>
+          <div class="text-xs text-gray-500">
+            Continue the conversation below
+          </div>
         </div>
 
       </div>
+    </div>
+
+    <!-- CONVERSATION -->
+    <div
+      id="clarificationConversation"
+      class="flex-1 overflow-y-auto
+             px-4 py-4
+             space-y-3
+             bg-gradient-to-b
+             from-gray-50/70
+             to-white
+             min-h-[320px]
+             scroll-smooth">
+
+      <!-- messages injectés ici -->
+
+    </div>
+
+    <!-- INPUT BAR -->
+    <div
+      class="shrink-0
+             border-t border-gray-100
+             bg-white
+             px-4 py-3">
+
+      <div class="flex items-end gap-3">
+
+        <!-- textarea -->
+        <textarea
+          id="clarificationInput"
+          rows="1"
+          placeholder="Write your clarification..."
+          class="flex-1
+                 resize-none
+                 bg-gray-50
+                 border border-gray-200
+                 rounded-2xl
+                 px-4 py-3
+                 outline-none
+                 text-sm
+                 text-gray-700
+                 leading-relaxed
+                 max-h-[120px]
+                 overflow-y-auto
+                 focus:ring-2
+                 focus:ring-indigo-500
+                 focus:border-indigo-500"></textarea>
+
+        <!-- send -->
+        <button
+          type="button"
+          id="clarificationSubmitBtn"
+          class="shrink-0
+                 w-12 h-12
+                 rounded-2xl
+                 bg-indigo-600
+                 hover:bg-indigo-700
+                 active:scale-95
+                 text-white
+                 flex items-center justify-center
+                 transition-all
+                 shadow-md hover:shadow-lg">
+
+          <svg xmlns="http://www.w3.org/2000/svg"
+               class="w-5 h-5"
+               fill="none"
+               viewBox="0 0 24 24"
+               stroke="currentColor">
+
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 12h14M12 5l7 7-7 7" />
+
+          </svg>
+
+        </button>
+
+      </div>
+
+      <!-- FOOTER -->
+      <div class="flex justify-between mt-2 px-1">
+
+        <button
+          type="button"
+          id="clarificationBack"
+          class="text-xs text-gray-400 hover:text-gray-600 transition">
+
+          ← Back
+
+        </button>
+
+        <div class="text-[11px] text-gray-300">
+          Press Enter to send
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
 
       </div>
       </div>
@@ -1613,6 +1733,25 @@ if (amountSearchInput) {
 // 🔥 CLARIFICATION ACTIONS (BON ENDROIT)
 // ==============================
 
+
+const clarificationInput =
+  document.getElementById('clarificationInput');
+
+clarificationInput?.addEventListener('keydown', (e) => {
+
+  // enter sans shift
+  if (e.key === 'Enter' && !e.shiftKey) {
+
+    e.preventDefault();
+
+    document
+      .getElementById('clarificationSubmitBtn')
+      ?.click();
+  }
+
+});
+
+
 // bouton BACK
 document.getElementById('clarificationBack')?.addEventListener('click', () => {
   hideAllPanels();
@@ -2389,23 +2528,49 @@ function openModalFor(request_id) {
       const isAdmin = msg.sender === 'admin';
 
       bubble.className = `
-        px-3 py-2 rounded-2xl max-w-[75%] text-sm leading-relaxed shadow-sm
+        max-w-[80%]
+        px-4 py-3
+        rounded-3xl
+        text-sm
+        leading-relaxed
+        shadow-sm
+        whitespace-pre-wrap
+        break-words
         ${isAdmin
-          ? 'bg-orange-100 text-gray-800'
-          : 'bg-indigo-600 text-white ml-auto'}
+          ? `
+            self-start
+            bg-orange-100
+            text-gray-800
+            rounded-bl-md
+          `
+          : `
+            self-end
+            bg-indigo-600
+            text-white
+            rounded-br-md
+          `
+        }
       `;
 
       bubble.innerHTML = `
-        <div class="text-[10px] opacity-60 mb-1">
+        <div class="text-[11px] mb-1 opacity-70 font-medium">
           ${isAdmin ? 'Father' : 'You'}
         </div>
-        <div>${msg.message}</div>
+
+        <div>
+          ${msg.message}
+        </div>
       `;
 
       // micro animation
       bubble.classList.add('animate-fade-in');
 
       convoBox.appendChild(bubble);
+
+      setTimeout(() => {
+      convoBox.scrollTop = convoBox.scrollHeight;
+    }, 50);
+
     });
 
     // scroll en bas
