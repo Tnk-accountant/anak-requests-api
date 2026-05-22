@@ -82,6 +82,27 @@
   animation: fadeInUp 0.2s ease;
 }
 
+<!--BUBBLE CSS-->
+.chat-bubble {
+  max-width: 75%;
+  padding: 10px 14px;
+
+  word-break: break-word;
+  overflow-wrap: break-word;
+
+  width: fit-content;
+
+  display: block;
+}
+
+.chat-bubble.me {
+  align-self: flex-end;
+}
+
+.chat-bubble.other {
+  align-self: flex-start;
+}
+
 
 </style>
 
@@ -363,8 +384,8 @@ CHAT LAYOUT
 
 
    <!-- =========================================
-UNIFIED CHAT CONTAINER
-========================================= -->
+    UNIFIED CHAT CONTAINER
+    ========================================= -->
 
 <div
   class="flex-1 flex flex-col
@@ -381,11 +402,11 @@ UNIFIED CHAT CONTAINER
   ========================================= -->
 
   <div
-    id="adminConversation"
     class="flex-1
           overflow-y-auto
           px-4 py-5
           flex flex-col
+          items-start
           gap-3
           bg-[#f5f7fb]
           min-h-0">
@@ -1277,30 +1298,31 @@ if (req.conversation?.length) {
   // BUBBLE
   const bubble = document.createElement('div');
 
-  bubble.className = `
-    max-w-[75%]
-    px-4 py-2.5
-    rounded-3xl
-    text-sm
-    leading-relaxed
-    shadow-sm
-    break-words
-    whitespace-pre-wrap
-    animate-fade-in
-    ${isAdmin
-      ? `
-        bg-indigo-600
-        text-white
-        rounded-br-md
-      `
-      : `
-        bg-white
-        text-gray-800
-        border border-gray-200
-        rounded-bl-md
-      `
-    }
-  `;
+      bubble.className = `
+        chat-bubble
+        ${isAdmin ? 'me' : 'other'}
+        px-4 py-2.5
+        rounded-3xl
+        text-sm
+        leading-relaxed
+        shadow-sm
+        break-words
+        whitespace-pre-wrap
+        animate-fade-in
+        ${isAdmin
+          ? `
+            bg-indigo-600
+            text-white
+            rounded-br-md
+          `
+          : `
+            bg-white
+            text-gray-800
+            border border-gray-200
+            rounded-bl-md
+          `
+        }
+      `;
 
   bubble.innerHTML = `
     <div class="text-[10px] opacity-70 mb-1">
@@ -2132,7 +2154,8 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
       const bubble = document.createElement('div');
 
       bubble.className = `
-        max-w-[75%]
+        chat-bubble
+        me
         bg-indigo-600
         text-white
         rounded-3xl
