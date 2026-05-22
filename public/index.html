@@ -261,20 +261,32 @@ button:active {
         CHAT BUBBLES
       ========================= */
 
-      .chat-bubble {
-        width: fit-content;
-        max-width: 82%;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-      }
+    .chat-bubble {
+      display: inline-flex;
+      flex-direction: column;
 
-      .chat-bubble.me {
-        align-self: flex-end;
-      }
+      width: fit-content;
+      max-width: min(78%, 420px);
 
-      .chat-bubble.other {
-        align-self: flex-start;
-      }
+      padding: 10px 14px;
+
+      border-radius: 22px;
+
+      line-height: 1.45;
+
+      white-space: pre-wrap;
+      word-break: break-word;
+
+      box-sizing: border-box;
+    }
+
+    .chat-bubble.me {
+      align-self: flex-end;
+    }
+
+    .chat-bubble.other {
+      align-self: flex-start;
+    }
 
 </style>
 
@@ -779,6 +791,7 @@ MESSENGER STYLE CLARIFICATION PANEL
       overflow-x-hidden
       px-4 py-4
       flex flex-col
+      items-start
       gap-3
       bg-gradient-to-b
       from-gray-50/70
@@ -795,7 +808,7 @@ MESSENGER STYLE CLARIFICATION PANEL
       class="shrink-0
              border-t border-gray-100
              bg-white
-             px-4 py-3">
+             px-4 py-2.5">
 
       <div class="flex items-end gap-3">
 
@@ -809,7 +822,7 @@ MESSENGER STYLE CLARIFICATION PANEL
                  bg-gray-50
                  border border-gray-200
                  rounded-2xl
-                 px-4 py-3
+                 px-4 py-2
                  outline-none
                  text-sm
                  text-gray-700

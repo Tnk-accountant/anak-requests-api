@@ -87,23 +87,22 @@
   display: inline-flex;
   flex-direction: column;
 
-  align-self: flex-start;
+  max-width: min(78%, 420px);
 
-  max-width: 75%;
+  width: fit-content;
 
-  padding: 12px 16px;
+  padding: 10px 14px;
 
-  border-radius: 24px;
+  border-radius: 22px;
 
   line-height: 1.45;
 
   white-space: pre-wrap;
   word-break: break-word;
 
-  width: auto;
   height: auto;
 
-  flex: none;
+  box-sizing: border-box;
 }
 
 
@@ -1299,8 +1298,8 @@ row.className = `
       bubble.className = `
         chat-bubble
         ${isAdmin ? 'me' : 'other'}
-        px-4 py-2.5
-        rounded-[28px]
+        px-3.5 py-2
+        rounded-2xl
         text-sm
         leading-relaxed
         shadow-sm
@@ -2156,7 +2155,7 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
         me
         bg-indigo-600
         text-white
-        rounded-[25px]
+        rounded-2xl
         px-4 py-2.5
         shadow-sm
         text-sm
