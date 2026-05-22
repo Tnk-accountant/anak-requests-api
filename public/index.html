@@ -708,7 +708,7 @@ MESSENGER STYLE CLARIFICATION PANEL
 
 <div
   id="panel-clarification"
-  class="action-panel hidden h-full">
+  class="action-panel hidden flex flex-col h-full min-h-0">
 
   <!-- CHAT CONTAINER -->
   <div
@@ -754,7 +754,7 @@ MESSENGER STYLE CLARIFICATION PANEL
     <!-- CONVERSATION -->
     <div
       id="clarificationConversation"
-      class="flex-1 overflow-y-auto
+      class="flex-1 min-h-0 overflow-y-auto
              px-4 py-4
              space-y-3
              bg-gradient-to-b
@@ -791,8 +791,8 @@ MESSENGER STYLE CLARIFICATION PANEL
                  text-sm
                  text-gray-700
                  leading-relaxed
-                 max-h-[120px]
-                 overflow-y-auto
+                 max-h-[180px]
+                 overflow-hidden
                  focus:ring-2
                  focus:ring-indigo-500
                  focus:border-indigo-500"></textarea>
@@ -831,20 +831,7 @@ MESSENGER STYLE CLARIFICATION PANEL
       </div>
 
       <!-- FOOTER -->
-      <div class="flex justify-between mt-2 px-1">
-
-        <button
-          type="button"
-          id="clarificationBack"
-          class="text-xs text-gray-400 hover:text-gray-600 transition">
-
-          ← Back
-
-        </button>
-
-        <div class="text-[11px] text-gray-300">
-          Press Enter to send
-        </div>
+      <div class="flex justify-end mt-2 px-1">
 
       </div>
 
@@ -1737,6 +1724,15 @@ if (amountSearchInput) {
 const clarificationInput =
   document.getElementById('clarificationInput');
 
+  clarificationInput?.addEventListener('input', () => {
+
+  clarificationInput.style.height = '0px';
+
+  clarificationInput.style.height =
+    clarificationInput.scrollHeight + 'px';
+
+});
+
 clarificationInput?.addEventListener('keydown', (e) => {
 
   // enter sans shift
@@ -1752,10 +1748,6 @@ clarificationInput?.addEventListener('keydown', (e) => {
 });
 
 
-// bouton BACK
-document.getElementById('clarificationBack')?.addEventListener('click', () => {
-  hideAllPanels();
-});
 
 // bouton RESUBMIT
 document.getElementById('clarificationSubmitBtn')?.addEventListener('click', async () => {
@@ -1771,7 +1763,8 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
   const btn = document.getElementById('clarificationSubmitBtn');
 
   try {
-    lockButton(btn, "Sending...");
+    btn.disabled = true;
+    btn.classList.add('opacity-60');
 
     const res = await fetchWithAuth(`${API_URL}/requests/${currentRequestId}/respond`, {
       method: "POST",
@@ -1793,6 +1786,7 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
 
     // reset textarea
     textarea.value = "";
+    textarea.style.height = 'auto';
 
     // 🔥 recharger le modal COMPLET
     openModalFor(currentRequestId);
@@ -1801,7 +1795,8 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
     console.error("Submit clarification error:", err);
     notify("Error sending response", "error");
   } finally {
-    unlockButton(btn);
+    btn.disabled = false;
+    btn.classList.remove('opacity-60');
   }
 
 });
@@ -2528,7 +2523,9 @@ function openModalFor(request_id) {
       const isAdmin = msg.sender === 'admin';
 
       bubble.className = `
-        max-w-[80%]
+        block
+        w-fit
+        max-w-[82%]
         px-4 py-3
         rounded-3xl
         text-sm
@@ -2536,10 +2533,12 @@ function openModalFor(request_id) {
         shadow-sm
         whitespace-pre-wrap
         break-words
+        animate-fade-in
         ${isAdmin
           ? `
             self-start
-            bg-orange-100
+            bg-white
+            border border-gray-200
             text-gray-800
             rounded-bl-md
           `
