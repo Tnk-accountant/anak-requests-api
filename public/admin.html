@@ -84,24 +84,22 @@
 
 /* BUBBLE CSS */
 .chat-bubble {
-  max-width: 75%;
-  width: auto;
+  display: inline-block;
 
-  padding: 10px 14px;
+  max-width: 72%;
+  min-width: 120px;
+
+  padding: 14px 18px;
+
+  border-radius: 24px;
+
+  line-height: 1.45;
 
   word-break: break-word;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   white-space: pre-wrap;
 
-  display: inline-block;
-}
-
-.chat-bubble.me {
-  align-self: flex-end;
-}
-
-.chat-bubble.other {
-  align-self: flex-start;
+  box-sizing: border-box;
 }
 
 
@@ -404,13 +402,7 @@ CHAT LAYOUT
 
   <div
   id="adminConversation"
-    class="flex-1
-          overflow-y-auto
-          px-4 py-5
-          flex flex-col
-          gap-3
-          bg-[#f5f7fb]
-          min-h-0">
+  class="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4 bg-[#f5f7fb] min-h-0">
 
     <!-- messages injectés ici -->
 
@@ -1291,10 +1283,10 @@ if (req.conversation?.length) {
   // ROW
   const row = document.createElement('div');
 
-  row.className = `
-    flex
-    ${isAdmin ? 'justify-end' : 'justify-start'}
-  `;
+row.className = `
+  w-full flex
+  ${isAdmin ? 'justify-end' : 'justify-start'}
+`;
 
   // BUBBLE
   const bubble = document.createElement('div');
@@ -2150,7 +2142,7 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
 
     const row = document.createElement('div');
 
-      row.className = 'flex justify-end';
+      row.className = 'w-full flex justify-end';
 
       const bubble = document.createElement('div');
 
@@ -2159,8 +2151,7 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
         me
         bg-indigo-600
         text-white
-        rounded-3xl
-        rounded-br-md
+        rounded-[25px]
         px-4 py-2.5
         shadow-sm
         text-sm
