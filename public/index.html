@@ -757,13 +757,15 @@ MESSENGER STYLE CLARIFICATION PANEL
       class="flex-1
        min-h-0
        overflow-y-auto
+       overflow-x-hidden
        px-4 py-4
        flex flex-col
        gap-3
        bg-gradient-to-b
        from-gray-50/70
        to-white
-       scroll-smooth">
+       scroll-smooth
+       overscroll-contain">
 
       <!-- messages injectés ici -->
 
@@ -782,7 +784,7 @@ MESSENGER STYLE CLARIFICATION PANEL
         <textarea
           id="clarificationInput"
           rows="1"
-          placeholder="Write your clarification..."
+          placeholder="Type your message..."
           class="flex-1
                  resize-none
                  bg-gray-50
@@ -1788,7 +1790,7 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
 
     // reset textarea
     textarea.value = "";
-    textarea.style.height = 'auto';
+    textarea.style.height = '0px';
 
     // 🔥 recharger le modal COMPLET
     openModalFor(currentRequestId);
@@ -2509,82 +2511,91 @@ function openModalFor(request_id) {
     return;
   }
 
-  // ==============================
-  // CONVERSATION
-  // ==============================
-  const convoBox = document.getElementById('clarificationConversation');
-  convoBox.innerHTML = '';
+// ==============================
+// CONVERSATION
+// ==============================
+const convoBox =
+  document.getElementById('clarificationConversation');
 
-  if (req.conversation?.length) {
+convoBox.innerHTML = '';
 
-    convoBox.classList.remove('hidden');
+if (req.conversation?.length) {
 
-    req.conversation.forEach((msg) => {
+  convoBox.classList.remove('hidden');
 
-      const bubble = document.createElement('div');
-      const isAdmin = msg.sender === 'admin';
+  req.conversation.forEach((msg) => {
 
-      bubble.className = `
-        w-fit
-        max-w-[80%]
-        px-4 py-3
-        rounded-3xl
-        text-sm
-        leading-relaxed
-        shadow-sm
-        whitespace-pre-wrap
-        break-words
-        animate-fade-in
-        ${isAdmin
-          ? `
-            self-start
-            bg-white
-            border border-gray-200
-            text-gray-800
-            rounded-bl-md
-          `
-          : `
-            self-end
-            bg-indigo-600
-            text-white
-            rounded-br-md
-          `
-        }
-      `;
+    const isAdmin =
+      msg.sender === 'admin';
 
-      bubble.innerHTML = `
-        <div class="text-[11px] opacity-70 font-medium mb-1">
-          ${isAdmin ? 'Father' : 'You'}
-        </div>
+    // ROW
+    const row = document.createElement('div');
 
-        <div class="whitespace-pre-wrap break-words">
-          ${msg.message}
-        </div>
-      `;
+    row.className = `
+      flex
+      ${isAdmin ? 'justify-start' : 'justify-end'}
+    `;
 
-      // micro animation
-      bubble.classList.add('animate-fade-in');
+    // BUBBLE
+    const bubble = document.createElement('div');
 
-      convoBox.appendChild(bubble);
+    bubble.className = `
+      max-w-[78%]
+      px-4 py-2.5
+      rounded-3xl
+      text-sm
+      leading-relaxed
+      shadow-sm
+      whitespace-pre-wrap
+      break-words
+      animate-fade-in
+      ${isAdmin
+        ? `
+          bg-white
+          border border-gray-200
+          text-gray-800
+          rounded-bl-md
+        `
+        : `
+          bg-indigo-600
+          text-white
+          rounded-br-md
+        `
+      }
+    `;
 
-      setTimeout(() => {
-      convoBox.scrollTop = convoBox.scrollHeight;
-    }, 50);
+    bubble.innerHTML = `
+      <div class="text-[10px] opacity-70 mb-1">
+        ${isAdmin ? 'Father' : 'You'}
+      </div>
 
-    });
-
-    // scroll en bas
-    convoBox.scrollTop = convoBox.scrollHeight;
-
-  } else {
-    // empty state propre
-    convoBox.classList.remove('hidden');
-    convoBox.innerHTML = `
-      <div class="text-xs text-gray-400 text-center py-4">
-        No conversation yet
+      <div class="whitespace-pre-wrap break-words">
+        ${msg.message}
       </div>
     `;
-  }
+
+    row.appendChild(bubble);
+
+    convoBox.appendChild(row);
+
+  });
+
+  // scroll bottom
+  setTimeout(() => {
+    convoBox.scrollTop = convoBox.scrollHeight;
+  }, 30);
+
+} else {
+
+  // EMPTY STATE
+  convoBox.classList.remove('hidden');
+
+  convoBox.innerHTML = `
+    <div class="text-xs text-gray-400 text-center py-8">
+      No conversation yet
+    </div>
+  `;
+}
 
   // ==============================
   // ACTION BUTTON

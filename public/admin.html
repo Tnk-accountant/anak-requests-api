@@ -1264,74 +1264,59 @@ if (req.conversation?.length) {
 
   req.conversation.forEach((msg) => {
 
-    // ------------------------------
-    // CREATE BUBBLE
-    // ------------------------------
-    const row = document.createElement('div');
+  const isAdmin = msg.sender === 'admin';
 
-    row.className = `
-      flex
-      ${isAdmin ? 'justify-end' : 'justify-start'}
-    `;
+  // ROW
+  const row = document.createElement('div');
 
-    const bubble = document.createElement('div');
+  row.className = `
+    flex
+    ${isAdmin ? 'justify-end' : 'justify-start'}
+  `;
 
-    bubble.className = `
-      max-w-[75%]
-      px-4 py-2.5
-      rounded-3xl
-      text-sm
-      leading-relaxed
-      shadow-sm
-      break-words
-      whitespace-pre-wrap
-      animate-fade-in
-      ${isAdmin
-        ? `
-          bg-indigo-600
-          text-white
-          rounded-br-md
-        `
-        : `
-          bg-white
-          text-gray-800
-          border border-gray-200
-          rounded-bl-md
-        `
-      }
-    `;
+  // BUBBLE
+  const bubble = document.createElement('div');
 
-    bubble.innerHTML = `
-      <div class="whitespace-pre-wrap break-words">
-        ${msg.message}
-      </div>
-    `;
+  bubble.className = `
+    max-w-[75%]
+    px-4 py-2.5
+    rounded-3xl
+    text-sm
+    leading-relaxed
+    shadow-sm
+    break-words
+    whitespace-pre-wrap
+    animate-fade-in
+    ${isAdmin
+      ? `
+        bg-indigo-600
+        text-white
+        rounded-br-md
+      `
+      : `
+        bg-white
+        text-gray-800
+        border border-gray-200
+        rounded-bl-md
+      `
+    }
+  `;
 
-    row.appendChild(bubble);
-    convoBox.appendChild(row);
+  bubble.innerHTML = `
+    <div class="text-[10px] opacity-70 mb-1">
+      ${isAdmin ? 'Father' : 'User'}
+    </div>
 
-    // ------------------------------
-    // CONTENT
-    // ------------------------------
-    bubble.innerHTML = `
-      <div class="text-[10px] opacity-70 mb-1">
-        ${isAdmin ? 'Admin' : 'User'}
-      </div>
-      <div class="inline whitespace-pre-wrap break-words">
-        ${msg.message}
-      </div>
-    `;
+    <div class="whitespace-pre-wrap break-words">
+      ${msg.message}
+    </div>
+  `;
 
-    // ------------------------------
-    // MICRO ANIMATION
-    // ------------------------------
-    bubble.classList.add('animate-fade-in');
+  row.appendChild(bubble);
 
-    // ------------------------------
-    // APPEND
-    // ------------------------------
-    convoBox.appendChild(bubble);
-  });
+  convoBox.appendChild(row);
+
+});
 
   // ------------------------------
   // AUTO SCROLL (une seule fois)
@@ -2138,6 +2123,8 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
     // INSTANT UI MESSAGE
     // =====================================
 
+    convoBox.classList.remove('hidden');
+
     const row = document.createElement('div');
 
       row.className = 'flex justify-end';
@@ -2160,6 +2147,10 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
       `;
 
       bubble.innerHTML = `
+        <div class="text-[10px] opacity-70 mb-1">
+          Father
+        </div>
+
         <div class="whitespace-pre-wrap break-words">
           ${message}
         </div>
