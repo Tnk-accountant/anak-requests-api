@@ -82,17 +82,18 @@
   animation: fadeInUp 0.2s ease;
 }
 
-<!--BUBBLE CSS-->
+/* BUBBLE CSS */
 .chat-bubble {
   max-width: 75%;
+  width: auto;
+
   padding: 10px 14px;
 
   word-break: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 
-  width: fit-content;
-
-  display: block;
+  display: inline-block;
 }
 
 .chat-bubble.me {
@@ -402,11 +403,11 @@ CHAT LAYOUT
   ========================================= -->
 
   <div
+  id="adminConversation"
     class="flex-1
           overflow-y-auto
           px-4 py-5
           flex flex-col
-          items-start
           gap-3
           bg-[#f5f7fb]
           min-h-0">
