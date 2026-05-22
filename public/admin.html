@@ -410,21 +410,22 @@ UNIFIED CHAT CONTAINER
         id="feedbackInput"
         rows="1"
         placeholder="Write a clarification request..."
-        class="flex-1
-               resize-none
-               bg-gray-50
-               border border-gray-200
-               rounded-2xl
-               px-4 py-3
-               outline-none
-               text-sm
-               text-gray-700
-               leading-relaxed
-               max-h-[120px]
-               overflow-y-auto
-               focus:ring-2
-               focus:ring-indigo-500
-               focus:border-indigo-500"></textarea>
+          class="flex-1
+                resize-none
+                bg-gray-50
+                border border-gray-200
+                rounded-2xl
+                px-4 py-3
+                outline-none
+                text-sm
+                text-gray-700
+                leading-relaxed
+                min-h-[52px]
+                overflow-hidden
+                focus:ring-2
+                focus:ring-indigo-500
+                focus:border-indigo-500
+                transition-all"></textarea>
 
       <!-- send -->
       <button
@@ -1269,10 +1270,32 @@ if (req.conversation?.length) {
     const isAdmin = msg.sender === 'admin';
 
     bubble.className = `
-      px-3 py-2 rounded-2xl max-w-[75%] text-sm leading-relaxed shadow-sm
+      inline-block
+      w-fit
+      max-w-[80%]
+      px-4 py-3
+      rounded-3xl
+      text-sm
+      leading-relaxed
+      shadow-sm
+      whitespace-pre-wrap
+      break-words
+      animate-fade-in
       ${isAdmin
-        ? 'bg-indigo-600 text-white ml-auto'
-        : 'bg-white border text-gray-800'}
+        ? `
+          self-end
+          bg-indigo-600
+          text-white
+          rounded-br-md
+        `
+        : `
+          self-start
+          bg-white
+          border border-gray-200
+          text-gray-800
+          rounded-bl-md
+        `
+      }
     `;
 
     // ------------------------------
@@ -2034,6 +2057,8 @@ if (feedbackTextarea) {
 
     feedbackTextarea.style.height = 'auto';
 
+    feedbackTextarea.style.height = '0px';
+
     feedbackTextarea.style.height =
       feedbackTextarea.scrollHeight + 'px';
   });
@@ -2103,17 +2128,19 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
     const bubble =
       document.createElement('div');
 
-    bubble.className = `
-      ml-auto
-      max-w-[82%]
-      bg-indigo-600
-      text-white
-      rounded-3xl
-      rounded-br-md
-      px-4 py-3
-      shadow-sm
-      animate-fade-in
-    `;
+      bubble.className = `
+        self-end
+        inline-block
+        w-fit
+        max-w-[80%]
+        bg-indigo-600
+        text-white
+        rounded-3xl
+        rounded-br-md
+        px-4 py-3
+        shadow-sm
+        animate-fade-in
+      `;
 
     bubble.innerHTML = `
       <div class="text-[10px] opacity-70 mb-1 flex justify-between gap-3">
