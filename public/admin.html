@@ -84,25 +84,23 @@
 
 /* BUBBLE CSS */
 .chat-bubble {
-  display: inline-flex;
-  flex-direction: column;
+  display: inline-block;
 
-  max-width: min(78%, 420px);
+  width: auto;
+ max-width: min(75%, 420px);
 
-  width: fit-content;
+  padding: 12px 16px;
 
-  padding: 10px 14px;
-
-  border-radius: 22px;
+  border-radius: 24px;
 
   line-height: 1.45;
 
   white-space: pre-wrap;
   word-break: break-word;
 
-  height: auto;
-
   box-sizing: border-box;
+
+  flex: none;
 }
 
 
@@ -1298,13 +1296,13 @@ row.className = `
       bubble.className = `
         chat-bubble
         ${isAdmin ? 'me' : 'other'}
-        px-3.5 py-2
+        px-3.5 py-1
         rounded-2xl
         text-sm
         leading-relaxed
         shadow-sm
         break-words
-        whitespace-pre-wrap
+        whitespace-pre-line
         animate-fade-in
         ${isAdmin
           ? `
@@ -1326,7 +1324,7 @@ row.className = `
       ${isAdmin ? 'Father' : 'User'}
     </div>
 
-    <div class="whitespace-pre-wrap break-words">
+    <div class="break-words">
       ${msg.message}
     </div>
   `;
