@@ -754,14 +754,16 @@ MESSENGER STYLE CLARIFICATION PANEL
     <!-- CONVERSATION -->
     <div
       id="clarificationConversation"
-      class="flex-1 min-h-0 overflow-y-auto
-             px-4 py-4
-             space-y-3
-             bg-gradient-to-b
-             from-gray-50/70
-             to-white
-             min-h-[320px]
-             scroll-smooth">
+      class="flex-1
+       min-h-0
+       overflow-y-auto
+       px-4 py-4
+       flex flex-col
+       gap-3
+       bg-gradient-to-b
+       from-gray-50/70
+       to-white
+       scroll-smooth">
 
       <!-- messages injectés ici -->
 
@@ -2523,9 +2525,8 @@ function openModalFor(request_id) {
       const isAdmin = msg.sender === 'admin';
 
       bubble.className = `
-        block
         w-fit
-        max-w-[82%]
+        max-w-[80%]
         px-4 py-3
         rounded-3xl
         text-sm
@@ -2552,11 +2553,11 @@ function openModalFor(request_id) {
       `;
 
       bubble.innerHTML = `
-        <div class="text-[11px] mb-1 opacity-70 font-medium">
+        <div class="text-[11px] opacity-70 font-medium mb-1">
           ${isAdmin ? 'Father' : 'You'}
         </div>
 
-        <div>
+        <div class="whitespace-pre-wrap break-words">
           ${msg.message}
         </div>
       `;

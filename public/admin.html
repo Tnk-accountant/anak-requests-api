@@ -371,10 +371,10 @@ UNIFIED CHAT CONTAINER
          border border-gray-200
          rounded-3xl
          overflow-hidden
-         max-h-[180px]
+         h-full
+         min-h-0
          bg-white
-         shadow-inner
-         min-h-0">
+         shadow-inner">
 
   <!-- =========================================
   MESSAGES
@@ -384,13 +384,11 @@ UNIFIED CHAT CONTAINER
     id="adminConversation"
     class="flex-1
           overflow-y-auto
-          px-4 py-4
+          px-4 py-5
           flex flex-col
-          gap-4
-          bg-gradient-to-b
-          from-gray-50/70
-          to-white
-          scroll-smooth">
+          gap-3
+          bg-[#f5f7fb]
+          min-h-0">
 
     <!-- messages injectés ici -->
 
@@ -1269,38 +1267,48 @@ if (req.conversation?.length) {
     // ------------------------------
     // CREATE BUBBLE
     // ------------------------------
+    const row = document.createElement('div');
+
+    row.className = `
+      flex
+      ${isAdmin ? 'justify-end' : 'justify-start'}
+    `;
+
     const bubble = document.createElement('div');
 
-    const isAdmin = msg.sender === 'admin';
-
     bubble.className = `
-      block
-      w-fit
-      max-w-[80%]
-      px-4 py-3
+      max-w-[75%]
+      px-4 py-2.5
       rounded-3xl
       text-sm
       leading-relaxed
       shadow-sm
-      whitespace-pre-wrap
       break-words
+      whitespace-pre-wrap
       animate-fade-in
       ${isAdmin
         ? `
-          self-end
           bg-indigo-600
           text-white
           rounded-br-md
         `
         : `
-          self-start
           bg-white
-          border border-gray-200
           text-gray-800
+          border border-gray-200
           rounded-bl-md
         `
       }
     `;
+
+    bubble.innerHTML = `
+      <div class="whitespace-pre-wrap break-words">
+        ${msg.message}
+      </div>
+    `;
+
+    row.appendChild(bubble);
+    convoBox.appendChild(row);
 
     // ------------------------------
     // CONTENT
@@ -2130,45 +2138,35 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
     // INSTANT UI MESSAGE
     // =====================================
 
-    const bubble =
-      document.createElement('div');
+    const row = document.createElement('div');
+
+      row.className = 'flex justify-end';
+
+      const bubble = document.createElement('div');
 
       bubble.className = `
-        self-end
-        block
-        w-fit
-        max-w-[80%]
+        max-w-[75%]
         bg-indigo-600
         text-white
         rounded-3xl
         rounded-br-md
-        px-4 py-3
+        px-4 py-2.5
         shadow-sm
+        text-sm
+        leading-relaxed
+        whitespace-pre-wrap
+        break-words
         animate-fade-in
       `;
 
-    bubble.innerHTML = `
-      <div class="text-[10px] opacity-70 mb-1 flex justify-between gap-3">
+      bubble.innerHTML = `
+        <div class="whitespace-pre-wrap break-words">
+          ${message}
+        </div>
+      `;
 
-        <span>
-          Father
-        </span>
-
-        <span>
-          ${new Date().toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
-        </span>
-
-      </div>
-
-      <div class="inline whitespace-pre-wrap break-words text-sm leading-relaxed">
-        ${message}
-      </div>
-    `;
-
-    convoBox.appendChild(bubble);
+      row.appendChild(bubble);
+      convoBox.appendChild(row);
 
     // auto scroll
     convoBox.scrollTop =
