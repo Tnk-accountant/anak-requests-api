@@ -765,7 +765,8 @@ MESSENGER STYLE CLARIFICATION PANEL
        from-gray-50/70
        to-white
        scroll-smooth
-       overscroll-contain">
+       overscroll-contain
+       items-start">
 
       <!-- messages injectés ici -->
 
@@ -2533,6 +2534,7 @@ if (req.conversation?.length) {
 
     row.className = `
       flex
+      items-start
       ${isAdmin ? 'justify-start' : 'justify-end'}
     `;
 
@@ -2540,6 +2542,8 @@ if (req.conversation?.length) {
     const bubble = document.createElement('div');
 
     bubble.className = `
+      inline-block
+      h-auto
       max-w-[78%]
       px-4 py-2.5
       rounded-3xl
