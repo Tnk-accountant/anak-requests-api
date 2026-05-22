@@ -280,7 +280,7 @@
 CHAT LAYOUT
 ========================================= -->
 
-<div class="flex flex-col h-[75vh]">
+<div class="flex flex-col h-[85vh] max-h-[85vh]">
 
   <!-- =========================================
   REQUEST DESCRIPTION
@@ -371,6 +371,7 @@ UNIFIED CHAT CONTAINER
          border border-gray-200
          rounded-3xl
          overflow-hidden
+         max-h-[180px]
          bg-white
          shadow-inner
          min-h-0">
@@ -381,13 +382,15 @@ UNIFIED CHAT CONTAINER
 
   <div
     id="adminConversation"
-    class="flex-1 overflow-y-auto
-           px-4 py-4
-           space-y-4
-           bg-gradient-to-b
-           from-gray-50/70
-           to-white
-           scroll-smooth">
+    class="flex-1
+          overflow-y-auto
+          px-4 py-4
+          flex flex-col
+          gap-4
+          bg-gradient-to-b
+          from-gray-50/70
+          to-white
+          scroll-smooth">
 
     <!-- messages injectés ici -->
 
@@ -422,6 +425,7 @@ UNIFIED CHAT CONTAINER
                 leading-relaxed
                 min-h-[52px]
                 overflow-hidden
+                max-h-[180px]
                 focus:ring-2
                 focus:ring-indigo-500
                 focus:border-indigo-500
@@ -1270,7 +1274,7 @@ if (req.conversation?.length) {
     const isAdmin = msg.sender === 'admin';
 
     bubble.className = `
-      inline-block
+      block
       w-fit
       max-w-[80%]
       px-4 py-3
@@ -1305,7 +1309,9 @@ if (req.conversation?.length) {
       <div class="text-[10px] opacity-70 mb-1">
         ${isAdmin ? 'Admin' : 'User'}
       </div>
-      <div>${msg.message}</div>
+      <div class="inline whitespace-pre-wrap break-words">
+        ${msg.message}
+      </div>
     `;
 
     // ------------------------------
@@ -2053,15 +2059,14 @@ const feedbackTextarea =
 if (feedbackTextarea) {
 
   // auto resize
-  feedbackTextarea.addEventListener('input', () => {
+feedbackTextarea.addEventListener('input', () => {
 
-    feedbackTextarea.style.height = 'auto';
+  feedbackTextarea.style.height = '0px';
 
-    feedbackTextarea.style.height = '0px';
+  feedbackTextarea.style.height =
+    feedbackTextarea.scrollHeight + 'px';
 
-    feedbackTextarea.style.height =
-      feedbackTextarea.scrollHeight + 'px';
-  });
+});
 
   // ENTER = SEND
   feedbackTextarea.addEventListener('keydown', (e) => {
@@ -2130,7 +2135,7 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
 
       bubble.className = `
         self-end
-        inline-block
+        block
         w-fit
         max-w-[80%]
         bg-indigo-600
@@ -2158,7 +2163,7 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
 
       </div>
 
-      <div class="text-sm leading-relaxed whitespace-pre-wrap">
+      <div class="inline whitespace-pre-wrap break-words text-sm leading-relaxed">
         ${message}
       </div>
     `;
