@@ -100,6 +100,9 @@
   white-space: pre-wrap;
 
   box-sizing: border-box;
+
+  height: auto;
+  flex: none;
 }
 
 
@@ -1283,10 +1286,13 @@ if (req.conversation?.length) {
   // ROW
   const row = document.createElement('div');
 
-row.className = `
-  w-full flex
-  ${isAdmin ? 'justify-end' : 'justify-start'}
-`;
+    row.className = `
+      w-full flex
+      ${isAdmin
+        ? 'justify-end items-end'
+        : 'justify-start items-start'
+      }
+    `;
 
   // BUBBLE
   const bubble = document.createElement('div');
