@@ -2051,151 +2051,117 @@ roleSelectCreate.addEventListener('change', toggleCenterInput);
 toggleCenterInput();
 
 
-// =====================================
-// CHAT AUTO RESIZE + ENTER TO SEND
-// =====================================
+// ─────────────────────────────────────────
+// CHAT — Auto-resize + Enter to send
+// ─────────────────────────────────────────
 
-const feedbackTextarea =
-  document.getElementById('feedbackInput');
+const feedbackTextarea = document.getElementById('feedbackInput');
 
-if (feedbackTextarea) {
-
-  // auto resize
-feedbackTextarea.addEventListener('input', () => {
-
-  feedbackTextarea.style.height = '0px';
-
-  feedbackTextarea.style.height =
-    feedbackTextarea.scrollHeight + 'px';
-
+feedbackTextarea?.addEventListener('input', () => {
+  feedbackTextarea.style.height = 'auto';
+  feedbackTextarea.style.height = feedbackTextarea.scrollHeight + 'px';
 });
 
-  // ENTER = SEND
-  feedbackTextarea.addEventListener('keydown', (e) => {
+feedbackTextarea?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('sendFeedbackBtn')?.click();
+  }
+});
 
-    if (
-      e.key === 'Enter' &&
-      !e.shiftKey
-    ) {
 
-      e.preventDefault();
+// ─────────────────────────────────────────
+// CHAT — Send message
+// ─────────────────────────────────────────
 
-      document
-        .getElementById('sendFeedbackBtn')
-        ?.click();
+function appendBubble(convoBox, { isAdmin, senderName, message }) {
+  const row = document.createElement('div');
+  row.className = `w-full flex ${isAdmin ? 'justify-end' : 'justify-start'}`;
+
+  const bubble = document.createElement('div');
+  bubble.className = `
+    chat-bubble text-sm leading-relaxed break-words animate-fade-in
+    ${isAdmin
+      ? 'bg-indigo-500 text-white rounded-[18px] rounded-br-[4px]'
+      : 'bg-white text-gray-800 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
     }
-  });
+    px-4 py-2 shadow-sm
+  `;
+
+  bubble.innerHTML = `
+    <div class="text-[10px] opacity-60 mb-1">${senderName}</div>
+    <div class="break-words whitespace-pre-wrap">${message}</div>
+  `;
+
+  row.appendChild(bubble);
+  convoBox.appendChild(row);
+  convoBox.scrollTop = convoBox.scrollHeight;
 }
 
 
 document.getElementById('sendFeedbackBtn').onclick = async () => {
-
-  const input =
-    document.getElementById('feedbackInput');
-
-  const convoBox =
-    document.getElementById('adminConversation');
-
+  const input   = document.getElementById('feedbackInput');
+  const convoBox = document.getElementById('adminConversation');
+  const btn     = document.getElementById('sendFeedbackBtn');
   const message = input.value.trim();
 
-  if (!message) {
-    return;
-  }
+  if (!message) return;
 
-  const btn =
-    document.getElementById('sendFeedbackBtn');
-
-  // loading
+  // ── Loading state ──
   btn.disabled = true;
-  btn.classList.add('opacity-50');
+  btn.innerHTML = `
+    <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10"
+        stroke="currentColor" stroke-width="4"/>
+      <path class="opacity-75" fill="currentColor"
+        d="M4 12a8 8 0 018-8v8H4z"/>
+    </svg>
+  `;
 
   try {
+    const res = await fetch(`${API_URL}/requests/${currentRequestId}/feedback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      },
+      body: JSON.stringify({ message })
+    });
 
-    const res = await fetch(
-      `${API_URL}/requests/${currentRequestId}/feedback`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization':
-            `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify({ message })
-      }
-    );
+    if (!res.ok) throw new Error('Send failed');
 
-    if (!res.ok) {
-      throw new Error('Failed');
-    }
-
-    // =====================================
-    // INSTANT UI MESSAGE
-    // =====================================
-
+    // ── Instant UI bubble ──
     convoBox.classList.remove('hidden');
+    appendBubble(convoBox, { isAdmin: true, senderName: 'Father', message });
 
-    const row = document.createElement('div');
-
-      row.className = 'w-full flex justify-end';
-
-      const bubble = document.createElement('div');
-
-    bubble.className = `
-      chat-bubble
-      me
-      bg-indigo-600
-      text-white
-      rounded-3xl
-      px-4 py-2
-      shadow-sm
-      text-sm
-      leading-relaxed
-      break-words
-      animate-fade-in
-    `;
-
-    bubble.innerHTML = `
-      <div class="text-[10px] opacity-70 mb-2">
-        Admin
-      </div>
-
-      <div>
-        ${message}
-      </div>
-    `;
-
-      row.appendChild(bubble);
-      convoBox.appendChild(row);
-
-    // auto scroll
-    convoBox.scrollTop =
-      convoBox.scrollHeight;
-
-    // reset input
+    // ── Reset input ──
     input.value = '';
     input.style.height = 'auto';
 
-    // refresh backend sync
+    // ── Sync backend ──
     await fetchRequests();
 
   } catch (err) {
-
     console.error(err);
-
-    notify(
-      "Error sending message",
-      "error"
-    );
+    notify('Error sending message', 'error');
 
   } finally {
-
     btn.disabled = false;
-    btn.classList.remove('opacity-50');
-
+    btn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
+        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    `;
     input.focus();
   }
-
 };
+
+
+// ─────────────────────────────────────────
+// MODAL — Close description
+// ─────────────────────────────────────────
 
 document.getElementById('closeDescription').onclick = () => {
   const modal = document.getElementById('descriptionModal');
