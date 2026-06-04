@@ -86,9 +86,9 @@
 .chat-bubble {
   display: inline-flex;
   flex-direction: column;
-  width: fit-content;
+  width: fit-content;      /* ← remplace width: auto */
   max-width: 65%;
-  padding: 8px 14px;
+  padding: 8px 14px;       /* ← réduit le padding */
   border-radius: 18px;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1263,81 +1263,53 @@ if (openDescBtn) {
     // reset
     convoBox.innerHTML = '';
 
-// ==============================
-// CONVERSATION (future-proof)
-// ==============================
+// ─────────────────────────────────────────
+// CONVERSATION RENDER
+// ─────────────────────────────────────────
 if (req.conversation?.length) {
 
-  convoBox.classList.remove('hidden');
   convoBox.innerHTML = '';
 
   req.conversation.forEach((msg) => {
+    const isAdmin = msg.sender === 'admin';
+    const senderName = isAdmin ? 'Father' : (msg.sender_name || msg.sender);
 
-  const isAdmin = msg.sender === 'admin';
+    const row = document.createElement('div');
+    row.className = `w-full flex ${isAdmin ? 'justify-end' : 'justify-start'}`;
 
-  // ROW
-  const row = document.createElement('div');
-
-row.className = `w-full flex ${isAdmin ? 'justify-end' : 'justify-start'}`;
-
-  // BUBBLE
-  const bubble = document.createElement('div');
-
-      bubble.className = `
-        chat-bubble
-        ${isAdmin ? 'me' : 'other'}
-        px-3.5 py-1
-        rounded-2xl
-        text-sm
-        leading-relaxed
-        shadow-sm
-        break-words
-        whitespace-pre-line
-        animate-fade-in
-        ${isAdmin
-          ? `
-            bg-indigo-600
-            text-white
-            rounded-3xl
-            rounded-br-lg
-          `
-          : `
-            bg-white
-            text-gray-800
-            border border-gray-200
-            rounded-bl-md
-          `
-        }
-      `;
+    const bubble = document.createElement('div');
+    bubble.className = `
+      chat-bubble text-sm leading-relaxed break-words animate-fade-in shadow-sm
+      ${isAdmin
+        ? 'bg-indigo-500 text-white rounded-[18px] rounded-br-[4px]'
+        : 'bg-white text-gray-800 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
+      }
+      px-4 py-2
+    `;
 
     bubble.innerHTML = `
-      <div class="text-[10px] opacity-60 mb-1">
-        ${isAdmin ? 'Father' : (msg.sender_name || msg.sender)}
-      </div>
+      <div class="text-[10px] opacity-60 mb-1">${senderName}</div>
       <div class="break-words whitespace-pre-wrap">${msg.message}</div>
     `;
 
-      row.appendChild(bubble);
+    row.appendChild(bubble);
+    convoBox.appendChild(row);
+  });
 
-      convoBox.appendChild(row);
-
-    });
+  convoBox.scrollTop = convoBox.scrollHeight;
 
   // ------------------------------
   // AUTO SCROLL (une seule fois)
   // ------------------------------
   convoBox.scrollTop = convoBox.scrollHeight;
+  
+} else {
+  convoBox.innerHTML = `
+    <div class="text-xs text-gray-400 text-center py-8">
+      No conversation yet
+    </div>
+  `;
 }
-
-    // 🔥 CAS 3 — rien
-    else {
-        convoBox.classList.remove('hidden');
-        convoBox.innerHTML = `
-          <div class="text-xs text-gray-400 text-center py-4">
-            No conversation yet
-          </div>
-        `;
-      }
 
     // ==============================
     // RESET INPUT
