@@ -287,6 +287,13 @@ button:active {
       align-self: flex-start;
     }
 
+/*Hauteur des lignes dans my requests*/
+  #myRequestsTable tr td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+
 </style>
 
 </head>
@@ -2571,43 +2578,19 @@ if (req.conversation?.length) {
     // BUBBLE
     const bubble = document.createElement('div');
 
-    bubble.className = `
-      chat-bubble
-      ${isAdmin ? 'other' : 'me'}
-      h-auto
-      px-4 py-2.5
-      rounded-3xl
-      text-sm
-      leading-relaxed
-      shadow-sm
-      whitespace-pre-wrap
-      break-words
-      animate-fade-in
-      ${isAdmin
-        ? `
-          bg-white
-          text-gray-800
-          border border-gray-200
-          rounded-3xl
-          rounded-bl-lg
-        `
-        : `
-          bg-indigo-600
-          text-white
-          rounded-br-md
-        `
-      }
-    `;
+bubble.className = `
+  chat-bubble text-sm leading-relaxed break-words animate-fade-in shadow-sm
+  ${isAdmin
+    ? 'bg-white text-gray-800 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
+    : 'bg-indigo-500 text-white rounded-[18px] rounded-br-[4px]'
+  }
+  px-4 py-2
+`;
 
-    bubble.innerHTML = `
-      <div class="text-[10px] opacity-70 mb-1">
-        ${isAdmin ? 'Father' : 'You'}
-      </div>
-
-      <div class="whitespace-pre-wrap break-words">
-        ${msg.message}
-      </div>
-    `;
+bubble.innerHTML = `
+  <div class="text-[10px] opacity-60 mb-1">${isAdmin ? 'Father' : 'You'}</div>
+  <div class="whitespace-pre-wrap break-words">${msg.message}</div>
+`;
 
     row.appendChild(bubble);
 

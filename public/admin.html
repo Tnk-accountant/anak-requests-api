@@ -86,9 +86,9 @@
 .chat-bubble {
   display: inline-flex;
   flex-direction: column;
-  width: fit-content;      /* ← remplace width: auto */
+  width: fit-content;
   max-width: 65%;
-  padding: 8px 14px;       /* ← réduit le padding */
+  padding: 8px 14px;
   border-radius: 18px;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1278,11 +1278,7 @@ if (req.conversation?.length) {
   // ROW
   const row = document.createElement('div');
 
-row.className = `
-  flex
-  w-full
-  ${isAdmin ? 'justify-end' : 'justify-start'}
-`;
+row.className = `w-full flex ${isAdmin ? 'justify-end' : 'justify-start'}`;
 
   // BUBBLE
   const bubble = document.createElement('div');
