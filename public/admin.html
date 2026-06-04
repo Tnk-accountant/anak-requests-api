@@ -1089,19 +1089,17 @@ const API_URL = 'https://anak-requests-api.onrender.com';
           }
         };
 
-          deleteBtn.onclick = async () => {
-            if (!confirm("Deactivate this user?")) return;
+        deleteBtn.onclick = async () => {
+          if (!confirm("Delete this user?")) return;
 
-            await fetch(`${API_URL}/admin/users/${u.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ is_active: false })
-            });
+          await fetch(`${API_URL}/admin/users/${u.id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
 
-            card.remove();
-            notify("User deactivated", "info");
-          };
+          card.remove();
+          notify("User deleted", "info");
+        };
 
           grid.appendChild(card);
         });

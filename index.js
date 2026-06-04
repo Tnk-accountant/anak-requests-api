@@ -332,6 +332,7 @@ app.get('/centers', async (req, res) => {
         const { data, error } = await supabaseService
           .from('profiles')
           .select('id, mail, "Name", role, center_name, permissions, is_active')
+          .eq('is_active', true)   // ← ajoute cette ligne
           .order('"Name"');
 
         if (error) throw error;
