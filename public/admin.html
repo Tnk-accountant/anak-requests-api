@@ -32,7 +32,7 @@
 
 .notification {
   min-width: 250px;
-  max-width: 65%;
+  max-width: 350px;
   padding: 14px 16px;
   border-radius: 14px;
   color: white;
@@ -84,22 +84,18 @@
 
 /* BUBBLE CSS */
 .chat-bubble {
-  display: inline-block;
-
-  width: auto;
+  display: inline-flex;
+  flex-direction: column;
+  width: fit-content;      /* ← remplace width: auto */
   max-width: 65%;
-
-  padding: 10px 14px;
-
-  border-radius: 22px;
-
+  padding: 8px 14px;       /* ← réduit le padding */
+  border-radius: 18px;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;
-
-  line-height: 1.45;
-
+  line-height: 1.4;
   box-sizing: border-box;
+  flex: 0 0 auto;
 }
 
 </style>
@@ -1294,7 +1290,7 @@ row.className = `
       bubble.className = `
         chat-bubble
         ${isAdmin ? 'me' : 'other'}
-        px-4 py-3
+        px-3.5 py-1
         rounded-2xl
         text-sm
         leading-relaxed
@@ -1319,16 +1315,17 @@ row.className = `
       `;
 
     bubble.innerHTML = `
-      <div class="break-words whitespace-pre-wrap">
-        ${msg.message}
+      <div class="text-[10px] opacity-60 mb-1">
+        ${isAdmin ? 'Father' : (msg.sender_name || msg.sender)}
       </div>
+      <div class="break-words whitespace-pre-wrap">${msg.message}</div>
     `;
 
-  row.appendChild(bubble);
+      row.appendChild(bubble);
 
-  convoBox.appendChild(row);
+      convoBox.appendChild(row);
 
-});
+    });
 
   // ------------------------------
   // AUTO SCROLL (une seule fois)
@@ -2198,6 +2195,12 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
     input.focus();
   }
 
+};
+
+document.getElementById('closeDescription').onclick = () => {
+  const modal = document.getElementById('descriptionModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
 };
 
   </script>
