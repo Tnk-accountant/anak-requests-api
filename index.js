@@ -492,6 +492,7 @@ app.get('/requests', authenticate, async (req, res) => {
     let query = supabaseService
       .from('Requests')
       .select('*', { count: 'exact' })
+      .eq('archived', false)
       .order('timestamp', { ascending: false })
       .range(offset, offset + limit - 1);
 
