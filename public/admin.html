@@ -209,18 +209,34 @@
 
         <button id="exportBtn"
           class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition shadow-sm hover:shadow-md active:scale-95">
-          Export Excel
+          Export XLS
         </button>
 
-        <button id="exportArchiveBtn"
-          class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition shadow-sm hover:shadow-md active:scale-95">
-          Export & Archive
-        </button>
+        <div class="relative">
 
-        <button id="archivesBtn"
-          class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition shadow-sm hover:shadow-md active:scale-95">
-          📦 Archives
-        </button>
+          <button id="actionsBtn"
+            class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg transition shadow-sm">
+            Actions ▾
+          </button>
+
+          <div id="actionsMenu"
+            class="hidden absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+
+            <button id="archivesBtn"
+              class="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm">
+              📦 View Archives
+            </button>
+
+            <div class="border-t border-gray-100"></div>
+
+            <button id="exportArchiveBtn"
+              class="w-full text-left px-4 py-3 hover:bg-amber-50 text-sm text-amber-700">
+              🗄 Export & Archive Completed
+            </button>
+
+          </div>
+
+        </div>
 
       </div>
 
@@ -2397,7 +2413,34 @@ document.getElementById('closeDescription').onclick = () => {
   modal.classList.remove('flex');
 };
 
+// ─────────────────────────────────────────
+// ACTIONS DROPDOWN
+// ─────────────────────────────────────────
 
+const actionsBtn =
+  document.getElementById('actionsBtn');
+
+const actionsMenu =
+  document.getElementById('actionsMenu');
+
+actionsBtn?.addEventListener('click', (e) => {
+
+  e.stopPropagation();
+
+  actionsMenu.classList.toggle('hidden');
+
+});
+
+document.addEventListener('click', (e) => {
+
+  if (
+    !actionsBtn?.contains(e.target) &&
+    !actionsMenu?.contains(e.target)
+  ) {
+    actionsMenu.classList.add('hidden');
+  }
+
+});
 
 // ─────────────────────────────────────────
 // Search bar - Users
