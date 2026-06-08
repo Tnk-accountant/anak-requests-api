@@ -970,187 +970,195 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     // USERS UI
     // ==============================
 
-    async function loadUsers() {
-      try {
-        const res = await fetch(`${API_URL}/admin/users`, {
-          headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('access_token')
-          }
-        });
+async function loadUsers() {
+  try {
+    const res = await fetch(`${API_URL}/admin/users`, {
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+      }
+    });
 
-        if (res.status === 401) {
-          window.location.href = 'login.html';
-          return;
-        }
+    if (res.status === 401) {
+      window.location.href = 'login.html';
+      return;
+    }
 
-        allUsers = await res.json();
-        renderUsers(allUsers);
-        return;
+    const users = await res.json();
+    allUsers = users;
 
-        const grid = document.getElementById('usersGrid');
-        grid.innerHTML = '';
+    const grid = document.getElementById('usersGrid');
+    grid.innerHTML = '';
 
-        users.forEach(u => {
+    users.forEach(u => {
 
-          const card = document.createElement('div');
-          card.className = `
-            bg-white border border-gray-200 rounded-2xl p-4 shadow-sm
-            hover:shadow-md transition flex flex-col gap-3
-          `;
+      const card = document.createElement('div');
+      card.className = `
+        bg-white border border-gray-200 rounded-2xl p-4 shadow-sm
+        hover:shadow-md transition flex flex-col gap-3
+      `;
 
-        card.innerHTML = `
-          <div class="flex justify-between items-center">
-            <input class="nameInput font-semibold text-gray-800 text-sm w-full"
-              value="${u.Name || ''}">
-            <input type="checkbox" class="activeToggle ml-2"
-              ${u.is_active ? 'checked' : ''}>
-          </div>
+      card.innerHTML = `
+        <div class="flex justify-between items-center">
+          <input class="nameInput font-semibold text-gray-800 text-sm w-full"
+            value="${u.Name || ''}">
+          <input type="checkbox" class="activeToggle ml-2"
+            ${u.is_active ? 'checked' : ''}>
+        </div>
 
-          <div class="text-xs text-gray-400">${u.mail}</div>
+        <div class="text-xs text-gray-400">${u.mail}</div>
 
-          <select class="roleSelect border px-2 py-1 rounded text-sm">
-            <option ${u.role==='Requester'?'selected':''}>Requester</option>
-            <option ${u.role==='CC'?'selected':''}>CC</option>
-            <option ${u.role==='Admin'?'selected':''}>Admin</option>
-          </select>
+        <select class="roleSelect border px-2 py-1 rounded text-sm">
+          <option ${u.role === 'Requester' ? 'selected' : ''}>Requester</option>
+          <option ${u.role === 'CC' ? 'selected' : ''}>CC</option>
+          <option ${u.role === 'Admin' ? 'selected' : ''}>Admin</option>
+        </select>
 
-          <!-- 👇 UNIQUEMENT POUR CC -->
-          <div class="centersContainer hidden">
-            <input
-              class="centersInput border px-2 py-1 rounded text-sm w-full"
-              placeholder="Ex: RB1, RB5"
-            >
-          </div>
+        <div class="centersContainer hidden">
+          <input
+            class="centersInput border px-2 py-1 rounded text-sm w-full"
+            placeholder="Ex: RB1, RB5"
+          >
+        </div>
 
-          <div class="flex justify-between items-center mt-2">
-            <button class="saveBtn bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 text-sm">
-              Save
-            </button>
+        <div class="flex justify-between items-center mt-2">
+          <button class="saveBtn bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 text-sm">
+            Save
+          </button>
 
-            <button class="deleteBtn text-red-500 text-sm hover:underline">
-              Delete
-            </button>
-          </div>
-        `;
-
+          <button class="deleteBtn text-red-500 text-sm hover:underline">
+            Delete
+          </button>
+        </div>
+      `;
 
       const roleSelect = card.querySelector('.roleSelect');
       const centersContainer = card.querySelector('.centersContainer');
       const centersInput = card.querySelector('.centersInput');
 
-      // -----------------------------
-      // UI: show / hide centers
-      // -----------------------------
       function updateCentersVisibility() {
         const isCC = roleSelect.value === 'CC';
 
         centersContainer.classList.toggle('hidden', !isCC);
 
-        // reset si pas CC
         if (!isCC) {
           centersInput.value = '';
         }
       }
 
-      // -----------------------------
-      // INIT (affichage + data)
-      // -----------------------------
       updateCentersVisibility();
 
-      // 🔥 pré-remplissage (UNE SEULE FOIS)
       if (u.permissions?.allowed_centers?.length) {
-        centersInput.value = u.permissions.allowed_centers.join(', ');
+        centersInput.value =
+          u.permissions.allowed_centers.join(', ');
       }
 
-      // -----------------------------
-      // EVENTS
-      // -----------------------------
-      roleSelect.addEventListener('change', updateCentersVisibility);
-                      
+      roleSelect.addEventListener(
+        'change',
+        updateCentersVisibility
+      );
 
-          const saveBtn = card.querySelector('.saveBtn');
-          const deleteBtn = card.querySelector('.deleteBtn');
+      const saveBtn = card.querySelector('.saveBtn');
+      const deleteBtn = card.querySelector('.deleteBtn');
 
-          saveBtn.onclick = async () => {
-          saveBtn.textContent = "Saving...";
-          saveBtn.disabled = true;
+      saveBtn.onclick = async () => {
+        saveBtn.textContent = "Saving...";
+        saveBtn.disabled = true;
 
-          try {
-            const name = card.querySelector('.nameInput').value;
-            const role = card.querySelector('.roleSelect').value;
-            const active = card.querySelector('.activeToggle').checked;
+        try {
 
-            const centersRaw = card.querySelector('.centersInput').value;
+          const name = card.querySelector('.nameInput').value;
+          const role = card.querySelector('.roleSelect').value;
+          const active = card.querySelector('.activeToggle').checked;
 
-            const selectedCenters = centersRaw
-              .split(',')
-              .map(c => c.trim().toUpperCase())
-              .filter(c => c);
+          const centersRaw =
+            card.querySelector('.centersInput').value;
 
-            const payload = {
-              name,
-              role,
-              is_active: active,
-              permissions: {
-                scope:
-                  role === 'Admin' ? 'ALL' :
-                  role === 'CC' ? 'CENTER' :
-                  'OWN',
+          const selectedCenters = centersRaw
+            .split(',')
+            .map(c => c.trim().toUpperCase())
+            .filter(c => c);
 
-                allowed_centers:
-                  role === 'CC' ? selectedCenters : [],
+          const payload = {
+            name,
+            role,
+            is_active: active,
+            permissions: {
+              scope:
+                role === 'Admin'
+                  ? 'ALL'
+                  : role === 'CC'
+                    ? 'CENTER'
+                    : 'OWN',
 
-                can_create_for_other_centers:
-                  role === 'Admin' || role === 'Requester'
-              }
-            };
+              allowed_centers:
+                role === 'CC'
+                  ? selectedCenters
+                  : [],
 
-            const res = await fetch(`${API_URL}/admin/users/${u.id}`, {
+              can_create_for_other_centers:
+                role === 'Admin' ||
+                role === 'Requester'
+            }
+          };
+
+          const res = await fetch(
+            `${API_URL}/admin/users/${u.id}`,
+            {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json'
+              },
               credentials: 'include',
               body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-              throw new Error("Update failed");
             }
+          );
 
-            notify("User updated", "success");
-
-          } catch (err) {
-            console.error(err);
-            notify("Error updating user", "error");
-
-          } finally {
-            // 🔥 TOUJOURS exécuté (succès OU erreur)
-            saveBtn.textContent = "Save";
-            saveBtn.disabled = false;
+          if (!res.ok) {
+            throw new Error("Update failed");
           }
-        };
 
-        deleteBtn.onclick = async () => {
-          if (!confirm("Delete this user?")) return;
+          notify("User updated", "success");
 
-          await fetch(`${API_URL}/admin/users/${u.id}`, {
+        } catch (err) {
+
+          console.error(err);
+          notify("Error updating user", "error");
+
+        } finally {
+
+          saveBtn.textContent = "Save";
+          saveBtn.disabled = false;
+
+        }
+      };
+
+      deleteBtn.onclick = async () => {
+
+        if (!confirm("Delete this user?")) return;
+
+        await fetch(
+          `${API_URL}/admin/users/${u.id}`,
+          {
             method: 'DELETE',
             credentials: 'include'
-          });
+          }
+        );
 
-          card.remove();
-          notify("User deleted", "info");
-        };
+        card.remove();
+        notify("User deleted", "info");
+      };
 
-          grid.appendChild(card);
-        });
+      grid.appendChild(card);
 
-      } catch (err) {
-        console.error(err);
-        notify("Error loading users", "error");
-      }
-    }
+    });
 
+  } catch (err) {
 
+    console.error(err);
+    notify("Error loading users", "error");
+
+  }
+}
 
     // Écoute des changements pour filtrage et rafraîchissement
     filterStatus.addEventListener('change', fetchRequests);
@@ -2179,20 +2187,20 @@ document.getElementById('closeDescription').onclick = () => {
 
 
 // ─────────────────────────────────────────
-// Search bar - Users created
+// Search bar - Users
 // ─────────────────────────────────────────
-document.addEventListener('input', (e) => {
-
-  if (e.target.id !== 'userSearch') return;
+document.getElementById('userSearch').addEventListener('input', (e) => {
 
   const q = e.target.value.toLowerCase().trim();
 
-  const filtered = allUsers.filter(u =>
-    (u.Name || '').toLowerCase().includes(q) ||
-    (u.mail || '').toLowerCase().includes(q)
-  );
+  document.querySelectorAll('#usersGrid > div').forEach(card => {
 
-  renderUsers(filtered);
+    const text = card.textContent.toLowerCase();
+
+    card.style.display =
+      text.includes(q) ? '' : 'none';
+
+  });
 
 });
 
