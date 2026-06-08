@@ -267,6 +267,18 @@
           </button>
         </div>
 
+      <!--  SEARCH BAR -->
+          <div class="mb-5">
+          <input
+            id="userSearch"
+            type="text"
+            placeholder="Search user by name or email..."
+            class="w-full md:w-96 px-4 py-2.5 rounded-xl border border-gray-200 bg-white
+                  focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                  transition text-sm"
+          >
+        </div>
+
         <!-- GRID -->
         <div id="usersGrid"
           class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -562,6 +574,7 @@ CHAT LAYOUT
   <script>
 
     let currentRequestId = null;
+    let allUsers = [];
 
   function notify(message, type = "info") {
   const container = document.getElementById("notificationContainer");
@@ -936,6 +949,23 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     }
     }
 
+
+    function renderUsers(users) {
+
+      const grid = document.getElementById('usersGrid');
+      grid.innerHTML = '';
+
+      users.forEach(u => {
+
+        // COLLE ICI TOUT TON CODE ACTUEL
+        // const card = document.createElement('div')
+        // ...
+        // grid.appendChild(card)
+
+      });
+
+    }
+
     // ==============================
     // USERS UI
     // ==============================
@@ -953,7 +983,10 @@ const API_URL = 'https://anak-requests-api.onrender.com';
           return;
         }
 
-        const users = await res.json();
+        allUsers = await res.json();
+        renderUsers(allUsers);
+        return;
+
         const grid = document.getElementById('usersGrid');
         grid.innerHTML = '';
 
@@ -2141,6 +2174,27 @@ document.getElementById('closeDescription').onclick = () => {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
 };
+
+
+
+
+// ─────────────────────────────────────────
+// Search bar - Users created
+// ─────────────────────────────────────────
+document.addEventListener('input', (e) => {
+
+  if (e.target.id !== 'userSearch') return;
+
+  const q = e.target.value.toLowerCase().trim();
+
+  const filtered = allUsers.filter(u =>
+    (u.Name || '').toLowerCase().includes(q) ||
+    (u.mail || '').toLowerCase().includes(q)
+  );
+
+  renderUsers(filtered);
+
+});
 
   </script>
 
