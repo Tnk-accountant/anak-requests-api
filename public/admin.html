@@ -753,6 +753,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     const refreshBtn = document.getElementById('refreshBtn');
     const exportArchiveBtn = document.getElementById('exportArchiveBtn');
     const archivesBtn = document.getElementById('archivesBtn');
+
     const searchName = document.getElementById('searchName');
     const searchCenter = document.getElementById('searchCenter');
     const minAmount = document.getElementById('minAmount');
@@ -934,6 +935,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     async function fetchRequests() {
 
     archivesMode = false;
+    archivesBtn.innerHTML = '📦 Archives';
 
     try {
     // Construire l'URL de la requête
@@ -1196,7 +1198,8 @@ async function loadUsers() {
 
       allRequests = json.data || [];
 
-      renderTable(allRequests);
+      applyAdvancedFilters();
+      updateToLiquidateSummary();
 
       document.getElementById('pageInfo').textContent =
         'Archives';
@@ -1213,14 +1216,37 @@ async function loadUsers() {
 
     // Écoute des changements pour filtrage et rafraîchissement
     filterStatus.addEventListener('change', fetchRequests);
-    refreshBtn.addEventListener('click', fetchRequests);
+    refreshBtn.addEventListener('click', async () => {
 
-    archivesBtn.addEventListener('click', () => {
-
-      loadArchives();
+      if (archivesMode) {
+        await loadArchives();
+      } else {
+        await fetchRequests();
+      }
 
     });
 
+    archivesBtn.addEventListener('click', async () => {
+
+  if (!archivesMode) {
+
+    archivesMode = true;
+
+    archivesBtn.innerHTML = '← Active Requests';
+
+    await loadArchives();
+
+  } else {
+
+    archivesMode = false;
+
+    archivesBtn.innerHTML = '📦 Archives';
+
+    await fetchRequests();
+
+  }
+
+});
 
   function renderTable(data) {   
   requestsTableBody.innerHTML = '';
@@ -1289,53 +1315,115 @@ async function loadUsers() {
 </td>
 
 <td class="actions-cell">
-  <div class="flex justify-center items-center gap-2 flex-wrap">
 
-    <!-- Amount input -->
-    <input 
-      type="text" 
-      class="approvedAmount w-20 p-1 border border-gray-200 rounded-md text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
-    />
+  ${
+    archivesMode
+      ? `
+        <div class="flex justify-center">
+          <button
+            class="restoreBtn bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-700 transition text-xs">
+            ↩ Restore
+          </button>
+        </div>
+      `
+      : `
+        <div class="flex justify-center items-center gap-2 flex-wrap">
 
-    <!-- Approve -->
-    <button class="approveBtn bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 transition text-xs">
-      ✅
-    </button>
+          <input
+            type="text"
+            class="approvedAmount w-20 p-1 border border-gray-200 rounded-md text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
 
-    <!-- Reject -->
-    <button class="rejectBtn bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600 transition text-xs">
-      ❌
-    </button>
+          <button class="approveBtn bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 transition text-xs">
+            ✅
+          </button>
 
+          <button class="rejectBtn bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600 transition text-xs">
+            ❌
+          </button>
 
+          ${
+            activeTab === 'liquidation' &&
+            req.status === 'PendingValidation'
+              ? `
+              <button class="validateBtn bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 transition text-xs">
+                ✔
+              </button>
+              `
+              : ''
+          }
 
-    <!-- Validate liquidation -->
-    ${
-      activeTab === 'liquidation' && req.status === 'PendingValidation'
-        ? `
-        <button class="validateBtn bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 transition text-xs">
-          ✔
-        </button>
-        `
-        : ''
-    }
+          ${
+            activeTab === 'liquidation' &&
+            req.status === 'PendingCancel'
+              ? `
+              <button class="validateCancelBtn bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition text-xs">
+                ✖
+              </button>
+              `
+              : ''
+          }
 
-    <!-- Validate cancel -->
-    ${
-      activeTab === 'liquidation' && req.status === 'PendingCancel'
-        ? `
-        <button class="validateCancelBtn bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition text-xs">
-          ✖
-        </button>
-        `
-        : ''
-    }
+        </div>
+      `
+  }
 
-  </div>
 </td>
     `;
 
     requestsTableBody.appendChild(tr);
+
+    if (archivesMode) {
+
+  const restoreBtn =
+    tr.querySelector('.restoreBtn');
+
+  restoreBtn?.addEventListener('click', async () => {
+
+    if (!confirm(
+      `Restore ${req.request_id} ?`
+    )) return;
+
+    try {
+
+      const res = await fetch(
+        `${API_URL}/requests/${req.request_id}/restore`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization':
+              'Bearer ' +
+              localStorage.getItem('access_token')
+          }
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error();
+      }
+
+      notify(
+        "Request restored",
+        "success"
+      );
+
+      await loadArchives();
+
+    } catch (err) {
+
+      console.error(err);
+
+      notify(
+        "Restore failed",
+        "error"
+      );
+
+    }
+
+  });
+
+  return;
+}
 
 
  // CLICK → ouvre modal
