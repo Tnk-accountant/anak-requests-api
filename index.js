@@ -182,9 +182,15 @@ app.post('/login', async (req, res) => {
 
     const { data: profile } = await supabaseService
       .from('profiles')
-      .select('role, center_name')
+      .select('role, center_name, is_active')
       .eq('id', user.id)
       .maybeSingle();
+
+      if (profile?.is_active === false) {
+  return res.status(403).json({
+    error: 'Your account has been deactivated. Please contact an administrator.'
+  });
+}
 
     // 🔥 ACCESS TOKEN (court)
     res.cookie('access_token', session.access_token, {
@@ -427,23 +433,41 @@ app.get('/centers', async (req, res) => {
     });
 
 
-    // DELETE (soft)
-    app.delete('/admin/users/:id', authenticate, async (req, res) => {
-      try {
-        if (req.profile.role !== 'Admin') return res.status(403);
+    // DELETE USER ADMIN SIDE
+app.delete('/admin/users/:id', authenticate, async (req, res) => {
+  try {
+    if (req.profile.role !== 'Admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
 
-        await supabaseService
-          .from('profiles')
-          .update({ is_active: false })
-          .eq('id', req.params.id);
+    const userId = req.params.id;
 
-        res.json({ success: true });
+    // 🔒 empêcher un admin de se supprimer lui-même
+    if (userId === req.user.id) {
+      return res.status(400).json({
+        error: 'You cannot delete your own account'
+      });
+    }
 
-      } catch (err) {
-        console.error('DELETE USER error:', err);
-        res.status(500).json({ error: err.message });
-      }
-    });
+    const { error: authError } =
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (authError) throw authError;
+
+    const { error: profileError } = await supabaseService
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (profileError) throw profileError;
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error('DELETE USER error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 // =====================
