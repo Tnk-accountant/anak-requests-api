@@ -2185,7 +2185,6 @@ document.getElementById('closeDescription').onclick = () => {
 
 
 
-
 // ─────────────────────────────────────────
 // Search bar - Users
 // ─────────────────────────────────────────
@@ -2195,10 +2194,18 @@ document.getElementById('userSearch').addEventListener('input', (e) => {
 
   document.querySelectorAll('#usersGrid > div').forEach(card => {
 
-    const text = card.textContent.toLowerCase();
+    const name =
+      (card.querySelector('.nameInput')?.value || '')
+        .toLowerCase();
+
+    const email =
+      card.querySelector('.text-xs')?.textContent
+        .toLowerCase() || '';
+
+    const searchable = `${name} ${email}`;
 
     card.style.display =
-      text.includes(q) ? '' : 'none';
+      searchable.includes(q) ? '' : 'none';
 
   });
 
