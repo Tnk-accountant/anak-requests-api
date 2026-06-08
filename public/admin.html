@@ -751,7 +751,78 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     const requestsTableBody = document.getElementById('requestsTableBody');
     const filterStatus = document.getElementById('filterStatus');
     const refreshBtn = document.getElementById('refreshBtn');
+
     const exportArchiveBtn = document.getElementById('exportArchiveBtn');
+    exportArchiveBtn.addEventListener('click', async () => {
+
+      try {
+
+        const statsRes = await fetch(
+          `${API_URL}/requests/archive-stats`,
+          {
+            headers: {
+              Authorization:
+                'Bearer ' +
+                localStorage.getItem('access_token')
+            }
+          }
+        );
+
+        const stats = await statsRes.json();
+
+        const confirmed = confirm(
+    `Archive completed requests?
+
+    Closed: ${stats.closed}
+    Cancelled: ${stats.cancelled}
+
+    Total: ${stats.total}
+
+    You can restore them later from Archives.`
+        );
+
+        if (!confirmed) return;
+
+        // export Excel actuel
+        exportBtn.click();
+
+        const archiveRes = await fetch(
+          `${API_URL}/requests/archive-completed`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization:
+                'Bearer ' +
+                localStorage.getItem('access_token')
+            }
+          }
+        );
+
+        if (!archiveRes.ok) {
+          throw new Error();
+        }
+
+        notify(
+          'Completed requests archived',
+          'success'
+        );
+
+        await fetchRequests();
+
+      } catch (err) {
+
+        console.error(err);
+
+        notify(
+          'Archive failed',
+          'error'
+        );
+
+      }
+
+    });
+
+
     const archivesBtn = document.getElementById('archivesBtn');
 
     const searchName = document.getElementById('searchName');

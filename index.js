@@ -550,6 +550,9 @@ app.get('/requests', authenticate, async (req, res) => {
 });
 
 
+    // ==============================
+    // ARCHIVES
+    // ==============================
 app.get('/requests/archives', authenticate, async (req, res) => {
   try {
 
@@ -570,6 +573,113 @@ app.get('/requests/archives', authenticate, async (req, res) => {
   } catch (err) {
 
     console.error('GET ARCHIVES error:', err);
+    res.status(500).json({ error: err.message });
+
+  }
+});
+
+// ========== ARCHIVED =======
+
+app.post('/requests/archive-completed', authenticate, async (req, res) => {
+  try {
+
+    if (req.profile.role !== 'Admin') {
+      return res.status(403).json({
+        error: 'Forbidden'
+      });
+    }
+
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .update({
+        archived: true
+      })
+      .in('status', ['Closed', 'Cancelled'])
+      .eq('archived', false)
+      .select();
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      archived: data.length
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+});
+
+app.get('/requests/archive-stats', authenticate, async (req, res) => {
+  try {
+
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .select('status')
+      .eq('archived', false)
+      .in('status', ['Closed', 'Cancelled']);
+
+    if (error) throw error;
+
+    const closed =
+      data.filter(r => r.status === 'Closed').length;
+
+    const cancelled =
+      data.filter(r => r.status === 'Cancelled').length;
+
+    res.json({
+      closed,
+      cancelled,
+      total: closed + cancelled
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+});
+
+
+//======== RESTORE =========
+app.patch('/requests/:request_id/restore', authenticate, async (req, res) => {
+  try {
+
+    if (req.profile.role !== 'Admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { request_id } = req.params;
+
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .update({
+        archived: false
+      })
+      .eq('request_id', request_id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data
+    });
+
+  } catch (err) {
+
+    console.error('RESTORE error:', err);
     res.status(500).json({ error: err.message });
 
   }
