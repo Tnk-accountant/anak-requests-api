@@ -209,7 +209,17 @@
 
         <button id="exportBtn"
           class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition shadow-sm hover:shadow-md active:scale-95">
-          Export
+          Export Excel
+        </button>
+
+        <button id="exportArchiveBtn"
+          class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition shadow-sm hover:shadow-md active:scale-95">
+          Export & Archive
+        </button>
+
+        <button id="archivesBtn"
+          class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition shadow-sm hover:shadow-md active:scale-95">
+          📦 Archives
         </button>
 
       </div>
@@ -603,6 +613,7 @@ CHAT LAYOUT
 }
 
     let activeTab = 'all';
+    let archivesMode = false;
 
     const tabAll = document.getElementById('tabAll');
     const tabLiquidation = document.getElementById('tabLiquidation');
@@ -740,6 +751,8 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     const requestsTableBody = document.getElementById('requestsTableBody');
     const filterStatus = document.getElementById('filterStatus');
     const refreshBtn = document.getElementById('refreshBtn');
+    const exportArchiveBtn = document.getElementById('exportArchiveBtn');
+    const archivesBtn = document.getElementById('archivesBtn');
     const searchName = document.getElementById('searchName');
     const searchCenter = document.getElementById('searchCenter');
     const minAmount = document.getElementById('minAmount');
@@ -917,7 +930,11 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     searchCenter.addEventListener('input', applyAdvancedFilters);
     minAmount.addEventListener('input', applyAdvancedFilters);
 
+//=============== FETCH REQUESTS FONCTION============
     async function fetchRequests() {
+
+    archivesMode = false;
+
     try {
     // Construire l'URL de la requête
    let url = `${API_URL}/requests`;
@@ -1160,12 +1177,50 @@ async function loadUsers() {
   }
 }
 
+//===== FONDCTION LOAD ARCHIVES ==========
+
+  async function loadArchives() {
+
+    try {
+
+      const res = await fetch(`${API_URL}/requests/archives`, {
+        headers: {
+          'Authorization':
+            'Bearer ' + localStorage.getItem('access_token')
+        }
+      });
+
+      const json = await res.json();
+
+      archivesMode = true;
+
+      allRequests = json.data || [];
+
+      renderTable(allRequests);
+
+      document.getElementById('pageInfo').textContent =
+        'Archives';
+
+    } catch (err) {
+
+      console.error(err);
+      notify("Error loading archives", "error");
+
+    }
+
+  }
+
+
     // Écoute des changements pour filtrage et rafraîchissement
     filterStatus.addEventListener('change', fetchRequests);
     refreshBtn.addEventListener('click', fetchRequests);
 
+    archivesBtn.addEventListener('click', () => {
 
-    
+      loadArchives();
+
+    });
+
 
   function renderTable(data) {   
   requestsTableBody.innerHTML = '';

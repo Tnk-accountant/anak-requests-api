@@ -549,6 +549,32 @@ app.get('/requests', authenticate, async (req, res) => {
   }
 });
 
+
+app.get('/requests/archives', authenticate, async (req, res) => {
+  try {
+
+    if (req.profile.role !== 'Admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .select('*')
+      .eq('archived', true)
+      .order('timestamp', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ data });
+
+  } catch (err) {
+
+    console.error('GET ARCHIVES error:', err);
+    res.status(500).json({ error: err.message });
+
+  }
+});
+
 // ===============
 // RETOUR clarification ADMIN 
 //================
