@@ -142,22 +142,21 @@
     </div>
 
     <!-- TABS/ONGLETS -->
-    <div class="flex gap-2 mb-6">
+    <div class="inline-flex items-center p-1 bg-white border border-gray-200 rounded-2xl shadow-sm mb-6">
 
       <button id="tabAll"
-        class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow-sm hover:shadow-md active:scale-95">
-        All Requests
+        class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200">
+      All Requests
       </button>
 
       <button id="tabLiquidation"
-        class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95">
-        Liquidations / Cancellation
+        class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200">
+      Liquidations
       </button>
 
-      <!-- ✅ AJOUT ICI -->
       <button id="tabUsers"
-        class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95">
-        Users
+        class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200">
+      Users
       </button>
 
     </div>
@@ -598,23 +597,31 @@ CHAT LAYOUT
     const usersSection = document.getElementById('usersSection');
     const tableSection = document.querySelector('.overflow-x-auto');
 
-   function setActiveTab(active) {
-    const tabs = [
-      { el: tabAll, key: 'all' },
-      { el: tabLiquidation, key: 'liquidation' },
-      { el: tabUsers, key: 'users' }
-    ];
+    function setActiveTab(active) {
 
-    tabs.forEach(tab => {
-      if (tab.key === active) {
-        tab.el.classList.add('bg-indigo-600', 'text-white');
-        tab.el.classList.remove('bg-gray-100', 'text-gray-600');
-      } else {
-        tab.el.classList.remove('bg-indigo-600', 'text-white');
-        tab.el.classList.add('bg-gray-100', 'text-gray-600');
-      }
-    });
-  }
+      const tabs = [
+        { el: tabAll, key: 'all' },
+        { el: tabLiquidation, key: 'liquidation' },
+        { el: tabUsers, key: 'users' }
+      ];
+
+      tabs.forEach(tab => {
+
+        if (tab.key === active) {
+
+          tab.el.className =
+            'tab-btn px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 bg-indigo-600 text-white shadow-md';
+
+        } else {
+
+          tab.el.className =
+            'tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50';
+
+        }
+
+      });
+
+    }
 
 
     const filtersBar = document.querySelector('.bg-white\\/80'); // 👈 IMPORTANT
