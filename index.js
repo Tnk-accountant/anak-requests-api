@@ -578,7 +578,7 @@ app.get('/requests/archives', authenticate, async (req, res) => {
   }
 });
 
-// ========== ARCHIVED =======
+// ========== ARCHIVED ROUTE 1=======
 
 app.post('/requests/archive-completed', authenticate, async (req, res) => {
   try {
@@ -615,6 +615,8 @@ app.post('/requests/archive-completed', authenticate, async (req, res) => {
 
   }
 });
+
+// ========== ARCHIVED ROUTE 2 =======
 
 app.get('/requests/archive-stats', authenticate, async (req, res) => {
   try {
