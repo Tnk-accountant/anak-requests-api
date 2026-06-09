@@ -107,24 +107,23 @@
   background:
     radial-gradient(
       circle at top left,
-      rgba(255,255,255,0.10),
+      rgba(255,255,255,.08),
       transparent 25%
     ),
 
     radial-gradient(
       circle at bottom right,
-      rgba(148,163,184,0.15),
-      transparent 35%
+      rgba(148,163,184,.10),
+      transparent 40%
     ),
 
     linear-gradient(
       135deg,
-      #1e293b 0%,
-      #0f172a 45%,
-      #020617 100%
+      #020617 0%,
+      #0f172a 40%,
+      #1e293b 100%
     );
 
-  transition: all .8s ease;
 }
 
 
@@ -239,8 +238,7 @@
   class="bg-white/80 backdrop-blur border border-gray-200 rounded-2xl p-4 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
   
   <!-- LEFT -->
-      <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-
+     <div id="archiveFilters" class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
         <input
           id="searchName"
           type="text"
@@ -261,7 +259,7 @@
         >
 
         <!-- TOTAL -->
-        <div class="h-11 flex items-center gap-3 px-4 rounded-xl bg-gray-50 border border-gray-100">
+        <div id="liquidateCard" class="h-11 flex items-center gap-3 px-4 rounded-xl bg-gray-50 border border-gray-100">
 
           <div class="text-xs text-gray-400">
             To Liquidate
@@ -383,7 +381,7 @@
     <div id="tableCard"
     class="overflow-x-auto overflow-y-visible bg-white rounded-2xl shadow-sm border border-gray-200">
       <table class="min-w-full text-left border-collapse">
-        <thead class="bg-gray-50">
+        <thead id="tableHead" class="bg-gray-50">
           <tr>
             <th class="py-3 pl-6 pr-4 text-gray-500 font-medium text-xs uppercase">ID</th>
             <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Date</th>
@@ -1193,29 +1191,108 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     archivesMode = false;
     archivesBtn.innerHTML = '📦 Archives';
 
+    document.body.classList.remove('archives-theme');
     document.body.style.transition = 'background 800ms ease';
 
     document.getElementById('filtersCard')
       .classList.remove(
-        'bg-slate-100',
-        'border-slate-300'
+        'bg-slate-900',
+        'border-slate-700'
       );
 
     document.getElementById('filtersCard')
-      .classList.add('bg-white/80');
-
-    document.getElementById('tableCard')
-      .classList.remove(
-        'bg-slate-50',
-        'border-slate-300'
+      .classList.add(
+        'bg-white/80'
       );
 
     document.getElementById('tableCard')
-      .classList.add('bg-white');
+      .classList.remove(
+        'bg-slate-900',
+        'border-slate-700'
+      );
+
+    document.getElementById('tableCard')
+      .classList.add(
+        'bg-white'
+      );
 
     document
-    .getElementById('archiveBanner')
-    .classList.add('hidden');
+      .getElementById('archiveBanner')
+      .classList.add('hidden');
+
+
+      document.getElementById('tableHead')
+        .classList.remove('bg-slate-800');
+
+      document.getElementById('tableHead')
+        .classList.add('bg-gray-50');
+
+  
+   /* ========== PAGINATION ===========*/
+        document.getElementById('pagination')
+          .classList.remove(
+            'text-slate-200'
+          );
+
+        document.getElementById('prevPage')
+          .classList.remove(
+            'bg-slate-900',
+            'border-slate-700',
+            'text-slate-200'
+          );
+
+        document.getElementById('nextPage')
+          .classList.remove(
+            'bg-slate-900',
+            'border-slate-700',
+            'text-slate-200'
+          );
+
+        document.getElementById('prevPage')
+          .classList.add(
+            'bg-white',
+            'border-gray-200'
+          );
+
+        document.getElementById('nextPage')
+          .classList.add(
+            'bg-white',
+            'border-gray-200'
+          );
+
+
+
+          /* FILTER INPUTS */
+
+        document.querySelectorAll('#archiveFilters input')
+          .forEach(input => {
+
+            input.classList.remove(
+              'bg-slate-800',
+              'text-slate-200',
+              'border-slate-600'
+            );
+
+            input.classList.add(
+              'bg-gray-50',
+              'text-gray-700',
+              'border-gray-100'
+            );
+
+          });
+
+
+          document.getElementById('liquidateCard')
+            .classList.remove(
+              'bg-slate-800',
+              'border-slate-600'
+            );
+
+          document.getElementById('liquidateCard')
+            .classList.add(
+              'bg-gray-50',
+              'border-gray-100'
+            );
 
     try {
     // Construire l'URL de la requête
@@ -1483,8 +1560,8 @@ async function loadUsers() {
 
       document.getElementById('filtersCard')
         .classList.add(
-          'bg-slate-100',
-          'border-slate-300'
+          'bg-slate-900',
+          'border-slate-700'
         );
 
       document.getElementById('tableCard')
@@ -1492,9 +1569,80 @@ async function loadUsers() {
 
       document.getElementById('tableCard')
         .classList.add(
-          'bg-slate-50',
-          'border-slate-300'
+          'bg-slate-900',
+          'border-slate-700'
         );
+
+        document.getElementById('tableHead')
+          .classList.remove('bg-gray-50');
+
+        document.getElementById('tableHead')
+          .classList.add('bg-slate-800');
+
+
+          /* PAGINATION */
+
+        document.getElementById('pagination')
+          .classList.add('text-slate-200');
+
+        document.getElementById('prevPage')
+          .classList.remove(
+            'bg-white',
+            'border-gray-200'
+          );
+
+        document.getElementById('nextPage')
+          .classList.remove(
+            'bg-white',
+            'border-gray-200'
+          );
+
+        document.getElementById('prevPage')
+          .classList.add(
+            'bg-slate-900',
+            'border-slate-700',
+            'text-slate-200'
+          );
+
+        document.getElementById('nextPage')
+          .classList.add(
+            'bg-slate-900',
+            'border-slate-700',
+            'text-slate-200'
+          );
+
+
+          /* FILTER INPUTS */
+
+      document.querySelectorAll('#archiveFilters input')
+        .forEach(input => {
+
+          input.classList.remove(
+            'bg-gray-50',
+            'text-gray-700',
+            'border-gray-100'
+          );
+
+          input.classList.add(
+            'bg-slate-800',
+            'text-slate-200',
+            'border-slate-600'
+          );
+
+        });
+
+        document.getElementById('liquidateCard')
+        .classList.remove(
+          'bg-gray-50',
+          'border-gray-100'
+        );
+
+      document.getElementById('liquidateCard')
+        .classList.add(
+          'bg-slate-800',
+          'border-slate-600'
+        );
+
 
     const banner =
       document.getElementById('archiveBanner');
