@@ -785,6 +785,70 @@ CHAT LAYOUT
 
 </div>
 
+
+<!-- ARCHIVE MODAL -->
+
+<div id="archiveModal"
+     class="fixed inset-0 hidden items-center justify-center z-[9999]">
+
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+
+  <div class="relative bg-white rounded-3xl shadow-2xl p-6 w-[420px]">
+
+    <div class="text-center">
+
+      <div class="text-5xl mb-3">📦</div>
+
+      <h3 class="text-xl font-semibold text-slate-800">
+        Archive Requests
+      </h3>
+
+      <p class="text-sm text-slate-500 mt-2">
+        Completed requests will be moved to Archives.
+      </p>
+
+      <div class="bg-slate-50 rounded-2xl p-4 mt-5">
+
+        <div class="flex justify-between">
+          <span>Closed</span>
+          <span id="modalClosed">0</span>
+        </div>
+
+        <div class="flex justify-between mt-2">
+          <span>Cancelled</span>
+          <span id="modalCancelled">0</span>
+        </div>
+
+        <div class="border-t mt-3 pt-3 flex justify-between font-semibold">
+          <span>Total</span>
+          <span id="modalTotal">0</span>
+        </div>
+
+      </div>
+
+
+      <!-- NOTIFICATION -->
+      <div class="flex justify-end gap-3 mt-6">
+
+        <button id="cancelArchive"
+          class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">
+          Cancel
+        </button>
+
+        <button id="confirmArchive"
+          class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">
+          Archive
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
 </body>
 
   <script>
@@ -958,7 +1022,92 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     const filterStatus = document.getElementById('filterStatus');
     const refreshBtn = document.getElementById('refreshBtn');
 
+   
+//Fonction openarchive modal ============
+
+    function openArchiveModal(stats) {
+
+      document.getElementById('modalClosed').textContent =
+        stats.closed;
+
+      document.getElementById('modalCancelled').textContent =
+        stats.cancelled;
+
+      document.getElementById('modalTotal').textContent =
+        stats.total;
+
+      const modal =
+        document.getElementById('archiveModal');
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeArchiveModal() {
+
+      const modal =
+        document.getElementById('archiveModal');
+
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
     const exportArchiveBtn = document.getElementById('exportArchiveBtn');
+
+// ARCHIVED BUTTONS =============
+    document
+      .getElementById('cancelArchive')
+      ?.addEventListener('click', () => {
+
+        closeArchiveModal();
+
+    });
+
+    document
+      .getElementById('confirmArchive')
+      ?.addEventListener('click', async () => {
+
+        closeArchiveModal();
+
+        try {
+
+          exportBtn.click();
+
+          const archiveRes = await fetch(
+            `${API_URL}/requests/archive-completed`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization:
+                  'Bearer ' +
+                  localStorage.getItem('access_token')
+              }
+            }
+          );
+
+          if (!archiveRes.ok) {
+            throw new Error();
+          }
+
+          notify(
+            'Completed requests archived',
+            'success'
+          );
+
+          await fetchRequests();
+
+        } catch (err) {
+
+          notify(
+            'Archive failed',
+            'error'
+          );
+
+        }
+
+    });
+
+
     exportArchiveBtn.addEventListener('click', async () => {
 
       try {
@@ -976,18 +1125,10 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
         const stats = await statsRes.json();
 
-        const confirmed = confirm(
-    `Archive completed requests?
+        window.archiveStats = stats;
+        return;
 
-    Closed: ${stats.closed}
-    Cancelled: ${stats.cancelled}
-
-    Total: ${stats.total}
-
-    You can restore them later from Archives.`
-        );
-
-        if (!confirmed) return;
+        openArchiveModal(stats);
 
         // export Excel actuel
         exportBtn.click();
@@ -2646,6 +2787,7 @@ document.getElementById('closeDescription').onclick = () => {
   modal.classList.remove('flex');
 };
 
+
 // ─────────────────────────────────────────
 // ACTIONS DROPDOWN
 // ─────────────────────────────────────────
@@ -2656,23 +2798,49 @@ const actionsBtn =
 const actionsMenu =
   document.getElementById('actionsMenu');
 
+function openActionsMenu() {
+  actionsMenu?.classList.remove('hidden');
+}
+
+function closeActionsMenu() {
+  actionsMenu?.classList.add('hidden');
+}
+
+function toggleActionsMenu() {
+  actionsMenu?.classList.toggle('hidden');
+}
+
+// Ouvrir / fermer via le bouton
 actionsBtn?.addEventListener('click', (e) => {
 
   e.stopPropagation();
 
-  actionsMenu.classList.toggle('hidden');
+  toggleActionsMenu();
 
 });
 
+// Fermer en cliquant ailleurs
 document.addEventListener('click', (e) => {
 
-  if (
-    !actionsBtn?.contains(e.target) &&
-    !actionsMenu?.contains(e.target)
-  ) {
-    actionsMenu.classList.add('hidden');
+  const clickedButton =
+    actionsBtn?.contains(e.target);
+
+  const clickedMenu =
+    actionsMenu?.contains(e.target);
+
+  if (!clickedButton && !clickedMenu) {
+    closeActionsMenu();
   }
 
+});
+
+// Fermer automatiquement après sélection
+archivesBtn?.addEventListener('click', () => {
+  closeActionsMenu();
+});
+
+exportArchiveBtn?.addEventListener('click', () => {
+  closeActionsMenu();
 });
 
 // ─────────────────────────────────────────
