@@ -750,18 +750,21 @@ CHAT LAYOUT
 
     <div class="text-center">
 
-      <!-- Icône -->
-      <div class="text-5xl mb-4 animate-bounce">
+      <div
+        id="archiveTransitionIcon"
+        class="text-5xl mb-4 animate-bounce">
         📦
       </div>
 
-      <!-- Titre -->
-      <div class="text-xl font-semibold text-slate-800">
+      <div
+        id="archiveTransitionTitle"
+        class="text-xl font-semibold text-slate-800">
         Entering Archives
       </div>
 
-      <!-- Sous-titre -->
-      <div class="text-sm text-slate-500 mt-2">
+      <div
+        id="archiveTransitionSubtitle"
+        class="text-sm text-slate-500 mt-2">
         Loading historical requests...
       </div>
 
@@ -1784,7 +1787,16 @@ async function loadUsers() {
 
     if (!archivesMode) {
 
-      showArchiveTransition();
+      showArchiveTransition(
+        'Entering Archives',
+        'Loading historical requests...',
+        '📦',
+        2500
+      );
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 2500)
+      );
 
       archivesMode = true;
 
@@ -1794,10 +1806,15 @@ async function loadUsers() {
 
       } else {
 
-      hideArchiveTransition();
+      showArchiveTransition(
+        'Returning to Active Requests',
+        'Loading active requests...',
+        '📂',
+        2500
+      );
 
       await new Promise(resolve =>
-        setTimeout(resolve, 500)
+        setTimeout(resolve, 1800)
       );
 
       archivesMode = false;
@@ -2990,10 +3007,27 @@ document.getElementById('userSearch').addEventListener('input', (e) => {
 // ARCHIVES TRANSITION
 // ─────────────────────────────────────────
 
-function showArchiveTransition(duration = 1400) {
+function showArchiveTransition(
+  title,
+  subtitle,
+  icon = '📦',
+  duration = 1800
+) {
 
   const overlay =
     document.getElementById('archiveTransition');
+
+  document.getElementById(
+    'archiveTransitionIcon'
+  ).textContent = icon;
+
+  document.getElementById(
+    'archiveTransitionTitle'
+  ).textContent = title;
+
+  document.getElementById(
+    'archiveTransitionSubtitle'
+  ).textContent = subtitle;
 
   overlay.classList.remove('hidden');
   overlay.classList.add('flex');
@@ -3001,8 +3035,12 @@ function showArchiveTransition(duration = 1400) {
   overlay.style.opacity = '0';
 
   requestAnimationFrame(() => {
-    overlay.style.transition = 'opacity .35s ease';
+
+    overlay.style.transition =
+      'opacity .35s ease';
+
     overlay.style.opacity = '1';
+
   });
 
   setTimeout(() => {
@@ -3014,7 +3052,7 @@ function showArchiveTransition(duration = 1400) {
       overlay.classList.add('hidden');
       overlay.classList.remove('flex');
 
-    }, 2500);
+    }, 350);
 
   }, duration);
 
@@ -3025,8 +3063,13 @@ function hideArchiveTransition() {
   const banner =
     document.getElementById('archiveBanner');
 
-  banner.classList.remove('archive-banner-show');
-  banner.classList.add('archive-banner-hide');
+  banner.classList.remove(
+    'archive-banner-show'
+  );
+
+  banner.classList.add(
+    'archive-banner-hide'
+  );
 
   setTimeout(() => {
 
