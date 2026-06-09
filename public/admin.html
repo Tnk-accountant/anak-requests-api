@@ -128,9 +128,14 @@
 }
 
 body {
-  transition:
-    background 0.8s ease,
-    color 0.3s ease;
+  background:
+    linear-gradient(
+      to bottom right,
+      #f9fafb,
+      #f3f4f6
+    );
+
+  min-height: 100vh;
 }
 
 /* Welcome banner animation */
@@ -179,7 +184,7 @@ body {
 </style>
 
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 text-sm font-sans min-h-screen transition-all duration-500">
+<body class="p-4 text-sm font-sans min-h-screen transition-all duration-500">
 
   <!-- LOADER -->
   <div id="loader" class="fixed inset-0 flex items-center justify-center bg-white z-50">
