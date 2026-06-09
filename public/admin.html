@@ -1256,22 +1256,6 @@ document
 
         openArchiveModal(stats);
 
-
-        // export Excel actuel
-        exportBtn.click();
-
-        const archiveRes = await fetch(
-          `${API_URL}/requests/archive-completed`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization:
-                'Bearer ' +
-                localStorage.getItem('access_token')
-            }
-          }
-        );
-
         if (!archiveRes.ok) {
           throw new Error();
         }
@@ -3030,7 +3014,7 @@ function showArchiveTransition(duration = 1400) {
       overlay.classList.add('hidden');
       overlay.classList.remove('flex');
 
-    }, 1400);
+    }, 2500);
 
   }, duration);
 
