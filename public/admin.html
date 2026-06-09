@@ -107,19 +107,31 @@
   background:
     radial-gradient(
       circle at top left,
-      rgba(59,130,246,.15),
-      transparent 30%
+      rgba(59,130,246,.18) 0%,
+      transparent 35%
+    ),
+
+    radial-gradient(
+      circle at bottom right,
+      rgba(99,102,241,.12) 0%,
+      transparent 40%
     ),
 
     linear-gradient(
-      135deg,
+      180deg,
       #0f172a 0%,
-      #172554 50%,
+      #16213e 40%,
       #1e293b 100%
     );
 
+  background-attachment: fixed;
 }
 
+body {
+  transition:
+    background 0.8s ease,
+    color 0.3s ease;
+}
 
 /* Welcome banner animation */
 
