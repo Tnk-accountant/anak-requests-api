@@ -631,11 +631,6 @@ button:active {
 
         <!-- Panel Received -->
         <div id="panel-received" class="action-panel hidden">
-          <button
-          type="button"
-          class="mobileBack md:hidden mb-4 text-indigo-600 font-medium">
-          ← Back
-        </button>
           <h4 class="font-semibold mb-2">Confirm receipt</h4>
           <div class="grid grid-cols-2 gap-3 mb-3">
             <div>
@@ -665,11 +660,7 @@ button:active {
 
         <!-- Panel Liquidate -->
         <div id="panel-liquidate" class="action-panel hidden mt-2">
-          <button
-          type="button"
-          class="mobileBack md:hidden mb-4 text-indigo-600 font-medium">
-          ← Back
-        </button>
+        
           <h4 class="font-semibold mb-2">Liquidation</h4>
           <div class="mb-3">
             <label class="block text-sm text-gray-700">Amount spent</label>
@@ -753,11 +744,6 @@ button:active {
 
         <!-- Panel Cancel -->
         <div id="panel-cancel" class="action-panel hidden mt-2">
-                  <button
-          type="button"
-          class="mobileBack md:hidden mb-4 text-indigo-600 font-medium">
-          ← Back
-        </button>
           <h4 class="font-semibold text-red-600 mb-3">Cancel / Decline</h4>
           <input type="text" id="cancelRequestorNamePanel" class="w-full border rounded px-3 py-2 mb-2" readonly>
           <textarea id="cancelReason" rows="3" class="w-full border rounded px-3 py-2 mb-4"></textarea>
@@ -775,11 +761,6 @@ MESSENGER STYLE CLARIFICATION PANEL
 <div
   id="panel-clarification"
   class="action-panel hidden flex flex-col h-full min-h-0">
-    <button
-    type="button"
-    class="mobileBack md:hidden m-4 text-indigo-600 font-medium">
-    ← Back
-  </button>
 
   <div class="flex flex-col h-full border border-gray-200 rounded-3xl overflow-hidden bg-white shadow-sm">
 
@@ -2512,10 +2493,9 @@ function showPanel(action) {
 
 requestAnimationFrame(() => {
 
-  panel?.scrollTo({
-    top: 0,
-    behavior: 'auto'
-  });
+  if (panel && panel.scrollHeight > panel.clientHeight) {
+    panel.scrollTop = 0;
+  }
 
   isSwitchingPanel = false;
 
@@ -2651,17 +2631,12 @@ bubble.innerHTML = `
       clarificationBtn.classList.add('hidden');
     }
 
-  // ==============================
-  // PANEL LOGIC
-  // ==============================
-    if (
-      req.status === "NeedsInfo" ||
-      req.status === "Resubmitted"
-    ) {
-      showPanel("clarification");
-    } else {
-      hideAllPanels();
-    }
+hideAllPanels();
+
+requestAnimationFrame(() => {
+  autoSelectMobileAction(req);
+});
+
 
   // ==============================
   // RESET INPUT
@@ -2999,10 +2974,19 @@ function closeModal() {
   if (!btn) return;
 
   btn.addEventListener('click', () => {
+
     hideAllPanels();
 
-    // mobile : revenir à la liste d’actions
     if (window.innerWidth < 768) {
+
+      document
+        .getElementById('modalLeftCol')
+        ?.classList.remove('mobile-hidden');
+
+      document
+        .getElementById('modalRightCol')
+        ?.classList.add('hidden');
+
       if (activeActionCard) {
         activeActionCard.classList.remove('is-active');
         activeActionCard = null;
