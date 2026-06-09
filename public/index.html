@@ -764,6 +764,13 @@ MESSENGER STYLE CLARIFICATION PANEL
     <div class="shrink-0 px-4 py-3 border-b border-gray-100 bg-white">
       <div class="flex items-center gap-3">
 
+        <button
+          type="button"
+          id="clarificationBack"
+          class="md:hidden text-indigo-600 font-medium text-lg">
+          ←
+        </button>
+
         <div class="relative">
           <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-lg">
             ⚠️
@@ -1206,6 +1213,34 @@ let mobileAmountFilter = '';
       ?.addEventListener('click', () => {
         showPanel('clarification');
       });
+
+      document
+  .querySelector('[data-action="clarification"]')
+  ?.addEventListener('click', () => {
+    showPanel('clarification');
+  });
+
+const clarificationBack =
+  document.getElementById('clarificationBack');
+
+clarificationBack?.addEventListener('click', () => {
+
+  hideAllPanels();
+
+  document
+    .getElementById('modalLeftCol')
+    ?.classList.remove('mobile-hidden');
+
+  document
+    .getElementById('modalRightCol')
+    ?.classList.add('hidden');
+
+  if (activeActionCard) {
+    activeActionCard.classList.remove('is-active');
+    activeActionCard = null;
+  }
+
+});
 
       
     // ==============================
