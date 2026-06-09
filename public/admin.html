@@ -98,10 +98,23 @@
   flex: 0 0 auto;
 }
 
+/* =========================
+   ARCHIVES THEME
+========================= */
+
+.archives-theme {
+  background:
+    linear-gradient(
+      135deg,
+      #f8fafc 0%,
+      #c1ccd8 100%
+    );
+}
+
 </style>
 
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 text-sm font-sans min-h-screen">
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 text-sm font-sans min-h-screen transition-all duration-500">
 
   <!-- LOADER -->
   <div id="loader" class="fixed inset-0 flex items-center justify-center bg-white z-50">
@@ -625,6 +638,37 @@ CHAT LAYOUT
       </div>
     </div>
 
+    <!-- CHANGEMENT : BIENVENUE DANS LES ARCHIVES -->
+
+    <div id="archiveTransition"
+     class="fixed inset-0 hidden items-center justify-center z-[9999]">
+
+      <div class="absolute inset-0 bg-white/50 backdrop-blur-sm"></div>
+
+      <div
+        class="relative bg-white border border-slate-200
+              rounded-3xl px-8 py-6 shadow-xl">
+
+        <div class="text-center">
+
+          <div class="text-4xl mb-3">
+            📦
+          </div>
+
+          <div class="text-lg font-semibold text-slate-800">
+            Entering Archives
+          </div>
+
+          <div class="text-sm text-slate-500 mt-1">
+            Browsing historical requests
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
 </body>
 
   <script>
@@ -1054,6 +1098,8 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     archivesMode = false;
     archivesBtn.innerHTML = '📦 Archives';
 
+    document.body.classList.remove('archives-theme');
+
     document
     .getElementById('archiveBanner')
     .classList.add('hidden');
@@ -1315,7 +1361,9 @@ async function loadUsers() {
 
       const json = await res.json();
 
-archivesMode = true;
+      archivesMode = true;
+
+      document.body.classList.add('archives-theme');
 
       document
         .getElementById('archiveBanner')
@@ -1354,13 +1402,15 @@ archivesMode = true;
 
     archivesBtn.addEventListener('click', async () => {
 
-  if (!archivesMode) {
+    if (!archivesMode) {
 
-    archivesMode = true;
+      showArchiveTransition();
 
-    archivesBtn.innerHTML = '← Active Requests';
+      archivesMode = true;
 
-    await loadArchives();
+      archivesBtn.innerHTML = '← Active Requests';
+
+      await loadArchives();
 
   } else {
 
@@ -2523,6 +2573,27 @@ document.getElementById('userSearch').addEventListener('input', (e) => {
   });
 
 });
+
+// ─────────────────────────────────────────
+// Bienvenue dans le monde des archives
+// ─────────────────────────────────────────
+
+function showArchiveTransition() {
+
+  const overlay =
+    document.getElementById('archiveTransition');
+
+  overlay.classList.remove('hidden');
+  overlay.classList.add('flex');
+
+  setTimeout(() => {
+
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+
+  }, 900);
+
+}
 
   </script>
 
