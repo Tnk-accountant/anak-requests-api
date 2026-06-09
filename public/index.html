@@ -2668,34 +2668,38 @@ bubble.innerHTML = `
 const clarificationBtn =
   document.getElementById('clarificationActionBtn');
 
-if (
+const needsClarification =
   req.status === 'NeedsInfo' ||
-  req.status === 'Resubmitted'
-) {
+  req.status === 'Resubmitted';
 
-  clarificationBtn.classList.remove('hidden');
+if (needsClarification) {
 
-  // 🔥 Mise en avant visuelle
-  clarificationBtn.classList.add(
+  clarificationBtn?.classList.remove('hidden');
+
+  // Reset propre
+  clarificationBtn?.classList.remove(
+    'animate-pulse'
+  );
+
+  // Mise en avant visuelle
+  clarificationBtn?.classList.add(
     'bg-orange-50',
     'border-orange-300',
     'ring-1',
     'ring-orange-200'
   );
 
-  // 🔥 Father attend une réponse
+  // Father attend une réponse
   if (req.status === 'NeedsInfo') {
-    clarificationBtn.classList.add('animate-pulse');
-  } else {
-    clarificationBtn.classList.remove('animate-pulse');
+    clarificationBtn?.classList.add('animate-pulse');
   }
 
 } else {
 
-  clarificationBtn.classList.add('hidden');
+  clarificationBtn?.classList.add('hidden');
 
-  // 🔄 Reset styles
-  clarificationBtn.classList.remove(
+  // Reset complet
+  clarificationBtn?.classList.remove(
     'bg-orange-50',
     'border-orange-300',
     'ring-1',
@@ -2709,7 +2713,9 @@ if (
 // ==============================
 hideAllPanels();
 
-
+// ==============================
+// RESET MOBILE LAYOUT
+// ==============================
 document
   .getElementById('modalLeftCol')
   ?.classList.remove('mobile-hidden');
@@ -2717,6 +2723,12 @@ document
 document
   .getElementById('modalRightCol')
   ?.classList.add('hidden');
+
+  clarificationBtn?.classList.remove(
+  'opacity-50',
+  'opacity-60',
+  'opacity-70'
+);
 
   // ==============================
   // RESET INPUT
@@ -2954,6 +2966,17 @@ document.querySelectorAll('#actionList .action-card').forEach(card => {
     (action === 'validate'  && req.status === 'PendingValidation') ||
     (action === 'cancel'    && req.status !== 'Closed' && req.status !== 'PendingCancel');
 
+    if (
+  req.status === 'NeedsInfo' ||
+  req.status === 'Resubmitted'
+) {
+
+  document
+    .getElementById('clarificationActionBtn')
+    ?.classList.remove('opacity-40');
+
+}
+
   // 👉 toujours cliquable (lecture seule possible)
   card.classList.remove('pointer-events-none');
 
@@ -2963,13 +2986,28 @@ document.querySelectorAll('#actionList .action-card').forEach(card => {
     return;
   }
 
-  // 🔁 logique normale
-  if (!allowed) {
+if (!allowed) {
+
+  // 🔥 Exception clarification quand Father attend une réponse
+  if (
+    action === 'clarification' &&
+    (req.status === 'NeedsInfo' || req.status === 'Resubmitted')
+  ) {
+
+    card.classList.remove('opacity-40');
+
+  } else {
+
     card.classList.add('opacity-40');
     card.classList.remove('is-active');
-  } else {
-    card.classList.remove('opacity-40');
+
   }
+
+} else {
+
+  card.classList.remove('opacity-40');
+
+}
 });
 
 }
