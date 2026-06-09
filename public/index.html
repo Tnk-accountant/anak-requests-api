@@ -1223,13 +1223,14 @@ let mobileAmountFilter = '';
 
       // reset input
       e.target.value = '';
-
-    document.querySelector('[data-action="clarification"]')
-        ?.addEventListener('click', () => {
-          showPanel('clarification');
-      });
       
     });
+
+    document
+      .querySelector('[data-action="clarification"]')
+      ?.addEventListener('click', () => {
+        showPanel('clarification');
+      });
 
       
     // ==============================
