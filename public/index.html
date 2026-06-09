@@ -38,10 +38,6 @@
    ACTION PANELS
 ========================= */
 
-/* Base */
-.action-panel {
-  display: block;
-}
 
 /* Desktop : panels scrollables */
 @media (min-width: 768px) {
@@ -2458,9 +2454,16 @@ const ACTION_BY_STATUS = {
  * Cache tous les panels et reset l’état desktop
  */
 function hideAllPanels() {
-  // Cacher tous les panels UNIQUEMENT
-  document.querySelectorAll('.action-panel')
-    .forEach(p => p.classList.add('hidden'));
+
+  document
+    .querySelectorAll('.action-panel')
+    .forEach(panel => {
+
+      panel.classList.add('hidden');
+
+      panel.style.display = 'none';
+    });
+
 }
 
 /**
@@ -2470,36 +2473,45 @@ function hideAllPanels() {
  */
 
 function showPanel(action) {
+
   if (isSwitchingPanel) return;
   isSwitchingPanel = true;
 
-
+  // 🔥 Toujours repartir proprement
   hideAllPanels();
 
-  const panel = document.getElementById('panel-' + action);
-  if (panel) panel.classList.remove('hidden');
+  const panel = document.getElementById(`panel-${action}`);
+
+  if (!panel) {
+    isSwitchingPanel = false;
+    return;
+  }
+
+  // 🔥 Sécurité anti-conflit CSS
+  panel.style.display = '';
+  panel.classList.remove('hidden');
 
   if (window.innerWidth < 768) {
 
-  document
-    .getElementById('modalLeftCol')
-    .classList.add('mobile-hidden');
+    const leftCol = document.getElementById('modalLeftCol');
+    const rightCol = document.getElementById('modalRightCol');
 
-  document
-    .getElementById('modalRightCol')
-    .classList.remove('hidden');
+    leftCol?.classList.add('mobile-hidden');
 
-}
-
-requestAnimationFrame(() => {
-
-  if (panel && panel.scrollHeight > panel.clientHeight) {
-    panel.scrollTop = 0;
+    rightCol?.classList.remove('hidden');
+    rightCol?.style.removeProperty('display');
   }
 
-  isSwitchingPanel = false;
+  requestAnimationFrame(() => {
 
-});
+    if (panel.scrollHeight > panel.clientHeight) {
+      panel.scrollTop = 0;
+    }
+
+    isSwitchingPanel = false;
+
+  });
+
 }
 
 
