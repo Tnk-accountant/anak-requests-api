@@ -121,7 +121,7 @@
       180deg,
       #566996 0%,
       #757881 40%,
-      #b7d2fd 100%
+      #a5c3f3 100%
     );
 
   background-attachment: fixed;
@@ -1203,6 +1203,17 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     archivesBtn.innerHTML = '📦 Archives';
 
     document.body.classList.remove('archives-theme');
+
+    const banner =
+      document.getElementById('archiveBanner');
+
+    banner.classList.remove('archive-banner-show');
+    banner.classList.add('archive-banner-hide');
+
+    setTimeout(() => {
+      banner.classList.add('hidden');
+    }, 500);
+
     document.body.style.transition = 'background 800ms ease';
 
     
@@ -2678,35 +2689,56 @@ document.getElementById('userSearch').addEventListener('input', (e) => {
 
 });
 
+
 // ─────────────────────────────────────────
-// Bienvenue dans le monde des archives
+// ARCHIVES TRANSITION
 // ─────────────────────────────────────────
 
-  function showArchiveTransition() {
+function showArchiveTransition(duration = 1400) {
 
-    const overlay =
-      document.getElementById('archiveTransition');
+  const overlay =
+    document.getElementById('archiveTransition');
 
-    overlay.classList.remove('hidden');
-    overlay.classList.add('flex');
+  overlay.classList.remove('hidden');
+  overlay.classList.add('flex');
+
+  overlay.style.opacity = '0';
+
+  requestAnimationFrame(() => {
+    overlay.style.transition = 'opacity .35s ease';
+    overlay.style.opacity = '1';
+  });
+
+  setTimeout(() => {
+
+    overlay.style.opacity = '0';
 
     setTimeout(() => {
 
       overlay.classList.add('hidden');
       overlay.classList.remove('flex');
 
-    }, 900);
+    }, 350);
 
-  }
+  }, duration);
 
-  function hideArchiveTransition() {
+}
 
-    const banner =
-      document.getElementById('archiveBanner');
+function hideArchiveTransition() {
 
-    banner.classList.add('archive-banner-hide');
+  const banner =
+    document.getElementById('archiveBanner');
 
-  }
+  banner.classList.remove('archive-banner-show');
+  banner.classList.add('archive-banner-hide');
+
+  setTimeout(() => {
+
+    banner.classList.add('hidden');
+
+  }, 500);
+
+}
 
   </script>
 
