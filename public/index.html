@@ -60,23 +60,6 @@
 
 @media (max-width:768px){
 
-  #modalRightCol{
-    display:flex;
-    flex-direction:column;
-    min-height:0;
-  }
-
-  #panel-clarification{
-    display:flex;
-    flex-direction:column;
-    flex:1;
-    min-height:0;
-  }
-
-}
-
-@media (max-width:768px){
-
   .mobile-hidden{
     display:none !important;
   }
@@ -166,8 +149,9 @@
    MODAL + GRID LAYOUT
 ========================= */
 
-/* Mobile : modal plein écran fiable */
+/* 📱 Modal mobile plein écran */
 @media (max-width: 768px) {
+
   #modal {
     align-items: stretch !important;
   }
@@ -176,42 +160,60 @@
     height: 100dvh;
     max-height: 100dvh;
   }
-}
 
-
-@media (max-width: 768px) {
+  /* La colonne droite occupe toute la largeur */
   .md\:col-span-7 {
     grid-column: span 12 / span 12;
     overflow: visible;
   }
+
+  /* Important :
+     ne pas forcer display:flex quand hidden est présent */
+  #modalRightCol:not(.hidden) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  #panel-clarification {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
 }
 
+/* =========================
+   ACTION CARDS
+========================= */
 
-/* Action cards — feedback visuel */
 .action-card {
   border-radius: 12px;
-  transition:
-    background-color 120ms ease,
-    box-shadow 120ms ease,
-    border-color 120ms ease;
 
-transition: all 140ms ease;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
 }
 
-/* Tap immédiat (mobile) */
+/* Feedback tactile */
 .action-card:active {
   background-color: rgba(99, 102, 241, 0.06);
 }
 
-/* État sélectionné (comme Cash / Chèque / CB) */
+/* Carte sélectionnée */
 .action-card.is-active {
   background: rgba(99, 102, 241, 0.08);
-  border-color: #6366f1; /* indigo-500 */
+  border-color: #6366f1;
+
   box-shadow:
     0 0 0 1px rgba(99, 102, 241, 0.35),
     0 6px 14px -8px rgba(99, 102, 241, 0.35);
 }
 
+/* Boutons */
 button:active {
   transform: scale(0.97);
 }
@@ -265,10 +267,6 @@ button:active {
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(20px); }
       to { opacity: 1; transform: translateX(0); }
-    }
-
-    .mobile-card {
-  transition: all 140ms ease;
     }
 
     .mobile-card:active {
@@ -2930,22 +2928,41 @@ document.querySelectorAll('#actionList .action-card').forEach(card => {
  * Fermeture du modal
  */
 function closeModal() {
-  document.getElementById('modal').classList.add('hidden');
-  scanningMode = false;
 
-  const scanStatus = document.getElementById('scanStatus');
-  if (scanStatus) scanStatus.classList.add('hidden');
+  // 🔄 Reset vue mobile
+  document
+    .getElementById('modalLeftCol')
+    ?.classList.remove('mobile-hidden');
 
-  document.body.style.overflow = '';
-  currentRequestId = null;
+  document
+    .getElementById('modalRightCol')
+    ?.classList.add('hidden');
 
-  // reset action sélectionnée
+  // 🔄 Reset panels
+  hideAllPanels();
+
+  // 🔄 Reset action sélectionnée
   if (activeActionCard) {
     activeActionCard.classList.remove('is-active');
     activeActionCard = null;
   }
 
-  hideAllPanels();
+  // 🔄 Reset scan
+  scanningMode = false;
+
+  const scanStatus = document.getElementById('scanStatus');
+  if (scanStatus) {
+    scanStatus.classList.add('hidden');
+  }
+
+  // 🔄 Reset contexte
+  currentRequestId = null;
+
+  // 🔄 Restore scroll page
+  document.body.style.overflow = '';
+
+  // 🔄 Fermer modal
+  document.getElementById('modal').classList.add('hidden');
 }
 
 
