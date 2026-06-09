@@ -2580,19 +2580,8 @@ bubble.innerHTML = `
       req.status === 'NeedsInfo' ||
       req.status === 'Resubmitted'
     ) {
-
       clarificationBtn.classList.remove('hidden');
-
-    } 
-    
-    // 📱 Mobile → ouvrir directement le chat
-      if (
-        window.innerWidth < 768 &&
-        req.status === 'NeedsInfo'
-      ) {
-        showPanel('clarification');
-      } else {
-
+    } else {
       clarificationBtn.classList.add('hidden');
     }
 
@@ -2603,7 +2592,13 @@ bubble.innerHTML = `
       req.status === "NeedsInfo" ||
       req.status === "Resubmitted"
     ) {
-      showPanel("clarification");
+
+      if (window.innerWidth < 768) {
+        showPanel("clarification");
+      } else {
+        hideAllPanels();
+      }
+
     } else {
       hideAllPanels();
     }
