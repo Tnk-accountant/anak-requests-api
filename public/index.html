@@ -53,10 +53,26 @@
 
 /* Mobile : panels = contenu principal, pas de scroll interne */
 @media (max-width: 768px) {
-  .action-panel {
-    max-height: none;
-    overflow: visible;
+  #modal > div {
+    overflow: hidden;
   }
+}
+
+@media (max-width:768px){
+
+  #modalRightCol{
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  #panel-clarification{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    min-height:0;
+  }
+
 }
 
 /* =========================
@@ -265,7 +281,7 @@ button:active {
       display: inline-flex;
       flex-direction: column;
       width: fit-content;
-      max-width: 65%;
+      max-width: 75%;
       padding: 8px 14px;
       border-radius: 18px;
       line-height: 1.4;
@@ -768,11 +784,16 @@ MESSENGER STYLE CLARIFICATION PANEL
     <!-- MESSAGES -->
     <div
       id="clarificationConversation"
-      class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden
-             px-5 py-5
-             flex flex-col gap-3
-             bg-[#f5f7fb]
-             scroll-smooth overscroll-contain">
+          class="
+          flex-1
+          overflow-y-auto
+          overflow-x-hidden
+          px-4
+          py-4
+          pb-24
+          bg-[#f5f7fb]
+          scroll-smooth
+          ">
     </div>
 
     <!-- INPUT BAR -->
@@ -2532,7 +2553,9 @@ bubble.innerHTML = `
 
   // scroll bottom
   setTimeout(() => {
-    convoBox.scrollTop = convoBox.scrollHeight;
+    requestAnimationFrame(() => {
+      convoBox.scrollTop = convoBox.scrollHeight;
+    });
   }, 30);
 
 } else {
