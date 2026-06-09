@@ -2645,10 +2645,14 @@ bubble.innerHTML = `
 
 hideAllPanels();
 
-requestAnimationFrame(() => {
-  autoSelectMobileAction(req);
-});
 
+document
+  .getElementById('modalLeftCol')
+  ?.classList.remove('mobile-hidden');
+
+document
+  .getElementById('modalRightCol')
+  ?.classList.add('hidden');
 
   // ==============================
   // RESET INPUT
@@ -2872,11 +2876,6 @@ if (isLocked) {
 const modal = document.getElementById('modal');
 modal.classList.remove('hidden');
 document.body.style.overflow = 'hidden';
-
-// afficher bon panel après rendu
-requestAnimationFrame(() => {
-  autoSelectMobileAction(req);
-});
 
 
 // ---------- Gestion des action cards (gauche) ----------
