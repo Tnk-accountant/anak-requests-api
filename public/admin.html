@@ -87,7 +87,7 @@
   display: inline-flex;
   flex-direction: column;
   width: fit-content;      /* ← remplace width: auto */
-  max-width: 65%;
+  max-width: 75%;
   padding: 8px 14px;       /* ← réduit le padding */
   border-radius: 18px;
   white-space: pre-wrap;
@@ -456,7 +456,7 @@
  <div id="descriptionModal"
   class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
 
-  <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl p-5">
+  <div class="bg-white w-full max-w-5xl rounded-2xl shadow-xl p-6">
 
     <!-- HEADER -->
     <div class="flex justify-between items-center mb-3">
@@ -469,7 +469,7 @@
 CHAT LAYOUT
 ========================================= -->
 
-<div class="flex flex-col h-[85vh] max-h-[85vh]">
+<div class="flex flex-col h-[75vh] max-h-[75vh]">
 
   <!-- =========================================
   REQUEST DESCRIPTION
@@ -498,7 +498,7 @@ CHAT LAYOUT
              whitespace-pre-wrap
              leading-relaxed
              shadow-sm
-             max-h-[180px]
+             max-h-[120px]
              overflow-y-auto">
 
     </div>
@@ -1965,19 +1965,17 @@ async function loadUsers() {
 
     if (archivesMode) {
 
-  const restoreBtn =
-    tr.querySelector('.restoreBtn');
+      const restoreBtn =
+          tr.querySelector('.restoreBtn');
 
-  restoreBtn?.addEventListener('click', async () => {
+        restoreBtn?.addEventListener('click', async () => {
 
-window.restoreRequestId =
-  req.request_id;
+          window.restoreRequestId =
+            req.request_id;
 
-openRestoreModal(
-  req.request_id
-);
-
-return;
+          openRestoreModal(
+            req.request_id
+          );
 
     try {
 
