@@ -615,9 +615,6 @@ button:active {
 
             <div class="flex-1">
               <strong class="text-orange-600 font-semibold">⚠️ Clarification required</strong>
-              <div class="text-xs text-gray-500 mt-1">
-                View admin message
-              </div>
             </div>
 
           </button>
@@ -2085,15 +2082,17 @@ function renderMobileCards() {
   const paginated = requests.slice(start, start + mobilePerPage);
 
   paginated.forEach(req => {
-  const statusColor =
-    req.status === 'Pending' ? 'bg-yellow-400' :
-    req.status === 'Approved' ? 'bg-blue-500' :
-    req.status === 'ToLiquidate' ? 'bg-purple-500' :
-    req.status === 'PendingValidation' ? 'bg-orange-500' :
-    req.status === 'Closed' ? 'bg-green-600' :
-    req.status === 'PendingCancel' ? 'bg-red-400' :
-    req.status === 'Rejected' || req.status === 'Cancelled' ? 'bg-gray-400' :
-    'bg-gray-400';
+const statusColor =
+  req.status === 'Pending' ? 'bg-yellow-400' :
+  req.status === 'Approved' ? 'bg-blue-500' :
+  req.status === 'ToLiquidate' ? 'bg-purple-500' :
+  req.status === 'PendingValidation' ? 'bg-orange-500' :
+  req.status === 'NeedsInfo' ? 'bg-orange-500' :
+  req.status === 'Resubmitted' ? 'bg-indigo-500' :
+  req.status === 'Closed' ? 'bg-green-600' :
+  req.status === 'PendingCancel' ? 'bg-red-400' :
+  req.status === 'Rejected' || req.status === 'Cancelled' ? 'bg-gray-400' :
+  'bg-gray-400';
 
     const card = document.createElement('div');
     card.className = `
