@@ -742,36 +742,58 @@ CHAT LAYOUT
       </div>
     </div>
 
-    <!-- CHANGEMENT : BIENVENUE DANS LES ARCHIVES -->
 
-    <div id="archiveTransition"
+
+<!-- CHANGEMENT : BIENVENUE DANS LES ARCHIVES -->
+
+<div id="archiveTransition"
      class="fixed inset-0 hidden items-center justify-center z-[9999]">
 
-      <div class="absolute inset-0 bg-white/50 backdrop-blur-sm"></div>
+  <!-- Fond flou -->
+  <div class="absolute inset-0 bg-white/60 backdrop-blur-md"></div>
 
-      <div
-        class="relative bg-white border border-slate-200
-              rounded-3xl px-8 py-6 shadow-xl">
+  <!-- Carte -->
+  <div
+    class="relative bg-white border border-slate-200
+           rounded-3xl px-10 py-8 shadow-2xl
+           min-w-[320px]">
 
-        <div class="text-center">
+    <div class="text-center">
 
-          <div class="text-4xl mb-3">
-            📦
-          </div>
+      <!-- Icône -->
+      <div class="text-5xl mb-4 animate-bounce">
+        📦
+      </div>
 
-          <div class="text-lg font-semibold text-slate-800">
-            Entering Archives
-          </div>
+      <!-- Titre -->
+      <div class="text-xl font-semibold text-slate-800">
+        Entering Archives
+      </div>
 
-          <div class="text-sm text-slate-500 mt-1">
-            Browsing historical requests
-          </div>
+      <!-- Sous-titre -->
+      <div class="text-sm text-slate-500 mt-2">
+        Loading historical requests...
+      </div>
 
+      <!-- Spinner -->
+      <div class="flex justify-center mt-6">
+
+        <div
+          class="w-8 h-8
+                 border-4
+                 border-slate-300
+                 border-t-slate-700
+                 rounded-full
+                 animate-spin">
         </div>
 
       </div>
 
     </div>
+
+  </div>
+
+</div>
 
 </body>
 
@@ -2718,7 +2740,7 @@ function showArchiveTransition(duration = 1400) {
       overlay.classList.add('hidden');
       overlay.classList.remove('flex');
 
-    }, 350);
+    }, 1400);
 
   }, duration);
 
