@@ -191,7 +191,7 @@
   <div class="max-w-[1400px] mx-auto px-4">
 
     <!-- HEADER -->
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-4 flex items-center justify-between">
 
       <!-- LEFT -->
       <div class="flex items-center gap-3">
@@ -1783,47 +1783,48 @@ async function loadUsers() {
 
     });
 
-    archivesBtn.addEventListener('click', async () => {
+   archivesBtn.addEventListener('click', async () => {
 
-    if (!archivesMode) {
+  if (!archivesMode) {
 
-      showArchiveTransition(
-        'Entering Archives',
-        'Loading historical requests...',
-        '📦',
-        2500
-      );
+    showArchiveTransition(
+      'Entering Archives',
+      'Loading historical requests...',
+      '📦',
+      2500
+    );
 
-      await new Promise(resolve =>
-        setTimeout(resolve, 2500)
-      );
+    // Charge immédiatement en arrière-plan
+    const archivesPromise = loadArchives();
 
-      archivesMode = true;
+    // Attendre au minimum l'animation
+    await Promise.all([
+      archivesPromise,
+      new Promise(resolve => setTimeout(resolve, 2500))
+    ]);
 
-      archivesBtn.innerHTML = '← Active Requests';
+    archivesMode = true;
+    archivesBtn.innerHTML = '← Active Requests';
 
-      await loadArchives();
+  } else {
 
-      } else {
+    showArchiveTransition(
+      'Returning to Active Requests',
+      'Loading active requests...',
+      '📂',
+      2500
+    );
 
-      showArchiveTransition(
-        'Returning to Active Requests',
-        'Loading active requests...',
-        '📂',
-        2500
-      );
+    const requestsPromise = fetchRequests();
 
-      await new Promise(resolve =>
-        setTimeout(resolve, 1800)
-      );
+    await Promise.all([
+      requestsPromise,
+      new Promise(resolve => setTimeout(resolve, 2500))
+    ]);
 
-      archivesMode = false;
-
-      archivesBtn.innerHTML = '📦 Archives';
-
-      await fetchRequests();
-
-    }
+    archivesMode = false;
+    archivesBtn.innerHTML = '📦 Archives';
+  }
 
 });
 
