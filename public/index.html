@@ -607,12 +607,14 @@ button:active {
           </button>
 
 
-          <button type="button" data-action="clarification"
-            class="action-card w-full text-left p-3 rounded-lg border hover:shadow-sm transition flex items-start gap-3 hidden"
-            id="clarificationActionBtn">
+      <button
+        type="button"
+        data-action="clarification"
+        id="clarificationActionBtn"
+        class="action-card w-full text-left p-3 rounded-lg border border-orange-300 bg-orange-50 hover:shadow-sm transition flex items-start gap-3 hidden">
 
             <div class="flex-1">
-              <strong class="text-orange-600">⚠️ Clarification required</strong>
+              <strong class="text-orange-600 font-semibold">⚠️ Clarification required</strong>
               <div class="text-xs text-gray-500 mt-1">
                 View admin message
               </div>
@@ -2660,24 +2662,51 @@ bubble.innerHTML = `
   `;
 }
 
-  // ==============================
-  // ACTION BUTTON
-  // ==============================
-    const clarificationBtn =
-      document.getElementById('clarificationActionBtn');
+// ==============================
+// ACTION BUTTON
+// ==============================
+const clarificationBtn =
+  document.getElementById('clarificationActionBtn');
 
-    if (
-      req.status === 'NeedsInfo' ||
-      req.status === 'Resubmitted'
-    ) {
+if (
+  req.status === 'NeedsInfo' ||
+  req.status === 'Resubmitted'
+) {
 
-      clarificationBtn.classList.remove('hidden');
+  clarificationBtn.classList.remove('hidden');
 
-    } else {
+  // 🔥 Mise en avant visuelle
+  clarificationBtn.classList.add(
+    'bg-orange-50',
+    'border-orange-300',
+    'ring-1',
+    'ring-orange-200'
+  );
 
-      clarificationBtn.classList.add('hidden');
-    }
+  // 🔥 Father attend une réponse
+  if (req.status === 'NeedsInfo') {
+    clarificationBtn.classList.add('animate-pulse');
+  } else {
+    clarificationBtn.classList.remove('animate-pulse');
+  }
 
+} else {
+
+  clarificationBtn.classList.add('hidden');
+
+  // 🔄 Reset styles
+  clarificationBtn.classList.remove(
+    'bg-orange-50',
+    'border-orange-300',
+    'ring-1',
+    'ring-orange-200',
+    'animate-pulse'
+  );
+}
+
+// ==============================
+// RESET PANELS
+// ==============================
 hideAllPanels();
 
 
