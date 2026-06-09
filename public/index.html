@@ -75,6 +75,14 @@
 
 }
 
+@media (max-width:768px){
+
+  .mobile-hidden{
+    display:none !important;
+  }
+
+}
+
 /* =========================
    PAYMENT BUTTONS
 ========================= */
@@ -175,11 +183,6 @@
   .md\:col-span-7 {
     grid-column: span 12 / span 12;
     overflow: visible;
-  }
-
-  #modal > div {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -559,7 +562,7 @@ button:active {
         grid grid-cols-1 md:grid-cols-12
         h-full md:h-auto">
   
-      <div class="col-span-1 md:col-span-5 border-r md:border-r p-4 space-y-3">
+      <div id="modalLeftCol" class="col-span-1 md:col-span-5 border-r md:border-r p-4 space-y-3">
         <div class="flex items-start justify-between">
           <div>
             <h3 id="modalTitle" class="text-lg font-bold text-gray-800">Request details</h3>
@@ -626,10 +629,15 @@ button:active {
       </div>
 
       <!-- ✅ COLONNE DROITE -->
-<div id="modalRightCol" class="col-span-1 md:col-span-7 p-4">
+<div id="modalRightCol" class="col-span-1 md:col-span-7 p-4 hidden md:block">
 
         <!-- Panel Received -->
         <div id="panel-received" class="action-panel hidden">
+          <button
+          type="button"
+          class="mobileBack md:hidden mb-4 text-indigo-600 font-medium">
+          ← Back
+        </button>
           <h4 class="font-semibold mb-2">Confirm receipt</h4>
           <div class="grid grid-cols-2 gap-3 mb-3">
             <div>
@@ -659,6 +667,11 @@ button:active {
 
         <!-- Panel Liquidate -->
         <div id="panel-liquidate" class="action-panel hidden mt-2">
+          <button
+          type="button"
+          class="mobileBack md:hidden mb-4 text-indigo-600 font-medium">
+          ← Back
+        </button>
           <h4 class="font-semibold mb-2">Liquidation</h4>
           <div class="mb-3">
             <label class="block text-sm text-gray-700">Amount spent</label>
@@ -742,6 +755,11 @@ button:active {
 
         <!-- Panel Cancel -->
         <div id="panel-cancel" class="action-panel hidden mt-2">
+                  <button
+          type="button"
+          class="mobileBack md:hidden mb-4 text-indigo-600 font-medium">
+          ← Back
+        </button>
           <h4 class="font-semibold text-red-600 mb-3">Cancel / Decline</h4>
           <input type="text" id="cancelRequestorNamePanel" class="w-full border rounded px-3 py-2 mb-2" readonly>
           <textarea id="cancelReason" rows="3" class="w-full border rounded px-3 py-2 mb-4"></textarea>
@@ -759,6 +777,11 @@ MESSENGER STYLE CLARIFICATION PANEL
 <div
   id="panel-clarification"
   class="action-panel hidden flex flex-col h-full min-h-0">
+    <button
+    type="button"
+    class="mobileBack md:hidden m-4 text-indigo-600 font-medium">
+    ← Back
+  </button>
 
   <div class="flex flex-col h-full border border-gray-200 rounded-3xl overflow-hidden bg-white shadow-sm">
 
@@ -1132,6 +1155,7 @@ function debounce(fn, delay = 300) {
 
 
 const requestsMap = new Map();
+let mobileView = 'actions';
 let currentRequestId = null;
 
 let mobilePage = 1;
@@ -1794,9 +1818,32 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
     btn.classList.remove('opacity-60');
   }
 
+
+
+});
+
+
+
+  document.querySelectorAll('.mobileBack').forEach(btn => {
+
+  btn.addEventListener('click', () => {
+
+    if (window.innerWidth >= 768) return;
+
+    document
+      .getElementById('modalLeftCol')
+      .classList.remove('mobile-hidden');
+
+    document
+      .getElementById('modalRightCol')
+      .classList.add('hidden');
+
+  });
+
 });
 
 });
+
 
 
 function formatAmount(amount) {
@@ -2446,17 +2493,34 @@ function showPanel(action) {
   if (isSwitchingPanel) return;
   isSwitchingPanel = true;
 
+
   hideAllPanels();
 
   const panel = document.getElementById('panel-' + action);
   if (panel) panel.classList.remove('hidden');
 
-  requestAnimationFrame(() => {
-    const rightCol = document.getElementById('panel-liquidate');
-    if (rightCol) rightCol.scrollTop = 0;
+  if (window.innerWidth < 768) {
 
-    isSwitchingPanel = false;
+  document
+    .getElementById('modalLeftCol')
+    .classList.add('mobile-hidden');
+
+  document
+    .getElementById('modalRightCol')
+    .classList.remove('hidden');
+
+}
+
+requestAnimationFrame(() => {
+
+  panel?.scrollTo({
+    top: 0,
+    behavior: 'auto'
   });
+
+  isSwitchingPanel = false;
+
+});
 }
 
 
