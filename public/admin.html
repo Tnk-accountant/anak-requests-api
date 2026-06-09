@@ -456,7 +456,7 @@
  <div id="descriptionModal"
   class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
 
-  <div class="bg-white w-full max-w-5xl rounded-2xl shadow-xl p-6">
+  <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl p-5">
 
     <!-- HEADER -->
     <div class="flex justify-between items-center mb-3">
@@ -2880,13 +2880,21 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
 
     if (!res.ok) throw new Error('Send failed');
 
+    // 🔥 Supprime le placeholder "No conversation yet"
+    if (convoBox.textContent.includes('No conversation yet')) {
+      convoBox.innerHTML = '';
+    }
+
     // ── Instant UI bubble ──
     convoBox.classList.remove('hidden');
-    appendBubble(convoBox, { isAdmin: true, senderName: 'Father', message });
+    appendBubble(convoBox, {
+      isAdmin: true,
+      senderName: 'Father',
+      message
+    });
 
     // ── Reset input ──
     input.value = '';
-    input.style.height = 'auto';
 
     // ── Sync backend ──
     await fetchRequests();

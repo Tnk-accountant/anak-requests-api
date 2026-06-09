@@ -290,6 +290,16 @@ button:active {
     padding-bottom: 8px;
   }
 
+/* Conversation chat bubble */
+
+  #clarificationConversation {
+  -webkit-overflow-scrolling: touch;
+}
+
+#panel-clarification {
+  overflow: hidden;
+}
+
 
 </style>
 
@@ -543,7 +553,7 @@ button:active {
         grid grid-cols-1 md:grid-cols-12
         h-full md:h-auto">
   
-      <div class="col-span-1 md:col-span-5 border-r md:border-r p-4 space-y-3">
+      <div id="modalLeftCol" class="col-span-1 md:col-span-5 border-r md:border-r p-4 space-y-3">
         <div class="flex items-start justify-between">
           <div>
             <h3 id="modalTitle" class="text-lg font-bold text-gray-800">Request details</h3>
@@ -742,7 +752,7 @@ MESSENGER STYLE CLARIFICATION PANEL
 
 <div
   id="panel-clarification"
-  class="action-panel hidden flex flex-col h-full min-h-0">
+  class="action-panel hidden flex flex-col h-full min-h-0 overflow-hidden">
 
   <div class="flex flex-col h-full border border-gray-200 rounded-3xl overflow-hidden bg-white shadow-sm">
 
@@ -767,12 +777,12 @@ MESSENGER STYLE CLARIFICATION PANEL
 
     <!-- MESSAGES -->
     <div
-      id="clarificationConversation"
-      class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden
-             px-5 py-5
-             flex flex-col gap-3
-             bg-[#f5f7fb]
-             scroll-smooth overscroll-contain">
+    id="clarificationConversation"
+    class="flex-1 overflow-y-auto overflow-x-hidden
+          px-5 py-5
+          flex flex-col gap-3
+          bg-[#f5f7fb]
+          overscroll-contain">
     </div>
 
     <!-- INPUT BAR -->
@@ -2422,6 +2432,19 @@ function hideAllPanels() {
  */
 
 function showPanel(action) {
+
+  const leftCol = document.getElementById('modalLeftCol');
+
+if (window.innerWidth < 768) {
+
+  if (panel === 'clarification') {
+    leftCol.style.display = 'none';
+  } else {
+    leftCol.style.display = '';
+  }
+
+}
+
   if (isSwitchingPanel) return;
   isSwitchingPanel = true;
 
@@ -2560,7 +2583,15 @@ bubble.innerHTML = `
 
       clarificationBtn.classList.remove('hidden');
 
-    } else {
+    } 
+    
+    // 📱 Mobile → ouvrir directement le chat
+      if (
+        window.innerWidth < 768 &&
+        req.status === 'NeedsInfo'
+      ) {
+        showPanel('clarification');
+      } else {
 
       clarificationBtn.classList.add('hidden');
     }
