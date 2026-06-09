@@ -103,33 +103,72 @@
 ========================= */
 
 .archives-theme {
+
   background:
     radial-gradient(
       circle at top left,
-      rgba(214, 227, 255, 0.788),
+      rgba(255,255,255,0.10),
+      transparent 25%
+    ),
+
+    radial-gradient(
+      circle at bottom right,
+      rgba(148,163,184,0.15),
       transparent 35%
     ),
+
     linear-gradient(
       135deg,
-      #bdc9d6,
-      #91a5bd
+      #1e293b 0%,
+      #0f172a 45%,
+      #020617 100%
     );
+
+  transition: all .8s ease;
 }
 
+
+/* Welcome banner animation */
+
 @keyframes archiveWelcome {
-  from {
+
+  0% {
     opacity: 0;
-    transform: translateY(-12px);
+    transform: translateY(-20px) scale(.96);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateY(4px) scale(1.01);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+}
+
+@keyframes archiveExit {
+
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 
   to {
-    opacity: 1;
-    transform: translateY(0);
+    opacity: 0;
+    transform: translateY(-12px) scale(.98);
   }
+
+}
+
+.archive-banner-hide {
+  animation: archiveExit .5s ease forwards;
 }
 
 .archive-banner-show {
-  animation: archiveWelcome .6s ease;
+  animation: archiveWelcome .8s cubic-bezier(.22,.61,.36,1);
 }
 
 </style>
@@ -1154,7 +1193,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     archivesMode = false;
     archivesBtn.innerHTML = '📦 Archives';
 
-    document.body.classList.remove('archives-theme');
+    document.body.style.transition = 'background 800ms ease';
 
     document.getElementById('filtersCard')
       .classList.remove(
@@ -1460,6 +1499,7 @@ async function loadUsers() {
     const banner =
       document.getElementById('archiveBanner');
 
+    banner.classList.remove('archive-banner-hide');
     banner.classList.remove('hidden');
     banner.classList.add('archive-banner-show');
 
@@ -1506,15 +1546,21 @@ async function loadUsers() {
 
       await loadArchives();
 
-  } else {
+      } else {
 
-    archivesMode = false;
+      hideArchiveTransition();
 
-    archivesBtn.innerHTML = '📦 Archives';
+      await new Promise(resolve =>
+        setTimeout(resolve, 500)
+      );
 
-    await fetchRequests();
+      archivesMode = false;
 
-  }
+      archivesBtn.innerHTML = '📦 Archives';
+
+      await fetchRequests();
+
+    }
 
 });
 
@@ -2665,22 +2711,31 @@ document.getElementById('userSearch').addEventListener('input', (e) => {
 // Bienvenue dans le monde des archives
 // ─────────────────────────────────────────
 
-function showArchiveTransition() {
+  function showArchiveTransition() {
 
-  const overlay =
-    document.getElementById('archiveTransition');
+    const overlay =
+      document.getElementById('archiveTransition');
 
-  overlay.classList.remove('hidden');
-  overlay.classList.add('flex');
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
 
-  setTimeout(() => {
+    setTimeout(() => {
 
-    overlay.classList.add('hidden');
-    overlay.classList.remove('flex');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
 
-  }, 900);
+    }, 900);
 
-}
+  }
+
+  function hideArchiveTransition() {
+
+    const banner =
+      document.getElementById('archiveBanner');
+
+    banner.classList.add('archive-banner-hide');
+
+  }
 
   </script>
 
