@@ -848,6 +848,61 @@ CHAT LAYOUT
 
 </div>
 
+<!-- RESTORE MODAL -->
+
+<div id="restoreModal"
+     class="fixed inset-0 hidden items-center justify-center z-[9999]">
+
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+
+  <div class="relative bg-white rounded-3xl shadow-2xl p-6 w-[420px]">
+
+    <div class="text-center">
+
+      <div class="text-5xl mb-3">
+        ↩️
+      </div>
+
+      <h3 class="text-xl font-semibold text-slate-800">
+        Restore Request
+      </h3>
+
+      <p class="text-sm text-slate-500 mt-2">
+        This request will be moved back to active requests.
+      </p>
+
+      <div class="mt-5 bg-slate-50 rounded-2xl p-4">
+
+        <div class="text-sm text-slate-500">
+          Request ID
+        </div>
+
+        <div id="restoreRequestId"
+             class="font-semibold text-slate-800 mt-1">
+        </div>
+
+      </div>
+
+      <div class="flex justify-end gap-3 mt-6">
+
+        <button id="cancelRestore"
+          class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">
+          Cancel
+        </button>
+
+        <button id="confirmRestore"
+          class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">
+          Restore
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
 
 </body>
 
@@ -1023,6 +1078,29 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     const refreshBtn = document.getElementById('refreshBtn');
 
    
+   //Fonction OPEN RESTAURE MODAL =============
+    function openRestoreModal(requestId) {
+
+      document.getElementById(
+        'restoreRequestId'
+      ).textContent = requestId;
+
+      const modal =
+        document.getElementById('restoreModal');
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeRestoreModal() {
+
+      const modal =
+        document.getElementById('restoreModal');
+
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+   
 //Fonction openarchive modal ============
 
     function openArchiveModal(stats) {
@@ -1053,6 +1131,57 @@ const API_URL = 'https://anak-requests-api.onrender.com';
     }
 
     const exportArchiveBtn = document.getElementById('exportArchiveBtn');
+
+
+    document
+  .getElementById('cancelRestore')
+  ?.addEventListener('click', () => {
+
+    closeRestoreModal();
+
+});
+
+document
+  .getElementById('confirmRestore')
+  ?.addEventListener('click', async () => {
+
+    closeRestoreModal();
+
+    try {
+
+      const res = await fetch(
+        `${API_URL}/requests/${window.restoreRequestId}/restore`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization:
+              'Bearer ' +
+              localStorage.getItem('access_token')
+          }
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error();
+      }
+
+      notify(
+        'Request restored',
+        'success'
+      );
+
+      await loadArchives();
+
+    } catch (err) {
+
+      notify(
+        'Restore failed',
+        'error'
+      );
+
+    }
+
+});
 
 // ARCHIVED BUTTONS =============
     document
@@ -1125,10 +1254,8 @@ const API_URL = 'https://anak-requests-api.onrender.com';
 
         const stats = await statsRes.json();
 
-        window.archiveStats = stats;
-        return;
-
         openArchiveModal(stats);
+
 
         // export Excel actuel
         exportBtn.click();
@@ -1841,9 +1968,14 @@ async function loadUsers() {
 
   restoreBtn?.addEventListener('click', async () => {
 
-    if (!confirm(
-      `Restore ${req.request_id} ?`
-    )) return;
+window.restoreRequestId =
+  req.request_id;
+
+openRestoreModal(
+  req.request_id
+);
+
+return;
 
     try {
 
