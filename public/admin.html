@@ -1806,6 +1806,14 @@ async function loadUsers() {
     archivesMode = true;
     archivesBtn.innerHTML = '← Active Requests';
 
+    archivesBtn.classList.remove('hover:bg-gray-50');
+
+      archivesBtn.classList.add(
+        'bg-indigo-600',
+        'text-white',
+        'hover:bg-indigo-700'
+      );
+
   } else {
 
     showArchiveTransition(
@@ -1824,6 +1832,16 @@ async function loadUsers() {
 
     archivesMode = false;
     archivesBtn.innerHTML = '📦 Archives';
+
+    archivesBtn.classList.remove(
+  'bg-indigo-600',
+  'text-white',
+  'hover:bg-indigo-700'
+    );
+
+    archivesBtn.classList.add(
+      'hover:bg-gray-50'
+    );
   }
 
 });
@@ -2015,7 +2033,6 @@ async function loadUsers() {
 
   });
 
-  return;
 }
 
 
@@ -2112,6 +2129,7 @@ if (req.conversation?.length) {
   });
 }
 
+if (!archivesMode) {
         const approveBtn = tr.querySelector('.approveBtn');
         const rejectBtn = tr.querySelector('.rejectBtn');
         const approvedAmountInput = tr.querySelector('.approvedAmount');
@@ -2346,6 +2364,7 @@ if (req.conversation?.length) {
           await updateRequest(req, 'Rejected', currentAdmin, null, tr);
           enableButtons([approveBtn, rejectBtn]);
         });
+        } 
       });
     }
 
