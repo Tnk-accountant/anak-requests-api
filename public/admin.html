@@ -2626,15 +2626,79 @@ if (!archivesMode) {
         XLSX.writeFile(wb, "Anak_Requests.xlsx");
       });
 
-      const exportDispatchBtn = document.getElementById("exportDispatchBtn");
+      //DISPATCH EXPORT AUTOMATIC ================
 
-    exportDispatchBtn.addEventListener("click", () => {
+        const exportDispatchBtn = document.getElementById("exportDispatchBtn");
 
-      exportMenu.classList.add("hidden");
+        exportDispatchBtn.addEventListener("click", () => {
 
-      notify("Dispatch export coming soon...", "success");
+          exportMenu.classList.add("hidden");
 
-    });
+          if (!filteredRequests.length) {
+            notify("No data to export", "error");
+            return;
+          }
+
+          const wsData = [];
+
+          filteredRequests.forEach(r => {
+
+            const centers = [
+              r.center_name,
+              ...(r.other_centers || [])
+            ];
+
+            const total =
+              Number(r.approved_amount ?? r.amount_requested ?? 0);
+
+            const base = Math.floor(total / centers.length);
+            const remainder = total % centers.length;
+
+            centers.forEach((center, index) => {
+
+              const amount =
+                base + (index < remainder ? 1 : 0);
+
+              wsData.push({
+
+                ID: r.request_id,
+
+                Date: new Date(r.timestamp)
+                  .toLocaleDateString("en-US"),
+
+                Center: center,
+
+                Type:
+                  r.request_type === "FundTransfer"
+                    ? "FT"
+                    : "CA",
+
+                Amount: amount,
+
+                Description:
+                  r.description || ""
+
+              });
+
+            });
+
+          });
+
+          const wb = XLSX.utils.book_new();
+          const ws = XLSX.utils.json_to_sheet(wsData);
+
+          XLSX.utils.book_append_sheet(
+            wb,
+            ws,
+            "Dispatch"
+          );
+
+          XLSX.writeFile(
+            wb,
+            "Anak_Dispatch.xlsx"
+          );
+
+        });
 
     let evtSource = null;
     let sseReconnectTimer = null;
