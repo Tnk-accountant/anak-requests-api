@@ -393,6 +393,19 @@ button:active {
           <option value="">Select a center</option>
         </select>
 
+        <label class="flex items-center gap-2 mt-3 cursor-pointer">
+          <input type="checkbox" id="multipleCentersCheck">
+          <span>Other centers involved</span>
+        </label>
+          <div id="multipleCentersBox" class="hidden">
+          <select id="extraCenterSelect"></select>
+          <button id="addCenterBtn">
+          + Add
+          </button>
+          <div id="selectedCenters"></div>
+
+          </div>
+
       </div>
 
       <div>
@@ -1151,25 +1164,36 @@ let mobileAmountFilter = '';
 
   async function populateCenters(selectedCenter = "") {
     const select = document.getElementById("center_name");
-    if (!select) return;
+    const extraSelect = document.getElementById("extraCenterSelect");
+
+    if (!select || !extraSelect) return;
 
     select.innerHTML = `<option value="">Select a center</option>`;
+    extraSelect.innerHTML = `<option value="">Select another center</option>`;
 
     try {
       const res = await fetchWithAuth(`${API_URL}/centers`);
       const centers = await res.json();
 
-      centers.forEach(c => {
+    centers.forEach(c => {
+
         const opt = document.createElement("option");
         opt.value = c.code;
         opt.textContent = c.name;
 
         if (selectedCenter && c.code === selectedCenter) {
-          opt.selected = true;
+            opt.selected = true;
         }
 
         select.appendChild(opt);
-      });
+
+        const opt2 = document.createElement("option");
+        opt2.value = c.code;
+        opt2.textContent = c.name;
+
+        extraSelect.appendChild(opt2);
+
+    });
 
     } catch (err) {
       console.error("Erreur chargement centers:", err);
@@ -1291,6 +1315,80 @@ clarificationBack?.addEventListener('click', () => {
 await populateCenters((profile.center_name || "").trim().toUpperCase());
 setupCenterSelect(profile);
 
+const selectedCenters = [];
+
+const check = document.getElementById("multipleCentersCheck");
+const box = document.getElementById("multipleCentersBox");
+const addBtn = document.getElementById("addCenterBtn");
+const extraSelect = document.getElementById("extraCenterSelect");
+const container = document.getElementById("selectedCenters");
+
+check.addEventListener("change", () => {
+  box.classList.toggle("hidden", !check.checked);
+});
+
+addBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+
+  const value = extraSelect.value;
+
+  if (!value) return;
+
+  if (selectedCenters.includes(value)) return;
+
+  if (value === document.getElementById("center_name").value) return;
+
+  selectedCenters.push(value);
+
+  renderSelectedCenters();
+  extraSelect.value = "";
+
+});
+
+function renderSelectedCenters() {
+
+  container.innerHTML = "";
+
+  selectedCenters.forEach(center => {
+
+    const badge = document.createElement("span");
+
+    badge.className =
+      "inline-flex items-center bg-indigo-100 text-indigo-700 px-2 py-1 rounded mr-2 mb-2";
+
+    badge.innerHTML = `
+      ${center}
+      <button
+        type="button"
+        data-center="${center}"
+        class="ml-2 text-red-600">
+        ✕
+      </button>
+    `;
+
+    container.appendChild(badge);
+
+  });
+
+  container.querySelectorAll("button").forEach(btn => {
+
+    btn.onclick = () => {
+
+      const c = btn.dataset.center;
+
+      selectedCenters.splice(
+        selectedCenters.indexOf(c),
+        1
+      );
+
+      renderSelectedCenters();
+
+    };
+
+  });
+
+}
+
 
   console.log("Centers populated, select options =", document.getElementById("center_name")?.options?.length);
   console.log("Selected center =", document.getElementById("center_name")?.value);
@@ -1335,7 +1433,20 @@ form.addEventListener('submit', async (e) => {
     
   const amount_requested = Number(document.getElementById('amount_requested').value);
 
-  const description = document.getElementById('description').value.trim();
+  let description = document.getElementById('description').value.trim();
+
+  if (selectedCenters.length > 0) {
+
+    description =
+  `Other centers concerned:
+  ${selectedCenters.join(", ")}
+
+  ----------------------------
+
+  ${description}`;
+
+  }
+
   const payment_method = document.getElementById('payment_method').value;
   const request_type = document.getElementById('request_type').value;
 
@@ -1430,6 +1541,12 @@ try {
 
     // 🔄 reset form
     form.reset();
+
+    selectedCenters.length = 0;
+    renderSelectedCenters();
+
+    document.getElementById("multipleCentersCheck").checked = false;
+    document.getElementById("multipleCentersBox").classList.add("hidden");
 
     // 🔁 restore name
     requestorInput.value = currentName;
