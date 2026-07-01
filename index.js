@@ -946,6 +946,10 @@ app.post('/requests', authenticate, async (req, res) => {
     const payment_method = (req.body.payment_method || '').toString().trim();
     const request_type = (req.body.request_type || '').toString().trim();
 
+    const other_centers = Array.isArray(req.body.other_centers)
+  ? req.body.other_centers.map(c => c.trim().toUpperCase())
+  : [];
+
     // ==============================
     // 🔍 VALIDATION
     // ==============================
@@ -1057,13 +1061,23 @@ app.post('/requests', authenticate, async (req, res) => {
 
     // 🔒 whitelist centres
     const CENTERS = [
-      "ADM","DIB","DIG","NURB","NURG","RB1","RB2","RB3","RB4","RB5","RB6","RB7","RB8","RB9",
+      "ADM",, "ALL CENTERS", "DIB","DIG","NURB","NURG","RB1","RB2","RB3","RB4","RB5","RB6","RB7","RB8","RB9",
       "CARP","SJE","BH","CFH","RG3","RG4","RG5","RG6","JLH","OLG","SAH","SJB","OLMC","SSK",
       "SMG","NBBS","MOB","CLINIC","SEDS","CYDW","ELD"
     ];
 
     if (!CENTERS.includes(center_name)) {
       return res.status(400).json({ error: 'Invalid center_name.' });
+    }
+
+    for (const c of other_centers) {
+
+      if (!CENTERS.includes(c)) {
+        return res.status(400).json({
+          error: `Invalid other center: ${c}`
+        });
+      }
+
     }
 
     // ==============================
@@ -1078,8 +1092,9 @@ app.post('/requests', authenticate, async (req, res) => {
       p_description: description,
       p_payment_method: payment_method,
       p_request_type: request_type,
+      p_created_by: req.user.id,
       p_visibility_scope: visibility_scope,
-      p_created_by: req.user.id
+      p_other_centers: other_centers
     });
 
     if (error) {

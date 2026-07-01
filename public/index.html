@@ -1435,18 +1435,6 @@ form.addEventListener('submit', async (e) => {
 
   let description = document.getElementById('description').value.trim();
 
-  if (selectedCenters.length > 0) {
-
-    description =
-  `Other centers concerned:
-  ${selectedCenters.join(", ")}
-
-  ----------------------------
-
-  ${description}`;
-
-  }
-
   const payment_method = document.getElementById('payment_method').value;
   const request_type = document.getElementById('request_type').value;
 
@@ -1489,6 +1477,7 @@ form.addEventListener('submit', async (e) => {
   const payload = {
     requestor_name,
     center_name,
+    other_centers: selectedCenters,
     amount_requested,
     description,
     payment_method,
