@@ -299,7 +299,7 @@
 
           <button
             id="exportMenuBtn"
-         class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition w-full sm:w-auto">
+         class="h-10 px-4 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition flex items-center gap-2">
 
             Export
 
@@ -546,7 +546,7 @@ CHAT LAYOUT
     </div>
     <div
       id="centersConcerned"
-      class="mt-4 hidden bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-3">
+      class="mt-2 hidden">
     </div>
 
   </div>
@@ -2116,27 +2116,33 @@ if (openDescBtn) {
       centersBox.classList.remove("hidden");
 
       let html = `
-        <div class="text-[10px] uppercase tracking-wider text-gray-400 mb-2">
-          Centers concerned
-        </div>
+        <div class="flex items-center gap-2">
 
-        <div class="flex flex-wrap gap-2">
-          <span class="px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-medium">
-            ${req.center_name}
+          <span class="text-[10px] uppercase tracking-wider text-gray-400">
+            Centers
           </span>
+
+          <div class="flex flex-wrap gap-1">
+            <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
+              ${req.center_name}
+            </span>
       `;
 
       req.other_centers.forEach(center => {
 
-        html += `
-          <span class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium">
-            ${center}
-          </span>
-        `;
+      html += `
+        <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
+          ${center}
+        </span>
+      `;
 
       });
 
-      html += `</div>`;
+      html += `
+          </div>
+
+        </div>
+      `;
 
       centersBox.innerHTML = html;
 
