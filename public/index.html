@@ -394,17 +394,46 @@ button:active {
         </select>
 
         <label class="flex items-center gap-2 mt-3 cursor-pointer">
-          <input type="checkbox" id="multipleCentersCheck">
-          <span>Other centers involved</span>
+
+          <input
+            type="checkbox"
+            id="multipleCentersCheck"
+            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+
+          <span class="text-sm text-gray-600 font-medium">
+            Additional centers
+          </span>
+
         </label>
-          <div id="multipleCentersBox" class="hidden">
-          <select id="extraCenterSelect"></select>
-          <button id="addCenterBtn">
-          + Add
-          </button>
-          <div id="selectedCenters"></div>
+
+        <div
+          id="multipleCentersBox"
+          class="hidden mt-2 space-y-2">
+
+          <div class="flex gap-2">
+
+            <select
+              id="extraCenterSelect"
+              class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
+            </select>
+
+            <button
+              type="button"
+              id="addCenterBtn"
+              class="w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition">
+
+              +
+
+            </button>
 
           </div>
+
+          <div
+            id="selectedCenters"
+            class="flex flex-wrap gap-2">
+          </div>
+
+        </div>
 
       </div>
 
@@ -1353,16 +1382,19 @@ function renderSelectedCenters() {
 
     const badge = document.createElement("span");
 
-    badge.className =
-      "inline-flex items-center bg-indigo-100 text-indigo-700 px-2 py-1 rounded mr-2 mb-2";
+badge.className =
+  "inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-xs font-medium";
 
     badge.innerHTML = `
-      ${center}
+      <span>${center}</span>
+
       <button
         type="button"
         data-center="${center}"
-        class="ml-2 text-red-600">
-        ✕
+        class="text-gray-400 hover:text-red-600 transition font-bold leading-none">
+
+        ×
+
       </button>
     `;
 
@@ -1382,10 +1414,24 @@ function renderSelectedCenters() {
       );
 
       renderSelectedCenters();
+      extraCenterSelect.value = "";
 
     };
 
   });
+
+  const extraSelect = document.getElementById("extraCenterSelect");
+
+  if (extraSelect) {
+
+    [...extraSelect.options].forEach(option => {
+
+      option.disabled =
+        selectedCenters.includes(option.value);
+
+    });
+
+  }
 
 }
 
@@ -2902,7 +2948,12 @@ if (req.status === 'PendingValidation') {
     const modalPaymentMethod = document.getElementById('modalPaymentMethod');
 
     modalRequestId.textContent = request_id;
-    modalCenter.textContent = req.center_name || '';
+   const centers = [
+      req.center_name,
+      ...(req.other_centers || [])
+    ].filter(Boolean);
+
+    modalCenter.textContent = centers.join(" • ");
 
     const displayAmount = (req.approved_amount ?? req.amount_requested) ?? 0;
     modalTitle.textContent = `${req.requestor_name} — ${formatAmount(displayAmount)} PHP`;
