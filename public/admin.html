@@ -502,6 +502,10 @@ CHAT LAYOUT
              overflow-y-auto">
 
     </div>
+    <div
+      id="centersConcerned"
+      class="mt-4 hidden bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-3">
+    </div>
 
   </div>
 
@@ -1860,7 +1864,16 @@ async function loadUsers() {
       <td class="pl-6 pr-4 font-medium text-gray-700">${req.request_id}</td>
       <td>${new Date(req.timestamp).toLocaleDateString('fr-FR')}</td>
       <td>${req.requestor_name}</td>
-      <td>${req.center_name}</td>
+      <td>
+        ${req.center_name}
+        ${
+          req.other_centers?.length
+            ? `<span class="text-xs text-indigo-600 font-semibold">
+                (+${req.other_centers.length})
+              </span>`
+            : ''
+        }
+      </td>
       <td>${formatAmount(req.amount_requested)}</td>
 
       <td>
@@ -2053,6 +2066,43 @@ if (openDescBtn) {
     // ==============================
     const descriptionEl = document.getElementById('descriptionContent');
     descriptionEl.textContent = req.description || 'No description';
+
+    const centersBox = document.getElementById("centersConcerned");
+
+    if (req.other_centers?.length > 0) {
+
+      centersBox.classList.remove("hidden");
+
+      let html = `
+        <div class="font-semibold text-gray-700 mb-2">
+          Centers concerned
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <span class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium">
+            ${req.center_name}
+          </span>
+      `;
+
+      req.other_centers.forEach(center => {
+
+        html += `
+          <span class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium">
+            ${center}
+          </span>
+        `;
+
+      });
+
+      html += `</div>`;
+
+      centersBox.innerHTML = html;
+
+    } else {
+
+      centersBox.classList.add("hidden");
+
+    }
 
     // ==============================
     // CONVERSATION / CLARIFICATION
