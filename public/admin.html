@@ -2649,7 +2649,9 @@ if (!archivesMode) {
 
           const wsData = [];
 
-          filteredRequests.forEach(r => {
+          filteredRequests
+            .filter(r => Number(r.amount_spent) > 0)
+            .forEach(r => {
 
             const centers = [
               r.center_name,
@@ -2657,7 +2659,7 @@ if (!archivesMode) {
             ];
 
             const total =
-              Number(r.approved_amount ?? r.amount_requested ?? 0);
+                Number(r.amount_spent ?? 0);
 
             const base = Math.floor(total / centers.length);
             const remainder = total % centers.length;
