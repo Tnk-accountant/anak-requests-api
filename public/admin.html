@@ -350,7 +350,7 @@
           </button>
 
           <div id="actionsMenu"
-            class="hidden absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          class="hidden absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden z-50">
 
             <button id="archivesBtn"
               class="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm">
@@ -361,7 +361,7 @@
 
             <button id="exportArchiveBtn"
               class="w-full text-left px-4 py-3 hover:bg-amber-50 text-sm text-amber-700">
-              Export & Archive Completed
+               Archive & Export Closed
             </button>
 
           </div>
@@ -2584,6 +2584,8 @@ if (!archivesMode) {
 
       const exportMenuBtn = document.getElementById("exportMenuBtn");
       const exportMenu = document.getElementById("exportMenu");
+           
+      
 
       exportMenuBtn.addEventListener("click", (e) => {
 
