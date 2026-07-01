@@ -295,10 +295,52 @@
           Refresh
         </button>
 
-        <button id="exportBtn"
-          class="h-10 px-4 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition">
-          Export
-        </button>
+        <div class="relative inline-block">
+
+          <button
+            id="exportMenuBtn"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition">
+
+            Export
+
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+
+              <path stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"/>
+
+            </svg>
+
+          </button>
+
+          <div
+            id="exportMenu"
+            class="hidden absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-200 z-50">
+
+            <button
+              id="exportBtn"
+              class="w-full text-left px-4 py-3 hover:bg-gray-50 rounded-t-xl">
+
+              📄 Export Requests
+
+            </button>
+
+            <button
+              id="exportDispatchBtn"
+              class="w-full text-left px-4 py-3 hover:bg-gray-50 rounded-b-xl">
+
+              📊 Export Dispatch
+
+            </button>
+
+          </div>
+
+        </div>
 
         <div class="relative">
 
@@ -2074,12 +2116,12 @@ if (openDescBtn) {
       centersBox.classList.remove("hidden");
 
       let html = `
-        <div class="font-semibold text-gray-700 mb-2">
+        <div class="text-[10px] uppercase tracking-wider text-gray-400 mb-2">
           Centers concerned
         </div>
 
         <div class="flex flex-wrap gap-2">
-          <span class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium">
+          <span class="px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-medium">
             ${req.center_name}
           </span>
       `;
@@ -2534,7 +2576,27 @@ if (!archivesMode) {
      // Export Excel
       const exportBtn = document.getElementById('exportBtn');
 
+      const exportMenuBtn = document.getElementById("exportMenuBtn");
+      const exportMenu = document.getElementById("exportMenu");
+
+      exportMenuBtn.addEventListener("click", (e) => {
+
+        e.stopPropagation();
+
+        exportMenu.classList.toggle("hidden");
+
+      });
+
+      document.addEventListener("click", () => {
+
+        exportMenu.classList.add("hidden");
+
+});
+
       exportBtn.addEventListener('click', () => {
+
+        exportMenu.classList.add("hidden");
+
         if (!filteredRequests.length) {
           notify("No data to export", "error");
           return;
@@ -2563,6 +2625,16 @@ if (!archivesMode) {
         XLSX.utils.book_append_sheet(wb, ws, "Requests");
         XLSX.writeFile(wb, "Anak_Requests.xlsx");
       });
+
+      const exportDispatchBtn = document.getElementById("exportDispatchBtn");
+
+    exportDispatchBtn.addEventListener("click", () => {
+
+      exportMenu.classList.add("hidden");
+
+      notify("Dispatch export coming soon...", "success");
+
+    });
 
     let evtSource = null;
     let sseReconnectTimer = null;
