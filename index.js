@@ -1192,6 +1192,9 @@ app.patch('/requests/:request_id', authenticate, async (req, res) => {
 
     notifyAdmins(data);
 
+    console.log("BODY:", req.body);
+    console.log("UPDATED:", data);
+
     res.json({ message: 'Request updated successfully.', data });
 
   } catch (err) {
