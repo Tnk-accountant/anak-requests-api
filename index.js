@@ -1334,6 +1334,9 @@ app.patch('/requests/:request_id/liquidate', authenticate, async (req, res) => {
 
 const role = (req.profile.role || '').trim().toLowerCase();
 
+console.log("ROLE =", req.profile.role);
+console.log("PROFILE =", req.profile);
+
 if (role !== 'admin' && role !== 'cc') {
   return res.status(403).json({ error: 'Not allowed' });
 }
