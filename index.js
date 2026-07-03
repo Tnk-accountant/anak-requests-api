@@ -550,6 +550,36 @@ app.get('/requests', authenticate, async (req, res) => {
 });
 
 
+
+app.get('/requests/:request_id', authenticate, async (req, res) => {
+  try {
+    const { request_id } = req.params;
+
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .select('*')
+      .eq('request_id', request_id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      return res.status(404).json({
+        error: 'Request not found.'
+      });
+    }
+
+    res.json({ data });
+
+  } catch (err) {
+    console.error('GET /requests/:request_id error:', err);
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
     // ==============================
     // ARCHIVES
     // ==============================
@@ -1293,11 +1323,11 @@ app.patch('/requests/:request_id/liquidate', authenticate, async (req, res) => {
         .toLowerCase()
         .replace(/\s/g, '');
 
-      const role = (req.profile.role || '').toLowerCase();
+const role = (req.profile.role || '').trim().toLowerCase();
 
-      if (!role.includes('admin') && !role.includes('CC')) {
-        return res.status(403).json({ error: 'Not allowed' });
-      }
+if (role !== 'admin' && role !== 'cc') {
+  return res.status(403).json({ error: 'Not allowed' });
+}
 
 
     const { request_id } = req.params;

@@ -589,17 +589,20 @@ button:active {
 
   <!-- Modal actions -->
 
-  <div id="modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center">
+  <div id="modal" class="fixed inset-0 z-50 hidden flex items-end md:items-center justify-center">
+
     <div id="modalOverlay" class="absolute inset-0 bg-black/40"></div>
 
-      <div class="
-        relative w-full
-        max-w-3xl
-        bg-white
-        rounded-t-2xl md:rounded-2xl
-        shadow-2xl
-        grid grid-cols-1 md:grid-cols-12
-        h-full md:h-auto">
+    <div class="
+      relative
+      w-full
+      h-full
+      max-w-full md:max-w-3xl
+      bg-white
+      rounded-none md:rounded-2xl
+      shadow-2xl
+      grid grid-cols-1 md:grid-cols-12
+      md:h-auto">
   
       <div id="modalLeftCol" class="col-span-1 md:col-span-5 border-r md:border-r p-4 space-y-3">
         <div class="flex items-start justify-between">
@@ -656,7 +659,7 @@ button:active {
         type="button"
         data-action="clarification"
         id="clarificationActionBtn"
-        class="action-card w-full text-left p-3 rounded-lg border border-orange-300 bg-orange-50 hover:shadow-sm transition flex items-start gap-3 hidden">
+        class="action-card w-full text-left p-3 rounded-lg border border-gray-200 bg-white hover:shadow-sm transition flex items-start gap-3 hidden">
 
             <div class="flex-1">
               <strong class="text-orange-600 font-semibold">⚠️ Clarification required</strong>
@@ -842,6 +845,9 @@ MESSENGER STYLE CLARIFICATION PANEL
           pb-24
           bg-[#f5f7fb]
           scroll-smooth
+          flex
+          flex-col
+          gap-3
           ">
     </div>
 
@@ -2607,6 +2613,11 @@ async function fetchMyRequests() {
     // ------------------------------
     // RENDER DATA
     // ------------------------------
+
+    all.sort((a, b) =>
+  new Date(b.created_at || b.timestamp) -
+  new Date(a.created_at || a.timestamp)
+);
     all.forEach(req => upsertRow(req));
 
     // Desktop table
