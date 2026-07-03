@@ -1100,7 +1100,7 @@ app.post('/requests', authenticate, async (req, res) => {
 
     // 🔒 whitelist centres
     const CENTERS = [
-      "ADM",, "ALL CENTERS", "DIB","DIG","NURB","NURG","RB1","RB2","RB3","RB4","RB5","RB6","RB7","RB8","RB9",
+      "ADM","CAMP", "ALL CENTERS", "DIB","DIG","NURB","NURG","RB1","RB2","RB3","RB4","RB5","RB6","RB7","RB8","RB9",
       "CARP","SJE","BH","CFH","RG3","RG4","RG5","RG6","JLH","OLG","SAH","SJB","OLMC","SSK",
       "SMG","NBBS","MOB","CLINIC","SEDS","CYDW","ELD"
     ];
