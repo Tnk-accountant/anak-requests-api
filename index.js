@@ -551,33 +551,6 @@ app.get('/requests', authenticate, async (req, res) => {
 
 
 
-app.get('/requests/:request_id', authenticate, async (req, res) => {
-  try {
-    const { request_id } = req.params;
-
-    const { data, error } = await supabaseService
-      .from('Requests')
-      .select('*')
-      .eq('request_id', request_id)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (!data) {
-      return res.status(404).json({
-        error: 'Request not found.'
-      });
-    }
-
-    res.json({ data });
-
-  } catch (err) {
-    console.error('GET /requests/:request_id error:', err);
-    res.status(500).json({
-      error: err.message
-    });
-  }
-});
 
 
     // ==============================
@@ -845,6 +818,8 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
+
+
 // =========================================
 // SSE : stream temps réel (COOKIE AUTH)
 // =========================================
@@ -888,6 +863,8 @@ app.get('/requests/stream', async (req, res) => {
     // 🔥 important pour certains environnements (Render, proxies)
     if (res.flushHeaders) res.flushHeaders();
 
+ 
+
     // ==============================
     // ENREGISTRER LE CLIENT
     // ==============================
@@ -918,6 +895,38 @@ app.get('/requests/stream', async (req, res) => {
   }
 });
 
+
+   //=================
+    // GET REQUEST REQUEST ID
+    //=========================
+    
+app.get('/requests/:request_id', authenticate, async (req, res) => {
+  try {
+    const { request_id } = req.params;
+
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .select('*')
+      .eq('request_id', request_id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      return res.status(404).json({
+        error: 'Request not found.'
+      });
+    }
+
+    res.json({ data });
+
+  } catch (err) {
+    console.error('GET /requests/:request_id error:', err);
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
 
 // =========================================
 // NOTIFY CLIENTS (SSE BROADCAST)
