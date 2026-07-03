@@ -349,8 +349,8 @@
             Archives ▾
           </button>
 
-          <div id="actionsMenu"
-           class="hidden absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white opacity-100 shadow-2xl overflow-hidden z-[9999]">
+<div id="actionsMenu"
+  class="hidden absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white opacity-100 shadow-2xl overflow-hidden z-[9999]">
 
             <button id="archivesBtn"
               class="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm">
@@ -2591,46 +2591,21 @@ if (!archivesMode) {
       const exportMenuBtn = document.getElementById("exportMenuBtn");
       const exportMenu = document.getElementById("exportMenu");
            
-      function closeAllDropdowns() {
-        exportMenu.classList.add("hidden");
-        actionsMenu.classList.add("hidden");
-      }
       
 
       exportMenuBtn.addEventListener("click", (e) => {
 
         e.stopPropagation();
 
-        const isOpen = !exportMenu.classList.contains("hidden");
-
-        closeAllDropdowns();
-
-        if (!isOpen) {
-          exportMenu.classList.remove("hidden");
-        }
+        exportMenu.classList.toggle("hidden");
 
       });
 
+      document.addEventListener("click", () => {
 
-    actionsBtn.addEventListener("click", (e) => {
+        exportMenu.classList.add("hidden");
 
-      e.stopPropagation();
-
-      const isOpen = !actionsMenu.classList.contains("hidden");
-
-      closeAllDropdowns();
-
-      if (!isOpen) {
-        actionsMenu.classList.remove("hidden");
-      }
-
-    });
-        
-    document.addEventListener("click", () => {
-
-      closeAllDropdowns();
-
-    });
+});
 
       exportBtn.addEventListener('click', () => {
 
