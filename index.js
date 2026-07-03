@@ -509,10 +509,19 @@ app.get('/requests', authenticate, async (req, res) => {
       // no filter
     }
 
-    // 🏠 CC → voit son centre uniquement
-    else if (role === 'CC') {
-      query = query.eq('center_name', userCenter);
-    }
+// 🏠 CC → voit tous les centres qu'il supervise
+else if (role === 'CC') {
+
+  const allowedCenters =
+    req.profile.permissions?.allowed_centers || [];
+
+  if (allowedCenters.length > 0) {
+    query = query.in('center_name', allowedCenters);
+  } else {
+    query = query.eq('center_name', userCenter);
+  }
+
+}
 
     // 👤 REQUESTER → voit uniquement ses demandes
     else {
