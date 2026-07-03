@@ -2515,9 +2515,15 @@ if (!archivesMode) {
 
     if (!result.error) {
 
-      req.status = status;
-      req.approved_by = approved_by;
-      req.approved_amount = approved_amount;
+    Object.assign(req, result.data);
+
+    const index = allRequests.findIndex(
+      r => r.request_id === req.request_id
+    );
+
+    if (index !== -1) {
+      allRequests[index] = result.data;
+    }
 
 
       // 1️⃣ Mise à jour de l'affichage
