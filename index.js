@@ -1334,10 +1334,7 @@ app.patch('/requests/:request_id/liquidate', authenticate, async (req, res) => {
 
 const role = (req.profile.role || '').trim().toLowerCase();
 
-console.log("ROLE =", req.profile.role);
-console.log("PROFILE =", req.profile);
-
-if (role !== 'admin' && role !== 'cc') {
+if (!['requester', 'cc', 'admin'].includes(role)) {
   return res.status(403).json({ error: 'Not allowed' });
 }
 
@@ -1358,12 +1355,20 @@ if (role !== 'admin' && role !== 'cc') {
 
     const { data: existing, error: getError } = await supabaseService
       .from('Requests')
-      .select('received_confirmed, status, approved_amount, request_type')
+      .select('created_by, received_confirmed, status, approved_amount, request_type')
       .eq('request_id', request_id)
       .maybeSingle();
 
     if (getError) throw getError;
     if (!existing) return res.status(404).json({ error: 'Request not found.' });
+
+    // 🔒 Un Requester ne peut liquider que ses propres demandes
+    if (
+      role === 'requester' &&
+      existing.created_by !== req.user.id
+    ) {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
 
         if (existing.request_type === 'FundTransfer') {
     return res.status(400).json({
