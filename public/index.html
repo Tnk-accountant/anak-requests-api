@@ -2851,29 +2851,32 @@ if (needsClarification) {
 
   clarificationBtn?.classList.remove('hidden');
 
-  // Reset propre
+  // Reset propre (toujours repartir de neutre)
   clarificationBtn?.classList.remove(
-    'animate-pulse'
-  );
-
-  // Mise en avant visuelle
-  clarificationBtn?.classList.add(
     'bg-orange-50',
     'border-orange-300',
     'ring-1',
-    'ring-orange-200'
+    'ring-orange-200',
+    'animate-pulse'
   );
 
-  // Father attend une réponse
+  // 🔥 Orange + clignotement UNIQUEMENT quand un nouveau message admin attend une réponse
   if (req.status === 'NeedsInfo') {
-    clarificationBtn?.classList.add('animate-pulse');
+    clarificationBtn?.classList.add(
+      'bg-orange-50',
+      'border-orange-300',
+      'ring-1',
+      'ring-orange-200',
+      'animate-pulse'
+    );
   }
+
+  // sinon (Resubmitted = déjà répondu, en attente de l'admin) → bouton reste normal
 
 } else {
 
   clarificationBtn?.classList.add('hidden');
 
-  // Reset complet
   clarificationBtn?.classList.remove(
     'bg-orange-50',
     'border-orange-300',
