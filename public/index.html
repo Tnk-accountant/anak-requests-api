@@ -511,6 +511,12 @@ button:active {
 <div class="bg-white rounded-2xl p-6 md:p-8 w-full max-w-6xl mx-auto mt-12 card-desktop">
   <h2 class="text-xl font-bold text-indigo-700 mb-4">My Requests</h2>
 
+<!-- 📱 MOBILE : badge liquidation -->
+<div id="toLiquidateBadgeMobile"
+  class="hidden md:hidden mb-2 px-3 py-2 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-sm font-semibold text-center">
+  <span id="toLiquidateCountMobile">0</span> waiting for liquidation
+</div>
+
 <!-- 📱 MOBILE : filtres -->
 <div class="mb-3 md:hidden space-y-2">
   <input
@@ -575,15 +581,24 @@ button:active {
       >
     </div>
 
-    <div>
-      <label for="dateSearch" class="block text-sm font-semibold text-gray-700 mb-1">
-        Filter by date
-      </label>
-      <input
-        type="date"
-        id="dateSearch"
-        class="w-52 px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-      >
+  <div>
+        <label for="dateSearch" class="block text-sm font-semibold text-gray-700 mb-1">
+          Filter by date
+        </label>
+        <input
+          type="date"
+          id="dateSearch"
+          class="w-52 px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+        >
+      </div>
+
+      <div class="flex items-end">
+        <div id="toLiquidateBadge"
+          class="hidden px-3 py-2 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-sm font-semibold">
+          <span id="toLiquidateCount">0</span> waiting for liquidation
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -2134,6 +2149,22 @@ function truncateText(text, maxLength = 40) {
   return clean.slice(0, maxLength).trim() + '…';
 }
 
+function updateToLiquidateCount() {
+  const count = Array.from(requestsMap.values())
+    .filter(r => r.status === 'ToLiquidate').length;
+
+  const desktopBadge = document.getElementById('toLiquidateBadge');
+  const desktopCount = document.getElementById('toLiquidateCount');
+  const mobileBadge = document.getElementById('toLiquidateBadgeMobile');
+  const mobileCount = document.getElementById('toLiquidateCountMobile');
+
+  if (desktopCount) desktopCount.textContent = count;
+  if (mobileCount) mobileCount.textContent = count;
+
+  if (desktopBadge) desktopBadge.classList.toggle('hidden', count === 0);
+  if (mobileBadge) mobileBadge.classList.toggle('hidden', count === 0);
+}
+
 // Fonction pour compresser les images upload lors de la liquidation
   async function compressImage(file, {
     maxWidth = 1200,
@@ -2638,13 +2669,14 @@ row.innerHTML = `
     `;
 
 
-
 myTableBody.insertBefore(row, myTableBody.firstChild);
 
     const voirBtn = row.querySelector('.voirBtn');
     if (voirBtn) {
       voirBtn.addEventListener('click', () => openModalFor(req.request_id));
     }
+
+    updateToLiquidateCount();
 
     return;
   }
@@ -2665,9 +2697,11 @@ myTableBody.insertBefore(row, myTableBody.firstChild);
   const amountCell = row.querySelector('.amount_requested');
   if (amountCell) amountCell.textContent = formatAmount(req.amount_requested);
 
-  // ✅ correction : mettre à jour le paiement aussi
+// ✅ correction : mettre à jour le paiement aussi
   const paymentCell = row.querySelector('.payment_method');
   if (paymentCell) paymentCell.textContent = paymentText;
+
+  updateToLiquidateCount();
 }
 
 
@@ -3137,12 +3171,13 @@ if (req.status === 'PendingValidation') {
     document.getElementById('confirmReceivedBtn')
   ];
 
-      receivedInputs[0].value = req.amount_received ?? '';
+// 🔥 Pré-remplissage : montant validé par l'admin + nom du CC (modifiable)
+      receivedInputs[0].value = req.amount_received ?? req.approved_amount ?? '';
       receivedInputs[1].value = req.received_at
         ? req.received_at.slice(0, 10)
         : new Date().toISOString().slice(0, 10);
 
-      receivedInputs[2].value = req.received_name ?? '';
+      receivedInputs[2].value = req.received_name ?? req.requestor_name ?? '';
       receivedInputs[3].checked = !!req.received_confirmed;
 
 
