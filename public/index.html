@@ -1300,6 +1300,26 @@ let mobileDateFilter = '';
       descriptionSearchInput = document.getElementById('descriptionSearch');
       dateSearchInput = document.getElementById('dateSearch');
 
+      // ==============================
+    // 🔥 Auto-calcul "Amount returned" à la liquidation
+    // ==============================
+    const liqSpentInputAuto = document.getElementById('liqSpent');
+    const liqReturnedInputAuto = document.getElementById('liqAmount');
+
+    liqSpentInputAuto?.addEventListener('input', () => {
+      const req = requestsMap.get(currentRequestId);
+      if (!req) return;
+
+      const approved = Number(req.approved_amount || 0);
+      const spent = parseFloat(liqSpentInputAuto.value);
+
+      if (!isNaN(spent) && approved > 0) {
+        const returned = approved - spent;
+        liqReturnedInputAuto.value = returned >= 0 ? returned.toFixed(2) : '';
+      }
+    });
+
+
       document.getElementById('liqReceipts').addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
@@ -2334,7 +2354,9 @@ function renderMobileCards() {
   const container = document.getElementById('mobileRequests');
   if (!container) return;
 
-  const requests = getMobileRequestsFiltered();
+  const requests = getMobileRequestsFiltered().sort((a, b) =>
+    new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at)
+  );
   container.innerHTML = '';
 
   const start = (mobilePage - 1) * mobilePerPage;
@@ -2615,7 +2637,7 @@ if (!row) {
 
 
 
-    myTableBody.appendChild(row);
+myTableBody.insertBefore(row, myTableBody.firstChild);
 
     const voirBtn = row.querySelector('.voirBtn');
     if (voirBtn) {
