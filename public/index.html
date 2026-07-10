@@ -593,15 +593,13 @@ button:active {
     <table class="min-w-[900px] w-full text-sm text-left border-collapse">
 
       <!-- Header -->
-      <thead class="bg-indigo-50 text-gray-600">
+    <thead class="bg-indigo-50 text-gray-600">
         <tr>
-          <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wide">ID</th>
           <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wide">Date</th>
+          <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wide">Description</th>
           <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wide">Amount requested</th>
           <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wide">Payment</th>
           <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
-          <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wide">Amount approved</th>
-          <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wide">Amount returned</th>
           <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-right">Action</th>
         </tr>
       </thead>
@@ -2129,6 +2127,13 @@ function formatAmount(amount) {
   });
 }
 
+function truncateText(text, maxLength = 40) {
+  if (!text) return '';
+  const clean = text.trim();
+  if (clean.length <= maxLength) return clean;
+  return clean.slice(0, maxLength).trim() + '…';
+}
+
 // Fonction pour compresser les images upload lors de la liquidation
   async function compressImage(file, {
     maxWidth = 1200,
@@ -2382,7 +2387,7 @@ const statusColor =
       cursor-pointer
     `;
 
-    card.innerHTML = `
+card.innerHTML = `
       <div class="flex justify-between items-center">
         <div class="min-w-0">
           <p class="text-sm font-medium text-gray-800 truncate">
@@ -2390,6 +2395,9 @@ const statusColor =
           </p>
           <p class="text-xs text-gray-500">
             ${req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : ''}
+          </p>
+          <p class="text-xs text-gray-400 truncate mt-0.5">
+            ${truncateText(req.description, 40)}
           </p>
         </div>
 
@@ -2568,6 +2576,8 @@ if (!row) {
     row.dataset.center = req.center_name || '';
     row.dataset.description = (req.description || '').toLowerCase();
     row.dataset.rawDate = req.timestamp || req.created_at || '';
+    row.dataset.approvedAmount = req.approved_amount ?? '';
+    row.dataset.requestedAmount = req.amount_requested ?? '';
 
     // ✨ highlight update
     row.classList.add('bg-indigo-50');
@@ -2591,13 +2601,13 @@ if (!row) {
         );
 
 
-    row.innerHTML = `
-      <td class="px-4 py-3 align-top border-b border-gray-100">
-        ${req.request_id}
-      </td>
-
+row.innerHTML = `
       <td class="px-4 py-3 align-top border-b border-gray-100">
         ${req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : ''}
+      </td>
+
+      <td class="px-4 py-3 align-top border-b border-gray-100 description_cell">
+        ${truncateText(req.description, 40)}
       </td>
 
       <td class="px-4 py-3 align-top border-b border-gray-100 amount_requested">
@@ -2610,14 +2620,6 @@ if (!row) {
 
       <td class="px-4 py-3 align-top border-b border-gray-100 status">
         ${statusHtml}
-      </td>
-
-      <td class="px-4 py-3 align-top border-b border-gray-100 approved_amount">
-        ${formatAmount(req.approved_amount)}
-      </td>
-
-      <td class="px-4 py-3 align-top border-b border-gray-100 returned_amount">
-        ${formatAmount(req.returned_amount)}
       </td>
 
       <td class="px-4 py-3 align-top border-b border-gray-100 text-right">
@@ -2651,15 +2653,14 @@ myTableBody.insertBefore(row, myTableBody.firstChild);
   row.dataset.center = req.center_name || '';
   row.dataset.description = (req.description || '').toLowerCase();
   row.dataset.rawDate = req.timestamp || req.created_at || '';
+  row.dataset.approvedAmount = req.approved_amount ?? '';
+  row.dataset.requestedAmount = req.amount_requested ?? '';
 
   const statusCell = row.querySelector('.status');
   if (statusCell) statusCell.innerHTML = statusHtml;
 
-  const approvedCell = row.querySelector('.approved_amount');
-  if (approvedCell) approvedCell.textContent = formatAmount(req.approved_amount);
-
-  const returnedCell = row.querySelector('.returned_amount');
-  if (returnedCell) returnedCell.textContent = formatAmount(req.returned_amount);
+  const descCell = row.querySelector('.description_cell');
+  if (descCell) descCell.textContent = truncateText(req.description, 40);
 
   const amountCell = row.querySelector('.amount_requested');
   if (amountCell) amountCell.textContent = formatAmount(req.amount_requested);
@@ -2668,7 +2669,6 @@ myTableBody.insertBefore(row, myTableBody.firstChild);
   const paymentCell = row.querySelector('.payment_method');
   if (paymentCell) paymentCell.textContent = paymentText;
 }
-
 
 
 // ==============================
@@ -3817,19 +3817,12 @@ function renderTable() {
   let filtered = rows;
 
   // Filtrer par montant
+// Filtrer par montant
     const amountValue = parseFloat(amountSearchInput?.value);
     if (!isNaN(amountValue)) {
       filtered = filtered.filter(row => {
-        const approvedCell = row.querySelector('.approved_amount');
-        const requestedCell = row.querySelector('.amount_requested');
-
-        const approved = approvedCell
-          ? parseFloat(approvedCell.textContent.replace(/,/g, '')) 
-          : NaN;
-
-        const requested = requestedCell
-          ? parseFloat(requestedCell.textContent.replace(/,/g, '')) 
-          : NaN;
+        const approved = parseFloat(row.dataset.approvedAmount);
+        const requested = parseFloat(row.dataset.requestedAmount);
 
         // logique : approved si existe, sinon requested
         const rowAmount = !isNaN(approved) && approved > 0 ? approved : (requested || 0);
