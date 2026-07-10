@@ -511,13 +511,26 @@ button:active {
 <div class="bg-white rounded-2xl p-6 md:p-8 w-full max-w-6xl mx-auto mt-12 card-desktop">
   <h2 class="text-xl font-bold text-indigo-700 mb-4">My Requests</h2>
 
-<!-- 📱 MOBILE : filtre montant -->
-<div class="mb-3 md:hidden">
+<!-- 📱 MOBILE : filtres -->
+<div class="mb-3 md:hidden space-y-2">
   <input
     type="number"
     inputmode="decimal"
     id="mobileAmountSearch"
     placeholder="Filter by amount"
+    class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+  >
+
+  <input
+    type="text"
+    id="mobileDescriptionSearch"
+    placeholder="Filter by description"
+    class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+  >
+
+  <input
+    type="date"
+    id="mobileDateSearch"
     class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
   >
 </div>
@@ -534,17 +547,45 @@ button:active {
   <!-- 💻 DESKTOP : tableau -->
 <div class="hidden md:block">
 
-  <!-- 🔎 Filter -->
-  <div class="mb-6">
-    <label for="amountSearch" class="block text-sm font-semibold text-gray-700 mb-1">
-      Search for an amount
-    </label>
-    <input
-      type="number"
-      id="amountSearch"
-      placeholder="0"
-      class="w-52 px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-    >
+
+<!-- 🔎 Filters -->
+  <div class="mb-6 flex flex-wrap gap-4">
+
+    <div>
+      <label for="amountSearch" class="block text-sm font-semibold text-gray-700 mb-1">
+        Search for an amount
+      </label>
+      <input
+        type="number"
+        id="amountSearch"
+        placeholder="0"
+        class="w-52 px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+      >
+    </div>
+
+    <div>
+      <label for="descriptionSearch" class="block text-sm font-semibold text-gray-700 mb-1">
+        Search by description
+      </label>
+      <input
+        type="text"
+        id="descriptionSearch"
+        placeholder="Description..."
+        class="w-52 px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+      >
+    </div>
+
+    <div>
+      <label for="dateSearch" class="block text-sm font-semibold text-gray-700 mb-1">
+        Filter by date
+      </label>
+      <input
+        type="date"
+        id="dateSearch"
+        class="w-52 px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+      >
+    </div>
+
   </div>
 
   <!-- 📊 Table -->
@@ -979,7 +1020,7 @@ MESSENGER STYLE CLARIFICATION PANEL
     return false;
   }
 }
-  let requestorInput, form, status, generatedIdEl, myTableBody, amountSearchInput;
+let requestorInput, form, status, generatedIdEl, myTableBody, amountSearchInput, descriptionSearchInput, dateSearchInput;
 
   function notify(message, type = "info") {
     const container = document.getElementById("notificationContainer");
@@ -1203,6 +1244,8 @@ let currentRequestId = null;
 let mobilePage = 1;
 const mobilePerPage = 20;
 let mobileAmountFilter = '';
+let mobileDescriptionFilter = '';
+let mobileDateFilter = '';
 
 
 // ==============================
@@ -1254,6 +1297,8 @@ let mobileAmountFilter = '';
       generatedIdEl = document.getElementById('generatedId');
       myTableBody = document.getElementById('myRequestsTable');
       amountSearchInput = document.getElementById('amountSearch');
+      descriptionSearchInput = document.getElementById('descriptionSearch');
+      dateSearchInput = document.getElementById('dateSearch');
 
       document.getElementById('liqReceipts').addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []);
@@ -1352,13 +1397,31 @@ clarificationBack?.addEventListener('click', () => {
     }
     
   const mobileAmountInput = document.getElementById('mobileAmountSearch');
-  if (mobileAmountInput) {
-    mobileAmountInput.addEventListener('input', () => {
-      mobileAmountFilter = mobileAmountInput.value.trim();
-      mobilePage = 1; // reset pagination
-      renderMobileCards();
-    });
-  }
+    if (mobileAmountInput) {
+      mobileAmountInput.addEventListener('input', () => {
+        mobileAmountFilter = mobileAmountInput.value.trim();
+        mobilePage = 1; // reset pagination
+        renderMobileCards();
+      });
+    }
+
+    const mobileDescriptionInput = document.getElementById('mobileDescriptionSearch');
+    if (mobileDescriptionInput) {
+      mobileDescriptionInput.addEventListener('input', () => {
+        mobileDescriptionFilter = mobileDescriptionInput.value.trim().toLowerCase();
+        mobilePage = 1;
+        renderMobileCards();
+      });
+    }
+
+    const mobileDateInput = document.getElementById('mobileDateSearch');
+    if (mobileDateInput) {
+      mobileDateInput.addEventListener('change', () => {
+        mobileDateFilter = mobileDateInput.value; // format YYYY-MM-DD
+        mobilePage = 1;
+        renderMobileCards();
+      });
+    }
 
 await populateCenters((profile.center_name || "").trim().toUpperCase());
 setupCenterSelect(profile);
@@ -1905,7 +1968,7 @@ setupSSE();
 
 
 //========================
-  // Filtre montant
+  // Filtre montant / description / date
 //========================
 const debouncedRenderTable = debounce(() => {
   currentPage = 1;
@@ -1914,6 +1977,17 @@ const debouncedRenderTable = debounce(() => {
 
 if (amountSearchInput) {
   amountSearchInput.addEventListener('input', debouncedRenderTable);
+}
+
+if (descriptionSearchInput) {
+  descriptionSearchInput.addEventListener('input', debouncedRenderTable);
+}
+
+if (dateSearchInput) {
+  dateSearchInput.addEventListener('change', () => {
+    currentPage = 1;
+    renderTable();
+  });
 }
 
 // ==============================
@@ -2219,24 +2293,38 @@ function formatAmount(amount) {
 
 
   function getMobileRequestsFiltered() {
-    let requests = Array.from(requestsMap.values());
+      let requests = Array.from(requestsMap.values());
 
-    if (mobileAmountFilter) {
-      const target = parseFloat(mobileAmountFilter);
+      if (mobileAmountFilter) {
+        const target = parseFloat(mobileAmountFilter);
 
-      if (!isNaN(target)) {
+        if (!isNaN(target)) {
+          requests = requests.filter(r => {
+            const approved = Number(r.approved_amount || 0);
+            const requested = Number(r.amount_requested || 0);
+
+            const amount = approved > 0 ? approved : requested;
+            return amount === target;
+          });
+        }
+      }
+
+      if (mobileDescriptionFilter) {
+        requests = requests.filter(r =>
+          (r.description || '').toLowerCase().includes(mobileDescriptionFilter)
+        );
+      }
+
+      if (mobileDateFilter) {
         requests = requests.filter(r => {
-          const approved = Number(r.approved_amount || 0);
-          const requested = Number(r.amount_requested || 0);
-
-          const amount = approved > 0 ? approved : requested;
-          return amount === target;
+          const rawDate = r.timestamp || r.created_at;
+          if (!rawDate) return false;
+          return rawDate.slice(0, 10) === mobileDateFilter;
         });
       }
-    }
 
-    return requests;
-  }
+      return requests;
+    }
 
 
 /* ==============================
@@ -2452,10 +2540,12 @@ if (req.status === "NeedsInfo") {
     '—';
 
   // Si la ligne n'existe pas : création
-  if (!row) {
+if (!row) {
     row = document.createElement('tr');
     row.dataset.id = req.request_id;
     row.dataset.center = req.center_name || '';
+    row.dataset.description = (req.description || '').toLowerCase();
+    row.dataset.rawDate = req.timestamp || req.created_at || '';
 
     // ✨ highlight update
     row.classList.add('bg-indigo-50');
@@ -2535,8 +2625,10 @@ if (req.status === "NeedsInfo") {
     return;
   }
 
-  // Sinon : update (ligne existante)
+// Sinon : update (ligne existante)
   row.dataset.center = req.center_name || '';
+  row.dataset.description = (req.description || '').toLowerCase();
+  row.dataset.rawDate = req.timestamp || req.created_at || '';
 
   const statusCell = row.querySelector('.status');
   if (statusCell) statusCell.innerHTML = statusHtml;
@@ -3723,6 +3815,24 @@ function renderTable() {
         return rowAmount === amountValue;
       });
     }
+
+    // Filtrer par description
+      const descValue = (descriptionSearchInput?.value || '').trim().toLowerCase();
+      if (descValue) {
+        filtered = filtered.filter(row =>
+          (row.dataset.description || '').includes(descValue)
+        );
+      }
+
+      // Filtrer par date
+      const dateValue = dateSearchInput?.value; // format YYYY-MM-DD
+      if (dateValue) {
+        filtered = filtered.filter(row => {
+          const rawDate = row.dataset.rawDate;
+          if (!rawDate) return false;
+          return rawDate.slice(0, 10) === dateValue;
+        });
+      }
 
 
   // -------------------------------------------
