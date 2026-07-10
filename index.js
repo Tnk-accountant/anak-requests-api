@@ -1048,6 +1048,7 @@ app.post('/requests', authenticate, async (req, res) => {
     }
 
     // 🏠 CC → limité
+
     else if (role === 'cc') {
       const allowedCenters = req.profile.permissions?.allowed_centers;
 
@@ -1059,6 +1060,14 @@ app.post('/requests', authenticate, async (req, res) => {
         return res.status(403).json({
           error: "Not allowed to create for this center"
         });
+      }
+
+      for (const oc of other_centers) {
+        if (!centers.includes(oc)) {
+          return res.status(403).json({
+            error: `Not allowed to add center: ${oc}`
+          });
+        }
       }
     }
 

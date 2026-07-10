@@ -1147,7 +1147,7 @@ async function displayUserProfile() {
       if (userCenter) centerSelect.value = userCenter;
     }
 
-    // 🏠 CC
+// 🏠 CC
     else if (role === 'cc') {
       centerSelect.innerHTML = '';
 
@@ -1162,6 +1162,16 @@ async function displayUserProfile() {
       });
 
       centerSelect.disabled = allowedCenters.length === 1;
+
+      // ✅ Restreindre aussi la liste "Additional centers"
+      const extraSelect = document.getElementById('extraCenterSelect');
+      if (extraSelect) {
+        [...extraSelect.options].forEach(opt => {
+          if (opt.value && !allowedCenters.includes(opt.value)) {
+            opt.remove();
+          }
+        });
+      }
     }
 
     // 👑 ADMIN
