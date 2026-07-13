@@ -789,10 +789,10 @@ button:active {
 
     </div>
 
-    <!-- ================= FOOTER : action secondaire ================= -->
-    <div id="modalSecondaryAction" class="shrink-0 px-5 py-3 text-center border-t border-gray-100 hidden">
-      <button type="button" id="secondaryCancelBtn" class="text-red-500 text-sm font-medium hover:text-red-700 hover:underline">
-        ✖ Cancel / Reject this request
+<!-- ================= FOOTER : action secondaire ================= -->
+    <div id="modalSecondaryAction" class="shrink-0 px-5 py-2 text-center hidden">
+      <button type="button" id="secondaryCancelBtn" class="text-gray-400 text-xs font-normal hover:text-red-600 transition-colors">
+        Cancel / reject this request
       </button>
     </div>
 
@@ -2011,7 +2011,7 @@ function getEmptyStateMessage(status) {
 }
 
 function isCancelEligible(status) {
-  return status !== 'Closed' && status !== 'PendingCancel' && status !== 'Cancelled';
+  return status !== 'Closed' && status !== 'PendingValidation' && status !== 'PendingCancel' && status !== 'Cancelled';
 }
 
 // Fonction pour compresser les images upload lors de la liquidation
@@ -2621,9 +2621,9 @@ async function fetchMyRequests() {
     // RENDER DATA
     // ------------------------------
 
-    all.sort((a, b) =>
-  new Date(b.created_at || b.timestamp) -
-  new Date(a.created_at || a.timestamp)
+all.sort((a, b) =>
+  new Date(a.created_at || a.timestamp) -
+  new Date(b.created_at || b.timestamp)
 );
     all.forEach(req => upsertRow(req));
 
