@@ -353,7 +353,6 @@ app.get('/admin/users', authenticate, async (req, res) => {
         const { data, error } = await supabaseService
           .from('profiles')
           .select('id, mail, "Name", role, center_name, permissions, is_active, display_names, saved_descriptions, profile_label')
-          .eq('is_active', true)   // ← ajoute cette ligne
           .order('"Name"');
 
         if (error) throw error;

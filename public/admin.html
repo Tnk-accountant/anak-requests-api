@@ -870,14 +870,24 @@ CHAT LAYOUT
           class="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm">
       </div>
 
-      <label class="flex items-center gap-2 text-sm mt-1">
-        <input type="checkbox" id="editUserActive">
-        Active account
-      </label>
+    <div class="border-t border-gray-100 pt-3 mt-1">
+
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium text-gray-700">Account status</div>
+            <div id="editUserStatusText" class="text-xs text-gray-400"></div>
+          </div>
+
+          <button id="editUserToggleActiveBtn" type="button"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+          </button>
+        </div>
+
+      </div>
 
       <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
-        <button id="editUserDeleteBtn" class="text-red-500 text-sm hover:underline">
-          Delete user
+        <button id="editUserDeleteBtn" class="text-red-500 text-xs hover:underline">
+          ⚠️ Delete permanently
         </button>
 
         <button id="editUserSaveBtn"
@@ -1772,8 +1782,8 @@ function renderUsersTable(users) {
       <td class="py-2.5 px-3">${getLabelBadgeHtml(u.profile_label) || '<span class="text-gray-300 text-xs">—</span>'}</td>
       <td class="py-2.5 px-3 text-center">
         ${u.is_active
-          ? '<span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>'
-          : '<span class="w-2.5 h-2.5 rounded-full bg-gray-300 inline-block"></span>'
+          ? '<span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" title="Active"></span>'
+          : '<span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" title="Disabled"></span>'
         }
       </td>
     `;
@@ -1788,12 +1798,13 @@ function openEditUserModal(userId) {
   const u = allUsers.find(x => x.id === userId);
   if (!u) return;
 
-  document.getElementById('editUserId').value = u.id;
+document.getElementById('editUserId').value = u.id;
   document.getElementById('editUserName').value = u.Name || '';
   document.getElementById('editUserEmailDisplay').textContent = u.mail;
   document.getElementById('editUserRole').value = u.role;
-  document.getElementById('editUserActive').checked = !!u.is_active;
   document.getElementById('editUserLabel').value = u.profile_label || '';
+
+  updateToggleActiveButton(u.is_active);
 
   const centersContainer = document.getElementById('editUserCentersContainer');
   const centersInput = document.getElementById('editUserCenters');
@@ -1812,6 +1823,24 @@ function openEditUserModal(userId) {
   const modal = document.getElementById('editUserModal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
+}
+
+
+function updateToggleActiveButton(isActive) {
+  const btn = document.getElementById('editUserToggleActiveBtn');
+  const statusText = document.getElementById('editUserStatusText');
+
+  btn.dataset.currentState = isActive ? 'active' : 'disabled';
+
+  if (isActive) {
+    btn.textContent = 'Disable account';
+    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-red-50 text-red-600 hover:bg-red-100';
+    statusText.textContent = 'Currently active — user can log in';
+  } else {
+    btn.textContent = 'Enable account';
+    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-green-50 text-green-600 hover:bg-green-100';
+    statusText.textContent = 'Currently disabled — user cannot log in';
+  }
 }
 
 function closeEditUserModal() {
@@ -1839,6 +1868,39 @@ document.getElementById('editUserSharedToggle')?.addEventListener('change', (e) 
   }
 });
 
+document.getElementById('editUserToggleActiveBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('editUserToggleActiveBtn');
+  const userId = document.getElementById('editUserId').value;
+  const currentState = btn.dataset.currentState === 'active';
+  const newState = !currentState;
+
+  const actionLabel = newState ? 'enable' : 'disable';
+  if (!confirm(`Are you sure you want to ${actionLabel} this account?`)) return;
+
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ is_active: newState })
+    });
+
+    if (!res.ok) throw new Error('Update failed');
+
+    notify(newState ? 'Account enabled' : 'Account disabled', 'success');
+    updateToggleActiveButton(newState);
+    await loadUsers();
+
+  } catch (err) {
+    console.error(err);
+    notify('Error updating account status', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 document.getElementById('editUserSaveBtn')?.addEventListener('click', async () => {
   const btn = document.getElementById('editUserSaveBtn');
   const userId = document.getElementById('editUserId').value;
@@ -1849,7 +1911,6 @@ document.getElementById('editUserSaveBtn')?.addEventListener('click', async () =
   try {
     const name = document.getElementById('editUserName').value;
     const role = document.getElementById('editUserRole').value;
-    const active = document.getElementById('editUserActive').checked;
 
     const centersRaw = document.getElementById('editUserCenters').value;
     const selectedCenters = centersRaw
@@ -1868,7 +1929,6 @@ document.getElementById('editUserSaveBtn')?.addEventListener('click', async () =
     const payload = {
       name,
       role,
-      is_active: active,
       display_names: displayNames,
       profile_label: profileLabel,
       permissions: {
@@ -1902,8 +1962,9 @@ document.getElementById('editUserSaveBtn')?.addEventListener('click', async () =
 
 document.getElementById('editUserDeleteBtn')?.addEventListener('click', async () => {
   const userId = document.getElementById('editUserId').value;
+  const userName = document.getElementById('editUserName').value || 'this user';
 
-  if (!confirm('Delete this user?')) return;
+  if (!confirm(`⚠️ This will PERMANENTLY delete ${userName}. This cannot be undone.\n\nAre you sure?`)) return;
 
   try {
     const res = await fetch(`${API_URL}/admin/users/${userId}`, {
