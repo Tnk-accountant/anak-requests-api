@@ -715,14 +715,24 @@ app.post('/requests/:id/respond', authenticate, async (req, res) => {
       return res.status(400).json({ error: "Message required" });
     }
 
-    // 🔥 1. récupérer conversation
+// 🔥 1. récupérer conversation
     const { data: existing, error: fetchError } = await supabaseService
       .from('Requests')
-      .select('conversation')
+      .select('conversation, created_by')
       .eq('request_id', id)
       .maybeSingle();
 
     if (fetchError) throw fetchError;
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+
+    // 🔒 Seul le créateur de la demande (ou un Admin) peut répondre
+    const respondRole = (req.profile.role || '').toLowerCase();
+    if (respondRole !== 'admin' && existing.created_by !== req.user.id) {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
 
     const conversation = existing?.conversation || [];
 
@@ -758,6 +768,11 @@ app.post('/requests/:id/respond', authenticate, async (req, res) => {
 
 app.post('/requests/:id/feedback', authenticate, async (req, res) => {
   try {
+    // 🔒 Réservé aux Admins
+    if ((req.profile.role || '').toLowerCase() !== 'admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+
     const { message } = req.body;
     const { id } = req.params;
 
@@ -1286,8 +1301,29 @@ app.patch('/requests/:request_id/received', authenticate, async (req, res) => {
     }
     console.log('Existing request:', existing);
 
-    if (!existing) return res.status(404).json({ error: 'Request not found.' });
+if (!existing) return res.status(404).json({ error: 'Request not found.' });
 
+    // 🔒 Autorisation : Admin | CC (centre autorisé) | Requester (créateur uniquement)
+    const receivedRole = (req.profile.role || '').toLowerCase();
+
+    if (receivedRole === 'admin') {
+      // ✅ autorisé
+    } else if (receivedRole === 'cc') {
+      const allowedCenters = req.profile.permissions?.allowed_centers;
+      const centers = (Array.isArray(allowedCenters) && allowedCenters.length > 0)
+        ? allowedCenters.map(c => c.toUpperCase())
+        : [req.profile.center];
+
+      if (!centers.includes((existing.center_name || '').toUpperCase())) {
+        return res.status(403).json({ error: 'Not allowed for this center' });
+      }
+    } else if (receivedRole === 'requester') {
+      if (existing.created_by !== req.user.id) {
+        return res.status(403).json({ error: 'Not allowed' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
 
     if (existing.received_confirmed)
       return res.status(400).json({ error: 'This request has already been confirmed.' });
@@ -1371,9 +1407,9 @@ if (!['requester', 'cc', 'admin'].includes(role)) {
       return res.status(400).json({ error: 'Invalid spent and returned amounts.' });
     }
 
-    const { data: existing, error: getError } = await supabaseService
+const { data: existing, error: getError } = await supabaseService
       .from('Requests')
-      .select('created_by, received_confirmed, status, approved_amount, request_type')
+      .select('created_by, received_confirmed, status, approved_amount, request_type, center_name')
       .eq('request_id', request_id)
       .maybeSingle();
 
@@ -1386,6 +1422,18 @@ if (!['requester', 'cc', 'admin'].includes(role)) {
       existing.created_by !== req.user.id
     ) {
       return res.status(403).json({ error: 'Not allowed' });
+    }
+
+    // 🔒 Un CC ne peut liquider que les demandes de ses centres autorisés
+    if (role === 'cc') {
+      const allowedCenters = req.profile.permissions?.allowed_centers;
+      const centers = (Array.isArray(allowedCenters) && allowedCenters.length > 0)
+        ? allowedCenters.map(c => c.toUpperCase())
+        : [req.profile.center];
+
+      if (!centers.includes((existing.center_name || '').toUpperCase())) {
+        return res.status(403).json({ error: 'Not allowed for this center' });
+      }
     }
 
         if (existing.request_type === 'FundTransfer') {
@@ -1499,15 +1547,37 @@ app.patch('/requests/:request_id/request-cancel', authenticate, async (req, res)
       return res.status(400).json({ error: 'Cancellation reason required' });
     }
 
-    // 🔒 empêcher double demande
+  // 🔒 empêcher double demande
     const { data: existing } = await supabaseService
       .from('Requests')
-      .select('status')
+      .select('status, created_by, center_name')
       .eq('request_id', request_id)
       .maybeSingle();
 
     if (!existing) {
       return res.status(404).json({ error: 'Request not found' });
+    }
+
+    // 🔒 Autorisation : Admin | CC (centre autorisé) | Requester (créateur uniquement)
+    const cancelRole = (req.profile.role || '').toLowerCase();
+
+    if (cancelRole === 'admin') {
+      // ✅ autorisé
+    } else if (cancelRole === 'cc') {
+      const allowedCenters = req.profile.permissions?.allowed_centers;
+      const centers = (Array.isArray(allowedCenters) && allowedCenters.length > 0)
+        ? allowedCenters.map(c => c.toUpperCase())
+        : [req.profile.center];
+
+      if (!centers.includes((existing.center_name || '').toUpperCase())) {
+        return res.status(403).json({ error: 'Not allowed for this center' });
+      }
+    } else if (cancelRole === 'requester') {
+      if (existing.created_by !== req.user.id) {
+        return res.status(403).json({ error: 'Not allowed' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Not allowed' });
     }
 
     if (existing.status === 'PendingCancel') {
@@ -1554,15 +1624,37 @@ app.patch('/requests/:request_id/request-cancel', authenticate, async (req, res)
           return res.status(400).json({ error: 'Cancellation reason required' });
         }
 
-        // 🔎 récupérer la demande actuelle
+// 🔎 récupérer la demande actuelle
         const { data: existing } = await supabaseService
           .from('Requests')
-          .select('status')
+          .select('status, created_by, center_name')
           .eq('request_id', request_id)
           .maybeSingle();
 
         if (!existing) {
           return res.status(404).json({ error: 'Request not found' });
+        }
+
+        // 🔒 Autorisation : Admin | CC (centre autorisé) | Requester (créateur uniquement)
+        const cancelRole2 = (req.profile.role || '').toLowerCase();
+
+        if (cancelRole2 === 'admin') {
+          // ✅ autorisé
+        } else if (cancelRole2 === 'cc') {
+          const allowedCenters = req.profile.permissions?.allowed_centers;
+          const centers = (Array.isArray(allowedCenters) && allowedCenters.length > 0)
+            ? allowedCenters.map(c => c.toUpperCase())
+            : [req.profile.center];
+
+          if (!centers.includes((existing.center_name || '').toUpperCase())) {
+            return res.status(403).json({ error: 'Not allowed for this center' });
+          }
+        } else if (cancelRole2 === 'requester') {
+          if (existing.created_by !== req.user.id) {
+            return res.status(403).json({ error: 'Not allowed' });
+          }
+        } else {
+          return res.status(403).json({ error: 'Not allowed' });
         }
 
         // 🔒 protections métier
@@ -1573,6 +1665,7 @@ app.patch('/requests/:request_id/request-cancel', authenticate, async (req, res)
         if (existing.status === 'Closed' || existing.status === 'Cancelled') {
           return res.status(400).json({ error: 'Cannot cancel this request' });
         }
+
 
         // 🔁 passer en attente de validation admin
         const { data, error } = await supabaseService
