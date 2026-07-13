@@ -1294,8 +1294,8 @@ app.patch('/requests/:request_id/received', authenticate, async (req, res) => {
 
     let statusToSet = existing.status;
 
-      if (received_confirmed) {
-        if (existing.request_type === 'FundTransfer') {
+if (received_confirmed) {
+        if (existing.request_type === 'FundTransfer' || existing.payment_method === 'cheque') {
           statusToSet = 'Closed';
         } else {
           statusToSet = 'ToLiquidate';

@@ -515,15 +515,37 @@ button:active {
     class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
   >
 
-  <input
+<input
     type="date"
     id="mobileDateSearch"
     class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
   >
+
+  <button type="button" id="clearFiltersBtnMobile"
+    class="w-full text-center text-gray-500 text-xs py-1 hover:text-gray-700">
+    Clear filters
+  </button>
+</div>
+
+<!-- 📱 MOBILE : loader -->
+<div id="loadingStateMobile" class="md:hidden text-center py-10">
+  <div class="inline-block w-6 h-6 border-[3px] border-gray-200 border-t-indigo-600 rounded-full animate-spin"></div>
 </div>
 
 <!-- 📱 MOBILE : cartes -->
 <div id="mobileRequests" class="space-y-3 md:hidden"></div>
+
+<div id="emptyStateDesktop" class="hidden text-center py-12 text-gray-400 text-sm">
+      You don't have any request yet.
+    </div>
+
+    <div id="loadingStateDesktop" class="text-center py-12">
+      <div class="inline-block w-6 h-6 border-[3px] border-gray-200 border-t-indigo-600 rounded-full animate-spin"></div>
+    </div>
+
+  </div>
+
+</div>
 
 <!-- 📱 MOBILE : pagination -->
 <div id="mobilePagination"
@@ -573,11 +595,18 @@ button:active {
         >
       </div>
 
-      <div class="flex items-end">
+<div class="flex items-end">
         <div id="toLiquidateBadge"
           class="hidden px-3 py-2 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-sm font-semibold">
           <span id="toLiquidateCount">0</span> waiting for liquidation
         </div>
+      </div>
+
+      <div class="flex items-end">
+        <button type="button" id="clearFiltersBtn"
+          class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-500 text-sm hover:bg-gray-50 hover:text-gray-700 transition">
+          Clear filters
+        </button>
       </div>
 
     </div>
@@ -600,7 +629,7 @@ button:active {
         </tr>
       </thead>
 
-      <!-- Body -->
+<!-- Body -->
       <tbody
         id="myRequestsTable"
         class="bg-white">
@@ -610,6 +639,11 @@ button:active {
       </tbody>
 
     </table>
+
+    <div id="emptyStateDesktop" class="hidden text-center py-12 text-gray-400 text-sm">
+      You don't have any request yet.
+    </div>
+
   </div>
 
 </div>
@@ -745,6 +779,52 @@ button:active {
           ✖ Confirm cancellation
         </button>
       </div>
+
+      <!-- Panel Summary (Closed) -->
+      <div id="panel-summary" class="action-panel hidden">
+        <h4 class="font-semibold mb-4">✅ Transaction summary</h4>
+
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+            <span class="text-gray-500">Received by</span>
+            <span id="summaryReceivedName" class="font-medium text-gray-800"></span>
+          </div>
+          <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+            <span class="text-gray-500">Amount received</span>
+            <span id="summaryReceivedAmount" class="font-medium text-gray-800"></span>
+          </div>
+          <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+            <span class="text-gray-500">Date received</span>
+            <span id="summaryReceivedDate" class="font-medium text-gray-800"></span>
+          </div>
+        </div>
+
+        <div id="summaryLiquidationBlock" class="mt-4 space-y-3 text-sm hidden">
+          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Liquidation</div>
+          <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+            <span class="text-gray-500">Amount spent</span>
+            <span id="summarySpent" class="font-medium text-gray-800"></span>
+          </div>
+          <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+            <span class="text-gray-500">Amount returned</span>
+            <span id="summaryReturned" class="font-medium text-gray-800"></span>
+          </div>
+          <div id="summaryNoteBlock" class="hidden">
+            <span class="text-gray-500 block mb-1">Note</span>
+            <p id="summaryNote" class="text-gray-700"></p>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500">Receipts</span>
+            <span id="summaryReceiptsCount" class="font-medium text-gray-800"></span>
+          </div>
+        </div>
+
+        <div id="summaryNoLiquidationBlock" class="mt-4 text-sm text-gray-500 hidden">
+          No liquidation required for this request.
+        </div>
+      </div>
+
+      <!-- Panel Clarification -->
 
       <!-- Panel Clarification -->
       <div id="panel-clarification" class="action-panel hidden h-full">
@@ -1839,6 +1919,30 @@ if (dateSearchInput) {
   });
 }
 
+document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
+  if (amountSearchInput) amountSearchInput.value = '';
+  if (descriptionSearchInput) descriptionSearchInput.value = '';
+  if (dateSearchInput) dateSearchInput.value = '';
+  currentPage = 1;
+  renderTable();
+});
+
+document.getElementById('clearFiltersBtnMobile')?.addEventListener('click', () => {
+  const mobileAmount = document.getElementById('mobileAmountSearch');
+  const mobileDesc = document.getElementById('mobileDescriptionSearch');
+  const mobileDate = document.getElementById('mobileDateSearch');
+
+  if (mobileAmount) mobileAmount.value = '';
+  if (mobileDesc) mobileDesc.value = '';
+  if (mobileDate) mobileDate.value = '';
+
+  mobileAmountFilter = '';
+  mobileDescriptionFilter = '';
+  mobileDateFilter = '';
+  mobilePage = 1;
+  renderMobileCards();
+});
+
 // ==============================
 // 🔥 CLARIFICATION ACTIONS (BON ENDROIT)
 // ==============================
@@ -1998,8 +2102,8 @@ function getPrimaryPanelForStatus(req) {
   if (status === 'ToLiquidate') return 'liquidate';
   if (status === 'PendingValidation') return 'liquidate';
   if (status === 'Closed') {
-    return req.request_type === 'FundTransfer' ? 'received' : 'liquidate';
-  }
+      return 'summary';
+    }
   return null; // Pending, Cancelled, PendingCancel → pas de panel actif
 }
 
@@ -2558,6 +2662,9 @@ myTableBody.insertBefore(row, myTableBody.firstChild);
 // FETCH MY REQUESTS (CLEAN + SAFE)
 // ==============================
 async function fetchMyRequests() {
+  document.getElementById('loadingStateDesktop')?.classList.remove('hidden');
+  document.getElementById('loadingStateMobile')?.classList.remove('hidden');
+
   try {
     const limit = 200;
     let offset = 0;
@@ -2627,7 +2734,7 @@ all.sort((a, b) =>
 );
     all.forEach(req => upsertRow(req));
 
-    // Desktop table
+// Desktop table
     if (typeof renderTable === 'function') {
       renderTable();
     }
@@ -2638,26 +2745,26 @@ all.sort((a, b) =>
       renderMobileCards();
     }
 
-  } catch (err) {
+// Fin du chargement
+    document.getElementById('loadingStateDesktop')?.classList.add('hidden');
+    document.getElementById('loadingStateMobile')?.classList.add('hidden');
+
+    // État vide
+    const isEmpty = requestsMap.size === 0;
+    document.getElementById('emptyStateDesktop')?.classList.toggle('hidden', !isEmpty);
+    document.getElementById('emptyStateMobile')?.classList.toggle('hidden', !isEmpty);
+
+} catch (err) {
     console.error('❌ fetchMyRequests error:', err);
     notify("Failed to load requests", "error");
+    document.getElementById('loadingStateDesktop')?.classList.add('hidden');
+    document.getElementById('loadingStateMobile')?.classList.add('hidden');
   }
 }
 
 /* ==============================
    Modal actions — CLEAN VERSION
 ============================== */
-
-/**
- * Table de décision : statut → action
- */
-const ACTION_BY_STATUS = {
-  Approved: 'received',
-  ToLiquidate: 'liquidate',
-  Pending: 'cancel',
-  NeedsInfo: 'clarification',
-  Resubmitted: 'clarification',
-};
 
 /**
  * Cache tous les panels et reset l’état desktop
@@ -2707,30 +2814,6 @@ function showPanel(action) {
   requestAnimationFrame(() => {
     isSwitchingPanel = false;
   });
-}
-
-
-/**
- * Sélection automatique du panel selon le statut
- */
-function autoSelectMobileAction(req) {
-  if (!req) return;
-
-  const action = ACTION_BY_STATUS[req.status];
-  if (!action) return;
-
-  // afficher le panel
-  showPanel(action);
-
-  // sélectionner visuellement la carte
-  const card = document.querySelector(`#actionList [data-action="${action}"]`);
-  if (card) {
-    if (activeActionCard) {
-      activeActionCard.classList.remove('is-active');
-    }
-    card.classList.add('is-active');
-    activeActionCard = card;
-  }
 }
 
 
@@ -2923,6 +3006,42 @@ function autoSelectMobileAction(req) {
   } else {
     cancelInputs.forEach(el => el.disabled = false);
     cancelPanel.classList.remove('opacity-50');
+  }
+
+
+  // ==============================
+  // PANEL SUMMARY (Closed)
+  // ==============================
+  document.getElementById('summaryReceivedName').textContent = req.received_name || req.requestor_name || '—';
+  document.getElementById('summaryReceivedAmount').textContent =
+    req.amount_received != null ? `${formatAmount(req.amount_received)} PHP` : '—';
+  document.getElementById('summaryReceivedDate').textContent =
+    req.received_at ? new Date(req.received_at).toLocaleDateString('en-US') : '—';
+
+  const hasLiquidation = req.amount_spent != null || req.returned_amount != null;
+  const liquidationBlock = document.getElementById('summaryLiquidationBlock');
+  const noLiquidationBlock = document.getElementById('summaryNoLiquidationBlock');
+
+  if (hasLiquidation) {
+    liquidationBlock.classList.remove('hidden');
+    noLiquidationBlock.classList.add('hidden');
+
+    document.getElementById('summarySpent').textContent = `${formatAmount(req.amount_spent)} PHP`;
+    document.getElementById('summaryReturned').textContent = `${formatAmount(req.returned_amount)} PHP`;
+
+    const noteBlock = document.getElementById('summaryNoteBlock');
+    if (req.liquidation_note) {
+      noteBlock.classList.remove('hidden');
+      document.getElementById('summaryNote').textContent = req.liquidation_note;
+    } else {
+      noteBlock.classList.add('hidden');
+    }
+
+    document.getElementById('summaryReceiptsCount').textContent =
+      req.receipts?.length ? `${req.receipts.length} file(s)` : 'None';
+  } else {
+    liquidationBlock.classList.add('hidden');
+    noLiquidationBlock.classList.remove('hidden');
   }
 
   // ==============================
