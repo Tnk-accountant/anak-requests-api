@@ -39,13 +39,7 @@
 ========================= */
 
 
-/* Desktop : panels scrollables */
-@media (min-width: 768px) {
-  .action-panel {
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-}
+/* (scroll géré par #modalBody désormais) */
 
 /* Mobile : panels = contenu principal, pas de scroll interne */
 @media (max-width: 768px) {
@@ -54,13 +48,6 @@
   }
 }
 
-@media (max-width:768px){
-
-  .mobile-hidden{
-    display:none !important;
-  }
-
-}
 
 /* =========================
    PAYMENT BUTTONS
@@ -142,12 +129,11 @@
 }
 
 /* =========================
-   MODAL + GRID LAYOUT
+   MODAL — nouveau layout plein-largeur
 ========================= */
 
 /* 📱 Modal mobile plein écran */
 @media (max-width: 768px) {
-
   #modal {
     align-items: stretch !important;
   }
@@ -156,28 +142,23 @@
     height: 100dvh;
     max-height: 100dvh;
   }
+}
 
-  /* La colonne droite occupe toute la largeur */
-  .md\:col-span-7 {
-    grid-column: span 12 / span 12;
-    overflow: visible;
-  }
+#modalBody {
+  overflow-y: auto;
+}
 
-  /* Important :
-     ne pas forcer display:flex quand hidden est présent */
-  #modalRightCol:not(.hidden) {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
+#modalBody.chat-mode {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 
-  #panel-clarification {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-  }
-
+#panel-clarification {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 /* =========================
@@ -641,314 +622,183 @@ button:active {
 </div> <!-- fin container -->
 
 
-  <!-- Modal actions -->
+<!-- Modal actions -->
+<div id="modal" class="fixed inset-0 z-50 hidden flex items-end md:items-center justify-center">
 
-  <div id="modal" class="fixed inset-0 z-50 hidden flex items-end md:items-center justify-center">
+  <div id="modalOverlay" class="absolute inset-0 bg-black/40"></div>
 
-    <div id="modalOverlay" class="absolute inset-0 bg-black/40"></div>
+  <div class="relative w-full h-full max-w-full md:max-w-xl bg-white rounded-none md:rounded-2xl shadow-2xl flex flex-col md:max-h-[88vh]">
 
-    <div class="
-      relative
-      w-full
-      h-full
-      max-w-full md:max-w-3xl
-      bg-white
-      rounded-none md:rounded-2xl
-      shadow-2xl
-      grid grid-cols-1 md:grid-cols-12
-      md:h-auto">
-  
-      <div id="modalLeftCol" class="col-span-1 md:col-span-5 border-r md:border-r p-4 space-y-3">
-        <div class="flex items-start justify-between">
+    <!-- ================= HEADER ================= -->
+    <div class="shrink-0 px-5 pt-5 pb-4 border-b border-gray-100">
+
+      <div class="flex items-start justify-between mb-3">
+        <span id="modalStatusBadge" class="px-3 py-1 rounded-full text-xs font-semibold text-white"></span>
+        <button type="button" id="closeModalBtn" class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+      </div>
+
+      <div id="modalAmount" class="text-2xl font-bold text-gray-900"></div>
+      <div id="modalRequestorName" class="text-sm text-gray-600 mt-0.5"></div>
+
+      <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-400 mt-2">
+        <span id="modalCenter"></span>
+        <span>·</span>
+        <span id="modalDateMeta"></span>
+        <span>·</span>
+        <span id="modalPaymentMethod"></span>
+      </div>
+
+      <div class="mt-3">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Description</div>
+        <p id="modalDescription" class="text-sm text-gray-700 max-h-24 overflow-y-auto pr-1"></p>
+      </div>
+
+    </div>
+
+    <!-- ================= BODY (scrollable) ================= -->
+    <div id="modalBody" class="flex-1 min-h-0 px-5 py-4">
+
+      <!-- Empty state (Pending / Cancelled / PendingCancel) -->
+      <div id="panel-empty" class="action-panel hidden text-center text-sm text-gray-500 py-10">
+        <p id="emptyStateMessage"></p>
+      </div>
+
+      <!-- Panel Received -->
+      <div id="panel-received" class="action-panel hidden">
+        <h4 class="font-semibold mb-3" id="receivedPanelTitle">💵 Cash received</h4>
+        <div class="grid grid-cols-2 gap-3 mb-3">
           <div>
-            <h3 id="modalTitle" class="text-lg font-bold text-gray-800">Request details</h3>
-
-            <p id="modalSubtitle" class="text-sm text-gray-500">
-              ID: <span id="modalRequestId"></span> — <span id="modalCenter"></span>
-            </p>
-
-            <div class="mb-3">
-              <p id="modalDescription" class="mt-1 text-gray-600 max-h-40 overflow-y-auto pr-1"></p>
-            </div>
-
-            <p id="modalPaymentMethod" class="text-sm text-gray-500"></p>
+            <label class="block text-sm text-gray-700">Amount received</label>
+            <input id="receivedAmount" type="number"
+                   inputmode="decimal"
+                   class="mt-1 w-full border rounded px-3 py-2">
           </div>
-
-          <button type="button" id="closeModalBtn"
-            class="sticky top-0 z-10 bg-white text-gray-500 hover:text-gray-700 px-2">
-            ✕
-          </button>
+          <div>
+            <label class="block text-sm text-gray-700">Date</label>
+            <input id="receivedDate" type="date" class="mt-1 w-full border rounded px-3 py-2">
+          </div>
         </div>
-
-        <div id="actionList" class="space-y-2 mt-2">
-
-          <button type="button" data-action="received"
-            class="action-card touch-manipulation w-full text-left p-3 rounded-lg border hover:shadow-sm transition flex items-start gap-3">
-            <div class="flex-1">
-              <div class="flex justify-between items-center">
-                <strong id="receivedActionTitle">💵 Money received</strong>
-              </div>
-            </div>
-          </button>
-
-          <button type="button" data-action="liquidate"
-            class="action-card w-full text-left p-3 rounded-lg border hover:shadow-sm transition flex items-start gap-3">
-            <div class="flex-1">
-              <div class="flex justify-between items-center">
-                <strong>📤 Submit liquidation</strong>
-              </div>
-            </div>
-          </button>
-
-
-          <button type="button" data-action="cancel"
-            class="action-card w-full text-left p-3 rounded-lg border hover:shadow-sm transition flex items-start gap-3">
-            <div class="flex-1">
-              <strong class="text-red-600">✖ Cancel / Reject</strong>
-            </div>
-          </button>
-
-
-      <button
-        type="button"
-        data-action="clarification"
-        id="clarificationActionBtn"
-        class="action-card w-full text-left p-3 rounded-lg border border-gray-200 bg-white hover:shadow-sm transition flex items-start gap-3 hidden">
-
-            <div class="flex-1">
-              <strong class="text-orange-600 font-semibold">⚠️ Clarification required</strong>
-            </div>
-
-          </button>
+        <div class="mb-3">
+          <label class="block text-sm text-gray-700">First name, last name</label>
+          <input id="receivedName" type="text" class="mt-1 w-full border rounded px-3 py-2">
         </div>
+        <label class="flex items-center gap-2 text-sm mb-4">
+          <input id="receivedCheck" type="checkbox" class="w-4 h-4">
+          <span>I certify on my honor that I have received the money.</span>
+        </label>
+        <button type="button" id="confirmReceivedBtn"
+                class="w-full bg-green-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-green-700">
+          Confirm
+        </button>
       </div>
 
-      <!-- ✅ COLONNE DROITE -->
-<div id="modalRightCol" class="col-span-1 md:col-span-7 p-4 hidden md:block">
-
-        <!-- Panel Received -->
-        <div id="panel-received" class="action-panel hidden">
-          <h4 class="font-semibold mb-2">Confirm receipt</h4>
-          <div class="grid grid-cols-2 gap-3 mb-3">
-            <div>
-              <label class="block text-sm text-gray-700">Amount received</label>
-              <input id="receivedAmount" type="number"
-                     inputmode="decimal"
-                     class="mt-1 w-full border rounded px-3 py-2">
-            </div>
-            <div>
-              <label class="block text-sm text-gray-700">Date</label>
-              <input id="receivedDate" type="date" class="mt-1 w-full border rounded px-3 py-2">
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="block text-sm text-gray-700">First name, last name</label>
-            <input id="receivedName" type="text" class="mt-1 w-full border rounded px-3 py-2">
-          </div>
-          <label class="flex items-center gap-2 text-sm mb-4">
-            <input id="receivedCheck" type="checkbox" class="w-4 h-4">
-            <span>I certify on my honor that I have received the money.</span>
-          </label>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <button type="button" id="confirmReceivedBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Confirm</button>
-            <button type="button" id="receivedBack" class="bg-gray-100 px-4 py-2 rounded">Back</button>
-          </div>
-        </div>
-
-        <!-- Panel Liquidate -->
-        <div id="panel-liquidate" class="action-panel hidden mt-2">
-        
-          <h4 class="font-semibold mb-2">Liquidation</h4>
-          <div class="mb-3">
+      <!-- Panel Liquidate -->
+      <div id="panel-liquidate" class="action-panel hidden">
+        <h4 class="font-semibold mb-3">📤 Liquidation</h4>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
             <label class="block text-sm text-gray-700">Amount spent</label>
-            <input id="liqSpent" type="number"
-                   inputmode="decimal"
-                   class="mt-1 w-full border rounded px-3 py-2">
+            <input id="liqSpent" type="number" inputmode="decimal" class="mt-1 w-full border rounded px-3 py-2">
           </div>
-          <div class="mb-3">
+          <div>
             <label class="block text-sm text-gray-700">Amount returned</label>
-            <input id="liqAmount" type="number"
-                   inputmode="decimal"
-                   class="mt-1 w-full border rounded px-3 py-2">
+            <input id="liqAmount" type="number" inputmode="decimal" class="mt-1 w-full border rounded px-3 py-2">
           </div>
-          <div class="mb-3">
-            <label class="block text-sm text-gray-700 mb-2">Receipts</label>
+        </div>
 
-            <div class="flex flex-col gap-2">
-
-              <!-- ACTION BUTTONS -->
-              <div class="flex gap-2">
-                
-                <!-- Galerie -->
-                <button
-                  type="button"
-                  id="galleryBtn"
-                  class="flex-1 bg-gray-100 py-2 rounded-lg text-sm active:scale-95">
-                  🖼️ Gallery
-                </button>
-
-                <!-- Scan -->
-                <button
-                  type="button"
-                  id="cameraBtn"
-                  class="flex-1 bg-indigo-100 text-indigo-700 py-2 rounded-lg text-sm active:scale-95">
-                  📸 Scan receipts
-                </button>
-
-              </div>
-
-              <!-- 🔥 SCAN STATUS (nouveau) -->
-              <div id="scanStatus"
-                  class="hidden text-xs text-gray-600 bg-indigo-50 px-3 py-2 rounded-lg flex items-center justify-between">
-
-                <span id="scanCount">📸 0 receipts</span>
-
-                <button id="stopScanBtn"
-                  class="text-red-600 text-xs font-medium">
-                  Stop scan
-                </button>
-              </div>
-
+        <div class="mb-3">
+          <label class="block text-sm text-gray-700 mb-2">Receipts</label>
+          <div class="flex flex-col gap-2">
+            <div class="flex gap-2">
+              <button type="button" id="galleryBtn" class="flex-1 bg-gray-100 py-2 rounded-lg text-sm active:scale-95">🖼️ Gallery</button>
+              <button type="button" id="cameraBtn" class="flex-1 bg-indigo-100 text-indigo-700 py-2 rounded-lg text-sm active:scale-95">📸 Scan receipts</button>
             </div>
-
-            <!-- inputs cachés -->
-            <input id="liqReceipts" type="file" accept="image/*" multiple hidden>
-
-            <!-- 🔥 camera reste simple (important iOS) -->
-            <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
-
-            <!-- compteur -->
-            <div id="receiptsInfo" class="text-sm text-gray-600 mt-2">
-              No receipts
+            <div id="scanStatus" class="hidden text-xs text-gray-600 bg-indigo-50 px-3 py-2 rounded-lg flex items-center justify-between">
+              <span id="scanCount">📸 0 receipts</span>
+              <button id="stopScanBtn" class="text-red-600 text-xs font-medium">Stop scan</button>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="block text-sm text-gray-700">Note</label>
-            <textarea id="liqNote" rows="3" class="w-full border rounded px-3 py-2"></textarea>
-          </div>
-          <div class="flex flex-col sm:flex-row gap-3">
-          <button type="button" id="liqSubmitBtn"
-                  class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center justify-center gap-2">
-            
-            <span id="liqBtnText">📤 Submit liquidation</span>
-            <span id="liqLoader"
-                  class="hidden w-5 h-5 border-[3px] border-white/40 border-t-white rounded-full animate-spin">
-            </span>
-          </button>
-            <button type="button" id="liqCancel" class="bg-gray-100 px-4 py-2 rounded">Back</button>
-          </div>
+          <input id="liqReceipts" type="file" accept="image/*" multiple hidden>
+          <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+          <div id="receiptsInfo" class="text-sm text-gray-600 mt-2">No receipts</div>
         </div>
 
-        <!-- Panel Cancel -->
-        <div id="panel-cancel" class="action-panel hidden mt-2">
-          <h4 class="font-semibold text-red-600 mb-3">Cancel / Decline</h4>
-          <input type="text" id="cancelRequestorNamePanel" class="w-full border rounded px-3 py-2 mb-2" readonly>
-          <textarea id="cancelReason" rows="3" class="w-full border rounded px-3 py-2 mb-4"></textarea>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <button type="button" id="cancelSubmitBtn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">✖ Cancel</button>
-            <button type="button" id="cancelBack" class="bg-gray-100 px-4 py-2 rounded">Back</button>
-          </div>
+        <div class="mb-4">
+          <label class="block text-sm text-gray-700">Note</label>
+          <textarea id="liqNote" rows="3" class="w-full border rounded px-3 py-2"></textarea>
         </div>
 
-
-<!-- =========================================
-MESSENGER STYLE CLARIFICATION PANEL
-========================================= -->
-
-<div
-  id="panel-clarification"
-  class="action-panel hidden flex flex-col h-full min-h-0">
-
-  <div class="flex flex-col h-full border border-gray-200 rounded-3xl overflow-hidden bg-white shadow-sm">
-
-    <!-- HEADER -->
-    <div class="shrink-0 px-4 py-3 border-b border-gray-100 bg-white">
-      <div class="flex items-center gap-3">
-
-        <button
-          type="button"
-          id="clarificationBack"
-          class="md:hidden text-indigo-600 font-medium text-lg">
-          ←
+        <button type="button" id="liqSubmitBtn"
+                class="w-full bg-purple-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-purple-700 flex items-center justify-center gap-2">
+          <span id="liqBtnText">📤 Submit liquidation</span>
+          <span id="liqLoader" class="hidden w-5 h-5 border-[3px] border-white/40 border-t-white rounded-full animate-spin"></span>
         </button>
-
-        <div class="relative">
-          <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-lg">
-            ⚠️
-          </div>
-          <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white"></div>
-        </div>
-
-        <div>
-          <div class="text-sm font-semibold text-gray-800">Clarification required</div>
-          <div class="text-xs text-gray-400">Live conversation with admin</div>
-        </div>
-
       </div>
+
+      <!-- Panel Cancel -->
+      <div id="panel-cancel" class="action-panel hidden">
+        <button type="button" id="cancelBackBtn" class="text-indigo-600 text-sm font-medium mb-3">← Back</button>
+        <h4 class="font-semibold text-red-600 mb-3">Cancel / Decline</h4>
+        <input type="text" id="cancelRequestorNamePanel" class="w-full border rounded px-3 py-2 mb-2" readonly>
+        <textarea id="cancelReason" rows="3" class="w-full border rounded px-3 py-2 mb-4" placeholder="Reason..."></textarea>
+        <button type="button" id="cancelSubmitBtn" class="w-full bg-red-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-red-700">
+          ✖ Confirm cancellation
+        </button>
+      </div>
+
+      <!-- Panel Clarification -->
+      <div id="panel-clarification" class="action-panel hidden h-full">
+        <div class="flex flex-col h-full border border-gray-200 rounded-3xl overflow-hidden bg-white shadow-sm">
+
+          <div class="shrink-0 px-4 py-3 border-b border-gray-100 bg-white">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-lg">⚠️</div>
+                <div class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white"></div>
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-gray-800">Clarification required</div>
+                <div class="text-xs text-gray-400">Live conversation with admin</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="clarificationConversation"
+               class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 pb-24 bg-[#f5f7fb] scroll-smooth flex flex-col gap-3">
+          </div>
+
+          <div class="shrink-0 border-t border-gray-100 bg-white px-4 py-3">
+            <div class="flex items-end gap-3">
+              <textarea id="clarificationInput" rows="1" placeholder="Type your message..."
+                class="flex-1 resize-none bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 outline-none text-sm text-gray-700 leading-relaxed min-h-[44px] max-h-[180px] overflow-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"></textarea>
+              <button type="button" id="clarificationSubmitBtn"
+                class="shrink-0 w-11 h-11 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white flex items-center justify-center transition-all shadow-md hover:shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+            <div class="flex justify-between mt-2 px-1">
+              <div class="text-[11px] text-gray-400">You can answer with one message only</div>
+              <div class="text-[11px] text-gray-300">Enter to send</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
 
-    <!-- MESSAGES -->
-    <div
-      id="clarificationConversation"
-          class="
-          flex-1
-          overflow-y-auto
-          overflow-x-hidden
-          px-4
-          py-4
-          pb-24
-          bg-[#f5f7fb]
-          scroll-smooth
-          flex
-          flex-col
-          gap-3
-          ">
-    </div>
-
-    <!-- INPUT BAR -->
-    <div class="shrink-0 border-t border-gray-100 bg-white px-4 py-3">
-
-      <div class="flex items-end gap-3">
-
-        <textarea
-          id="clarificationInput"
-          rows="1"
-          placeholder="Type your message..."
-          class="flex-1 resize-none bg-gray-50 border border-gray-200 rounded-2xl
-                 px-4 py-3 outline-none text-sm text-gray-700 leading-relaxed
-                 min-h-[44px] max-h-[180px] overflow-hidden
-                 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
-                 transition-all"></textarea>
-
-        <button
-          type="button"
-          id="clarificationSubmitBtn"
-          class="shrink-0 w-11 h-11 rounded-2xl bg-indigo-600 hover:bg-indigo-700
-                 active:scale-95 text-white flex items-center justify-center
-                 transition-all shadow-md hover:shadow-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-               viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                  stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        </button>
-
-      </div>
-
-      <div class="flex justify-between mt-2 px-1">
-        <div class="text-[11px] text-gray-400">You can answer with one message only</div>
-        <div class="text-[11px] text-gray-300">Enter to send</div>
-      </div>
-
+    <!-- ================= FOOTER : action secondaire ================= -->
+    <div id="modalSecondaryAction" class="shrink-0 px-5 py-3 text-center border-t border-gray-100 hidden">
+      <button type="button" id="secondaryCancelBtn" class="text-red-500 text-sm font-medium hover:text-red-700 hover:underline">
+        ✖ Cancel / Reject this request
+      </button>
     </div>
 
   </div>
 </div>
 
-
-      </div>
-      </div>
-    </div>
 
 
 
@@ -1356,40 +1206,6 @@ let mobileDateFilter = '';
       e.target.value = '';
       
     });
-
-    document
-      .querySelector('[data-action="clarification"]')
-      ?.addEventListener('click', () => {
-        showPanel('clarification');
-      });
-
-      document
-  .querySelector('[data-action="clarification"]')
-  ?.addEventListener('click', () => {
-    showPanel('clarification');
-  });
-
-const clarificationBack =
-  document.getElementById('clarificationBack');
-
-clarificationBack?.addEventListener('click', () => {
-
-  hideAllPanels();
-
-  document
-    .getElementById('modalLeftCol')
-    ?.classList.remove('mobile-hidden');
-
-  document
-    .getElementById('modalRightCol')
-    ?.classList.add('hidden');
-
-  if (activeActionCard) {
-    activeActionCard.classList.remove('is-active');
-    activeActionCard = null;
-  }
-
-});
 
       
     // ==============================
@@ -2110,25 +1926,19 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
 
 });
 
+// ==============================
+    // 🔥 Toggle action secondaire "Cancel/Reject"
+    // ==============================
+    document.getElementById('secondaryCancelBtn')?.addEventListener('click', () => {
+      showPanel('cancel');
+    });
 
-
-  document.querySelectorAll('.mobileBack').forEach(btn => {
-
-  btn.addEventListener('click', () => {
-
-    if (window.innerWidth >= 768) return;
-
-    document
-      .getElementById('modalLeftCol')
-      .classList.remove('mobile-hidden');
-
-    document
-      .getElementById('modalRightCol')
-      .classList.add('hidden');
-
-  });
-
-});
+    document.getElementById('cancelBackBtn')?.addEventListener('click', () => {
+      const req = requestsMap.get(currentRequestId);
+      if (!req) return;
+      const primary = getPrimaryPanelForStatus(req);
+      showPanel(primary || 'empty');
+    });
 
 });
 
@@ -2163,6 +1973,45 @@ function updateToLiquidateCount() {
 
   if (desktopBadge) desktopBadge.classList.toggle('hidden', count === 0);
   if (mobileBadge) mobileBadge.classList.toggle('hidden', count === 0);
+}
+
+function getStatusBadgeColor(status) {
+  const map = {
+    Pending: 'bg-yellow-400',
+    Approved: 'bg-blue-500',
+    Rejected: 'bg-red-600',
+    ToLiquidate: 'bg-purple-500',
+    PendingValidation: 'bg-orange-500',
+    NeedsInfo: 'bg-orange-500',
+    Resubmitted: 'bg-indigo-500',
+    Closed: 'bg-green-600',
+    PendingCancel: 'bg-red-400',
+    Cancelled: 'bg-gray-400'
+  };
+  return map[status] || 'bg-gray-400';
+}
+
+function getPrimaryPanelForStatus(req) {
+  const status = req.status;
+  if (status === 'NeedsInfo' || status === 'Resubmitted') return 'clarification';
+  if (status === 'Approved') return 'received';
+  if (status === 'ToLiquidate') return 'liquidate';
+  if (status === 'PendingValidation') return 'liquidate';
+  if (status === 'Closed') {
+    return req.request_type === 'FundTransfer' ? 'received' : 'liquidate';
+  }
+  return null; // Pending, Cancelled, PendingCancel → pas de panel actif
+}
+
+function getEmptyStateMessage(status) {
+  if (status === 'Pending') return 'Waiting for admin approval.';
+  if (status === 'Cancelled') return 'This request has been cancelled.';
+  if (status === 'PendingCancel') return 'Cancellation requested — waiting for admin validation.';
+  return '';
+}
+
+function isCancelEligible(status) {
+  return status !== 'Closed' && status !== 'PendingCancel' && status !== 'Cancelled';
 }
 
 // Fonction pour compresser les images upload lors de la liquidation
@@ -2837,41 +2686,27 @@ function showPanel(action) {
   if (isSwitchingPanel) return;
   isSwitchingPanel = true;
 
-  // 🔥 Toujours repartir proprement
   hideAllPanels();
 
   const panel = document.getElementById(`panel-${action}`);
+  const modalBody = document.getElementById('modalBody');
 
   if (!panel) {
     isSwitchingPanel = false;
     return;
   }
 
-  // 🔥 Sécurité anti-conflit CSS
   panel.style.display = '';
   panel.classList.remove('hidden');
 
-  if (window.innerWidth < 768) {
-
-    const leftCol = document.getElementById('modalLeftCol');
-    const rightCol = document.getElementById('modalRightCol');
-
-    leftCol?.classList.add('mobile-hidden');
-
-    rightCol?.classList.remove('hidden');
-    rightCol?.style.removeProperty('display');
+  // 🔥 le chat gère son propre scroll interne
+  if (modalBody) {
+    modalBody.classList.toggle('chat-mode', action === 'clarification');
   }
 
   requestAnimationFrame(() => {
-
-    if (panel.scrollHeight > panel.clientHeight) {
-      panel.scrollTop = 0;
-    }
-
     isSwitchingPanel = false;
-
   });
-
 }
 
 
@@ -2902,14 +2737,11 @@ function autoSelectMobileAction(req) {
 /**
  * Ouvre le modal et prépare les données
  */
-function openModalFor(request_id) {
+
+ function openModalFor(request_id) {
   console.log("Opening modal for request_id:", request_id);
 
-  // ==============================
-  // CONTEXT
-  // ==============================
   currentRequestId = request_id;
-
   const req = requestsMap.get(request_id);
 
   if (!req) {
@@ -2917,251 +2749,93 @@ function openModalFor(request_id) {
     return;
   }
 
-// ==============================
-// CONVERSATION
-// ==============================
-const convoBox =
-  document.getElementById('clarificationConversation');
+  // ==============================
+  // HEADER
+  // ==============================
+  const badge = document.getElementById('modalStatusBadge');
+  badge.textContent = req.status || '';
+  badge.className = `px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusBadgeColor(req.status)}`;
 
-convoBox.innerHTML = '';
+  const displayAmount = (req.approved_amount ?? req.amount_requested) ?? 0;
+  document.getElementById('modalAmount').textContent = `${formatAmount(displayAmount)} PHP`;
+  document.getElementById('modalRequestorName').textContent = req.requestor_name || '';
 
-if (req.conversation?.length) {
+  const centers = [req.center_name, ...(req.other_centers || [])].filter(Boolean);
+  document.getElementById('modalCenter').textContent = centers.join(' • ') || '—';
+  document.getElementById('modalDateMeta').textContent = req.timestamp
+    ? new Date(req.timestamp).toLocaleDateString('en-US')
+    : '';
 
-  convoBox.classList.remove('hidden');
+  const paymentLabel =
+    req.payment_method === 'cash'   ? '💵 Cash' :
+    req.payment_method === 'cheque' ? '🧾 Check' :
+    req.payment_method === 'card'   ? '💳 Card' :
+    '—';
+  document.getElementById('modalPaymentMethod').textContent = paymentLabel;
 
-  req.conversation.forEach((msg) => {
+  document.getElementById('modalDescription').textContent = req.description || '';
 
-    const isAdmin =
-      msg.sender === 'admin';
+  // ==============================
+  // CONVERSATION (clarification)
+  // ==============================
+  const convoBox = document.getElementById('clarificationConversation');
+  convoBox.innerHTML = '';
 
-    // ROW
-    const row = document.createElement('div');
+  if (req.conversation?.length) {
+    req.conversation.forEach((msg) => {
+      const isAdmin = msg.sender === 'admin';
+      const row = document.createElement('div');
+      row.className = `flex items-start ${isAdmin ? 'justify-start' : 'justify-end'}`;
 
-    row.className = `
-      flex
-      items-start
-      ${isAdmin ? 'justify-start' : 'justify-end'}
-    `;
-
-    // BUBBLE
-    const bubble = document.createElement('div');
-
-bubble.className = `
-  chat-bubble text-sm leading-relaxed break-words animate-fade-in shadow-sm
-  ${isAdmin
-    ? 'bg-white text-gray-800 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
-    : 'bg-indigo-500 text-white rounded-[18px] rounded-br-[4px]'
-  }
-  px-4 py-2
-`;
-
-bubble.innerHTML = `
-  <div class="text-[10px] opacity-60 mb-1">${isAdmin ? 'Father' : 'You'}</div>
-  <div class="whitespace-pre-wrap break-words">${msg.message}</div>
-`;
-
-    row.appendChild(bubble);
-
-    convoBox.appendChild(row);
-
-  });
-
-  // scroll bottom
-  setTimeout(() => {
-    requestAnimationFrame(() => {
-      convoBox.scrollTop = convoBox.scrollHeight;
+      const bubble = document.createElement('div');
+      bubble.className = `
+        chat-bubble text-sm leading-relaxed break-words animate-fade-in shadow-sm
+        ${isAdmin
+          ? 'bg-white text-gray-800 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
+          : 'bg-indigo-500 text-white rounded-[18px] rounded-br-[4px]'}
+        px-4 py-2
+      `;
+      bubble.innerHTML = `
+        <div class="text-[10px] opacity-60 mb-1">${isAdmin ? 'Father' : 'You'}</div>
+        <div class="whitespace-pre-wrap break-words">${msg.message}</div>
+      `;
+      row.appendChild(bubble);
+      convoBox.appendChild(row);
     });
-  }, 30);
 
-} else {
-
-  // EMPTY STATE
-  convoBox.classList.remove('hidden');
-
-  convoBox.innerHTML = `
-    <div class="text-xs text-gray-400 text-center py-8">
-      No conversation yet
-    </div>
-  `;
-}
-
-// ==============================
-// ACTION BUTTON
-// ==============================
-const clarificationBtn =
-  document.getElementById('clarificationActionBtn');
-
-const needsClarification =
-  req.status === 'NeedsInfo' ||
-  req.status === 'Resubmitted';
-
-if (needsClarification) {
-
-  clarificationBtn?.classList.remove('hidden');
-
-  // Reset propre (toujours repartir de neutre)
-  clarificationBtn?.classList.remove(
-    'bg-orange-50',
-    'border-orange-300',
-    'ring-1',
-    'ring-orange-200',
-    'animate-pulse'
-  );
-
-  // 🔥 Orange + clignotement UNIQUEMENT quand un nouveau message admin attend une réponse
-  if (req.status === 'NeedsInfo') {
-    clarificationBtn?.classList.add(
-      'bg-orange-50',
-      'border-orange-300',
-      'ring-1',
-      'ring-orange-200',
-      'animate-pulse'
-    );
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        convoBox.scrollTop = convoBox.scrollHeight;
+      });
+    }, 30);
+  } else {
+    convoBox.innerHTML = `<div class="text-xs text-gray-400 text-center py-8">No conversation yet</div>`;
   }
 
-  // sinon (Resubmitted = déjà répondu, en attente de l'admin) → bouton reste normal
-
-} else {
-
-  clarificationBtn?.classList.add('hidden');
-
-  clarificationBtn?.classList.remove(
-    'bg-orange-50',
-    'border-orange-300',
-    'ring-1',
-    'ring-orange-200',
-    'animate-pulse'
-  );
-}
-
-// ==============================
-// RESET PANELS
-// ==============================
-hideAllPanels();
-
-// ==============================
-// RESET MOBILE LAYOUT
-// ==============================
-document
-  .getElementById('modalLeftCol')
-  ?.classList.remove('mobile-hidden');
-
-document
-  .getElementById('modalRightCol')
-  ?.classList.add('hidden');
-
-  clarificationBtn?.classList.remove(
-  'opacity-50',
-  'opacity-60',
-  'opacity-70'
-);
-
-  // ==============================
-  // RESET INPUT
-  // ==============================
-  const input = document.getElementById('clarificationInput');
-  if (input) input.value = '';
-
-
-  const clarificationSubmitBtn =
-  document.getElementById('clarificationSubmitBtn');
+  const clarificationInput = document.getElementById('clarificationInput');
+  const clarificationSubmitBtn = document.getElementById('clarificationSubmitBtn');
+  if (clarificationInput) clarificationInput.value = '';
 
   if (req.status === 'Resubmitted') {
-
-    input?.classList.add('hidden');
-
+    clarificationInput?.classList.add('hidden');
     clarificationSubmitBtn?.classList.add('hidden');
-
   } else {
-
-    input?.classList.remove('hidden');
-
+    clarificationInput?.classList.remove('hidden');
     clarificationSubmitBtn?.classList.remove('hidden');
   }
 
-  // Gestion affichage bouton validate
-const validateCard = document.querySelector('[data-action="validate"]');
-const liquidateCard = document.querySelector('[data-action="liquidate"]');
-
-// RESET
-validateCard?.classList.add('hidden');
-liquidateCard?.classList.add('hidden');
-
-// AFFICHAGE PROPRE
-if (
-  req.status === 'ToLiquidate' ||
-  req.status === 'Closed' ||
-  req.status === 'PendingValidation'
-) {
-  liquidateCard?.classList.remove('hidden');
-}
-
-if (req.status === 'Closed') {
-  liquidateCard?.classList.add('opacity-50');
-} else {
-  liquidateCard?.classList.remove('opacity-50');
-}
-
-if (req.status === 'PendingValidation') {
-  // rien pour CC
-}
-
-  currentRequestId = request_id;
+  // ==============================
+  // RESET SCAN
+  // ==============================
   capturedPhotos = [];
   scanningMode = false;
-
-    const scanStatus = document.getElementById('scanStatus');
-    if (scanStatus) scanStatus.classList.add('hidden');
+  const scanStatus = document.getElementById('scanStatus');
+  if (scanStatus) scanStatus.classList.add('hidden');
   updateReceiptsUI(req);
 
-  // ---------- Infos générales ----------
-
-    const modalRequestId = document.getElementById('modalRequestId');
-    const modalCenter = document.getElementById('modalCenter');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalDescription = document.getElementById('modalDescription');
-    const modalPaymentMethod = document.getElementById('modalPaymentMethod');
-
-    modalRequestId.textContent = request_id;
-   const centers = [
-      req.center_name,
-      ...(req.other_centers || [])
-    ].filter(Boolean);
-
-    modalCenter.textContent = centers.join(" • ");
-
-    const displayAmount = (req.approved_amount ?? req.amount_requested) ?? 0;
-    modalTitle.textContent = `${req.requestor_name} — ${formatAmount(displayAmount)} PHP`;
-
-    modalDescription.textContent = req.description || '';
-
-    const paymentLabel =
-      req.payment_method === 'cash'   ? '(💵 Cash)' :
-      req.payment_method === 'cheque' ? '(🧾 Check)' :
-      req.payment_method === 'card'   ? '(💳 Card)' :
-      '—';
-
-    modalPaymentMethod.textContent = paymentLabel;
-
-    // -------------------------
-    // Texte du bouton "received" selon payment method
-    // -------------------------
-    const receivedTitle = document.getElementById('receivedActionTitle');
-
-    if (receivedTitle) {
-      if (req.payment_method === 'cheque') {
-        receivedTitle.textContent = '🧾 Check received';
-      } else {
-        receivedTitle.textContent = '💵 Cash received';
-      }
-    }
-
-
-  // ---------- Panel Annuler ----------
-  document.getElementById('cancelRequestorNamePanel').value = req.requestor_name;
-  document.getElementById('cancelReason').value = '';
-
-  // ---------- Panel Argent reçu ----------
+  // ==============================
+  // PANEL RECEIVED
+  // ==============================
   const receivedPanel = document.getElementById('panel-received');
   const receivedInputs = [
     document.getElementById('receivedAmount'),
@@ -3171,15 +2845,17 @@ if (req.status === 'PendingValidation') {
     document.getElementById('confirmReceivedBtn')
   ];
 
-// 🔥 Pré-remplissage : montant validé par l'admin + nom du CC (modifiable)
-      receivedInputs[0].value = req.amount_received ?? req.approved_amount ?? '';
-      receivedInputs[1].value = req.received_at
-        ? req.received_at.slice(0, 10)
-        : new Date().toISOString().slice(0, 10);
+  receivedInputs[0].value = req.amount_received ?? req.approved_amount ?? '';
+  receivedInputs[1].value = req.received_at
+    ? req.received_at.slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+  receivedInputs[2].value = req.received_name ?? req.requestor_name ?? '';
+  receivedInputs[3].checked = !!req.received_confirmed;
 
-      receivedInputs[2].value = req.received_name ?? req.requestor_name ?? '';
-      receivedInputs[3].checked = !!req.received_confirmed;
-
+  const receivedTitle = document.getElementById('receivedPanelTitle');
+  if (receivedTitle) {
+    receivedTitle.textContent = req.payment_method === 'cheque' ? '🧾 Check received' : '💵 Cash received';
+  }
 
   if (req.received_confirmed || req.status !== 'Approved') {
     receivedInputs.forEach(el => el.disabled = true);
@@ -3189,159 +2865,92 @@ if (req.status === 'PendingValidation') {
     receivedPanel.classList.remove('opacity-50');
   }
 
-// ---------- Panel Liquidation ----------
-      const liqPanel = document.getElementById('panel-liquidate');
+  // ==============================
+  // PANEL LIQUIDATION
+  // ==============================
+  const liqPanel = document.getElementById('panel-liquidate');
+  const liqSpentInput = document.getElementById('liqSpent');
+  const liqReturnedInput = document.getElementById('liqAmount');
+  const liqReceiptsInput = document.getElementById('liqReceipts');
+  const liqNoteInput = document.getElementById('liqNote');
+  const liqSubmitBtn = document.getElementById('liqSubmitBtn');
 
-      const liqSpentInput = document.getElementById('liqSpent');
-      const liqReturnedInput = document.getElementById('liqAmount');
-      const liqReceiptsInput = document.getElementById('liqReceipts');
-      const liqNoteInput = document.getElementById('liqNote');
-      const liqSubmitBtn = document.getElementById('liqSubmitBtn');
+  liqSpentInput.value = req.amount_spent ?? '';
+  liqReturnedInput.value = req.returned_amount ?? '';
+  liqNoteInput.value = req.liquidation_note ?? '';
+  liqReceiptsInput.value = '';
 
-      const liqInputs = [
-        liqSpentInput,
-        liqReturnedInput,
-        liqReceiptsInput,
-        liqNoteInput,
-        liqSubmitBtn
-      ];
-
-      // Remplir les champs existants (trace)
-      liqSpentInput.value = req.amount_spent ?? '';
-      liqReturnedInput.value = req.returned_amount ?? '';
-      liqNoteInput.value = req.liquidation_note ?? '';
-      liqReceiptsInput.value = '';
-
-  // Verrouillage selon statut
   const isLocked = req.status === 'Closed' || req.status === 'Cancelled';
 
   if (req.status !== 'ToLiquidate' || isLocked) {
-    // 🔒 lecture seule
-    liqSpentInput.disabled = true;
-    liqReturnedInput.disabled = true;
-    liqReceiptsInput.disabled = true;
-    liqNoteInput.disabled = true;
-    liqSubmitBtn.disabled = true;
-
+    [liqSpentInput, liqReturnedInput, liqReceiptsInput, liqNoteInput, liqSubmitBtn].forEach(el => el.disabled = true);
     liqPanel.classList.add('opacity-50');
-
     galleryBtn.disabled = true;
     cameraBtn.disabled = true;
-
     galleryBtn.classList.add('opacity-50', 'cursor-not-allowed');
     cameraBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
-    // 🎨 style gris uniquement si Closed
     if (isLocked) {
       liqSpentInput.classList.add('bg-gray-100', 'text-gray-500');
       liqReturnedInput.classList.add('bg-gray-100', 'text-gray-500');
       liqNoteInput.classList.add('bg-gray-100', 'text-gray-500');
-    }
-
-    // 🚫 cacher submit si Closed
-    if (isLocked) {
       liqSubmitBtn.classList.add('hidden');
     }
-
   } else {
-    // ✅ mode édition
-    liqSpentInput.disabled = false;
-    liqReturnedInput.disabled = false;
-    liqReceiptsInput.disabled = false;
-    liqNoteInput.disabled = false;
-    liqSubmitBtn.disabled = false;
-
+    [liqSpentInput, liqReturnedInput, liqReceiptsInput, liqNoteInput, liqSubmitBtn].forEach(el => el.disabled = false);
     liqPanel.classList.remove('opacity-50');
-
     galleryBtn.disabled = false;
     cameraBtn.disabled = false;
-
     galleryBtn.classList.remove('opacity-50', 'cursor-not-allowed');
     cameraBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-
     liqSpentInput.classList.remove('bg-gray-100', 'text-gray-500');
     liqReturnedInput.classList.remove('bg-gray-100', 'text-gray-500');
     liqNoteInput.classList.remove('bg-gray-100', 'text-gray-500');
-
     liqSubmitBtn.classList.remove('hidden');
   }
 
-// ---------- Panel Annuler ----------
-const cancelPanel = document.getElementById('panel-cancel');
-const cancelInputs = cancelPanel.querySelectorAll('input, textarea, button');
+  // ==============================
+  // PANEL CANCEL
+  // ==============================
+  document.getElementById('cancelRequestorNamePanel').value = req.requestor_name;
+  document.getElementById('cancelReason').value = '';
 
-// 🔒 états bloqués
-if (isLocked) {
-  cancelInputs.forEach(el => el.disabled = true);
-  cancelPanel.classList.add('opacity-50');
-} else {
-  cancelInputs.forEach(el => el.disabled = false);
-  cancelPanel.classList.remove('opacity-50');
-}
-
-
-// ---------- Ouvrir le modal ----------
-const modal = document.getElementById('modal');
-modal.classList.remove('hidden');
-document.body.style.overflow = 'hidden';
-
-
-// ---------- Gestion des action cards (gauche) ----------
-document.querySelectorAll('#actionList .action-card').forEach(card => {
-  const action = card.dataset.action;
-
-  const isCancelled = req.status === 'Cancelled';
-
-  const allowed =
-    (action === 'received'  && req.status === 'Approved') ||
-    (action === 'liquidate' && req.status === 'ToLiquidate') ||
-    (action === 'validate'  && req.status === 'PendingValidation') ||
-    (action === 'cancel'    && req.status !== 'Closed' && req.status !== 'PendingCancel');
-
-    if (
-  req.status === 'NeedsInfo' ||
-  req.status === 'Resubmitted'
-) {
-
-  document
-    .getElementById('clarificationActionBtn')
-    ?.classList.remove('opacity-40');
-
-}
-
-  // 👉 toujours cliquable (lecture seule possible)
-  card.classList.remove('pointer-events-none');
-
-  // 🔥 CAS PRIORITAIRE → Cancelled
-  if (isCancelled) {
-    card.classList.add('opacity-40');
-    return;
-  }
-
-if (!allowed) {
-
-  // 🔥 Exception clarification quand Father attend une réponse
-  if (
-    action === 'clarification' &&
-    (req.status === 'NeedsInfo' || req.status === 'Resubmitted')
-  ) {
-
-    card.classList.remove('opacity-40');
-
+  const cancelPanel = document.getElementById('panel-cancel');
+  const cancelInputs = cancelPanel.querySelectorAll('input, textarea, button');
+  if (isLocked) {
+    cancelInputs.forEach(el => el.disabled = true);
+    cancelPanel.classList.add('opacity-50');
   } else {
-
-    card.classList.add('opacity-40');
-    card.classList.remove('is-active');
-
+    cancelInputs.forEach(el => el.disabled = false);
+    cancelPanel.classList.remove('opacity-50');
   }
 
-} else {
+  // ==============================
+  // PANEL EMPTY
+  // ==============================
+  document.getElementById('emptyStateMessage').textContent = getEmptyStateMessage(req.status);
 
-  card.classList.remove('opacity-40');
+  // ==============================
+  // ACTION SECONDAIRE (Cancel/Reject)
+  // ==============================
+  const secondaryBar = document.getElementById('modalSecondaryAction');
+  if (isCancelEligible(req.status)) {
+    secondaryBar.classList.remove('hidden');
+  } else {
+    secondaryBar.classList.add('hidden');
+  }
 
-}
-});
+  // ==============================
+  // OUVERTURE DIRECTE DU PANEL PRINCIPAL
+  // ==============================
+  const primaryPanel = getPrimaryPanelForStatus(req);
+  showPanel(primaryPanel || 'empty');
 
+  // ==============================
+  // OUVRIR LE MODAL
+  // ==============================
+  document.getElementById('modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
 }
 
 /**
@@ -3349,23 +2958,10 @@ if (!allowed) {
  */
 function closeModal() {
 
-  // 🔄 Reset vue mobile
-  document
-    .getElementById('modalLeftCol')
-    ?.classList.remove('mobile-hidden');
-
-  document
-    .getElementById('modalRightCol')
-    ?.classList.add('hidden');
-
   // 🔄 Reset panels
   hideAllPanels();
 
-  // 🔄 Reset action sélectionnée
-  if (activeActionCard) {
-    activeActionCard.classList.remove('is-active');
-    activeActionCard = null;
-  }
+  document.getElementById('modalBody')?.classList.remove('chat-mode');
 
   // 🔄 Reset scan
   scanningMode = false;
@@ -3391,54 +2987,7 @@ function closeModal() {
     document.getElementById('modalOverlay').addEventListener('click', closeModal);
     window.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-    document.querySelector('#actionList').addEventListener('click', e => {
-      const card = e.target.closest('.action-card');
-      if (!card || card === activeActionCard) return;
-      if (card.classList.contains('pointer-events-none')) return;
 
-
-      // retire l'ancienne sélection
-      if (activeActionCard) {
-        activeActionCard.classList.remove('is-active');
-      }
-
-      // active la nouvelle
-      card.classList.add('is-active');
-      activeActionCard = card;
-
-      showPanel(card.dataset.action);
-    });
-
-
-
-/* ==============================
-   Handlers Retour pour les panels
-============================= */
-['receivedBack', 'liqCancel', 'cancelBack', 'validateBack'].forEach(id => {
-  const btn = document.getElementById(id);
-  if (!btn) return;
-
-  btn.addEventListener('click', () => {
-
-    hideAllPanels();
-
-    if (window.innerWidth < 768) {
-
-      document
-        .getElementById('modalLeftCol')
-        ?.classList.remove('mobile-hidden');
-
-      document
-        .getElementById('modalRightCol')
-        ?.classList.add('hidden');
-
-      if (activeActionCard) {
-        activeActionCard.classList.remove('is-active');
-        activeActionCard = null;
-      }
-    }
-  });
-});
 
 
 /* ==============================
