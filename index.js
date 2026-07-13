@@ -16,6 +16,15 @@ const DRIVE_PARENT_ID = '0AEg5ur7DTXwJUk9PVA'; // dossier Anak Requests sur driv
 // Pour stocker les connexions SSE des admins
 let sseClients = [];
 
+// 🧼 Nettoie et valide un tableau de chaînes (display_names, saved_descriptions)
+function sanitizeStringArray(arr, { maxItems = 20, maxLen = 200 } = {}) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map(v => (typeof v === 'string' ? v.trim() : ''))
+    .filter(v => v.length > 0 && v.length <= maxLen)
+    .slice(0, maxItems);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -120,10 +129,10 @@ async function authenticate(req, res, next) {
     const user = data.user;
 
     const { data: profile, error: profErr } = await supabaseService
-      .from('profiles')
-      .select('role, center_name, center_id, mail, "Name", permissions, is_active')
-      .eq('id', user.id)
-      .maybeSingle();
+          .from('profiles')
+          .select('role, center_name, center_id, mail, "Name", permissions, is_active, display_names, saved_descriptions, profile_label')
+          .eq('id', user.id)
+          .maybeSingle();
 
     if (profErr) {
       return res.status(500).json({ error: 'Erreur récupération profil' });
@@ -139,15 +148,18 @@ async function authenticate(req, res, next) {
 
     req.user = user;
     req.profile = {
-      userId: user.id,
-      role: profile.role,
-      center: (profile.center_name || '').trim().toUpperCase(),
-      center_id: profile.center_id,
-      name: profile.Name,
-      email: profile.mail,
-      permissions: profile.permissions || {},
-      is_active: profile.is_active !== false
-    };
+          userId: user.id,
+          role: profile.role,
+          center: (profile.center_name || '').trim().toUpperCase(),
+          center_id: profile.center_id,
+          name: profile.Name,
+          email: profile.mail,
+          permissions: profile.permissions || {},
+          is_active: profile.is_active !== false,
+          display_names: Array.isArray(profile.display_names) ? profile.display_names : [],
+          saved_descriptions: Array.isArray(profile.saved_descriptions) ? profile.saved_descriptions : [],
+          profile_label: profile.profile_label || null
+        };
 
     next();
 
@@ -279,7 +291,10 @@ app.get('/profile', authenticate, async (req, res) => {
         role: req.profile.role,
         center_name: req.profile.center,
         permissions: req.profile.permissions,
-        is_active: req.profile.is_active
+        is_active: req.profile.is_active,
+        display_names: req.profile.display_names,
+        saved_descriptions: req.profile.saved_descriptions,
+        profile_label: req.profile.profile_label
       });
   } catch (err) {
     console.error('GET /profile error:', err);
@@ -329,7 +344,7 @@ app.get('/centers', async (req, res) => {
   // =====================
 
     // GET USERS
-    app.get('/admin/users', authenticate, async (req, res) => {
+app.get('/admin/users', authenticate, async (req, res) => {
       try {
         if (req.profile.role !== 'Admin') {
           return res.status(403).json({ error: 'Forbidden' });
@@ -337,7 +352,7 @@ app.get('/centers', async (req, res) => {
 
         const { data, error } = await supabaseService
           .from('profiles')
-          .select('id, mail, "Name", role, center_name, permissions, is_active')
+          .select('id, mail, "Name", role, center_name, permissions, is_active, display_names, saved_descriptions, profile_label')
           .eq('is_active', true)   // ← ajoute cette ligne
           .order('"Name"');
 
@@ -359,7 +374,10 @@ app.get('/centers', async (req, res) => {
           return res.status(403).json({ error: 'Forbidden' });
         }
 
-        const { email, password, name, role, center_name, permissions } = req.body;
+        const { email, password, name, role, center_name, permissions, display_names, profile_label } = req.body;
+
+        const cleanDisplayNames = sanitizeStringArray(display_names, { maxItems: 10, maxLen: 50 });
+        const cleanLabel = (typeof profile_label === 'string' ? profile_label.trim() : '') || null;
 
         // =====================
         // 1. CREATE AUTH USER
@@ -378,7 +396,7 @@ app.get('/centers', async (req, res) => {
         // =====================
         // 2. CREATE PROFILE
         // =====================
-        const { error: profileError } = await supabaseService
+const { error: profileError } = await supabaseService
           .from('profiles')
           .insert({
             id: user.user.id,
@@ -387,7 +405,10 @@ app.get('/centers', async (req, res) => {
             role: role || 'Requester',
             center_name: center_name || '',
             permissions: permissions || { scope: 'OWN' },
-            is_active: true
+            is_active: true,
+            display_names: cleanDisplayNames,
+            saved_descriptions: [],
+            profile_label: cleanLabel
           });
 
         if (profileError) {
@@ -409,17 +430,27 @@ app.get('/centers', async (req, res) => {
       try {
         if (req.profile.role !== 'Admin') return res.status(403);
 
-        const { role, center_name, permissions, is_active, name } = req.body;
+const { role, center_name, permissions, is_active, name, display_names, profile_label } = req.body;
+
+        const updateData = {
+          role,
+          center_name,
+          permissions,
+          is_active,
+          Name: name
+        };
+
+        // 🔥 champs optionnels : on ne les touche que si envoyés explicitement
+        if (display_names !== undefined) {
+          updateData.display_names = sanitizeStringArray(display_names, { maxItems: 10, maxLen: 50 });
+        }
+        if (profile_label !== undefined) {
+          updateData.profile_label = (typeof profile_label === 'string' ? profile_label.trim() : '') || null;
+        }
 
         const { error } = await supabaseService
           .from('profiles')
-          .update({
-            role,
-            center_name,
-            permissions,
-            is_active,
-            Name: name
-          })
+          .update(updateData)
           .eq('id', req.params.id);
 
         if (error) throw error;
@@ -997,13 +1028,96 @@ function notifyAdmins(newRequest) {
   });
 }
 
+
+// =========================================
+// SAVED DESCRIPTIONS (templates personnels)
+// =========================================
+
+app.post('/profile/descriptions', authenticate, async (req, res) => {
+  try {
+    const description = (req.body.description || '').toString().trim();
+
+    if (!description) {
+      return res.status(400).json({ error: 'Description required' });
+    }
+    if (description.length > 200) {
+      return res.status(400).json({ error: 'Description too long (max 200 characters)' });
+    }
+
+    const current = req.profile.saved_descriptions || [];
+
+    if (current.includes(description)) {
+      return res.status(400).json({ error: 'This description is already saved' });
+    }
+    if (current.length >= 20) {
+      return res.status(400).json({ error: 'Maximum 20 saved descriptions reached' });
+    }
+
+    const updated = [...current, description];
+
+    const { error } = await supabaseService
+      .from('profiles')
+      .update({ saved_descriptions: updated })
+      .eq('id', req.user.id);
+
+    if (error) throw error;
+
+    res.json({ success: true, saved_descriptions: updated });
+
+  } catch (err) {
+    console.error('POST /profile/descriptions error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/profile/descriptions', authenticate, async (req, res) => {
+  try {
+    const description = (req.body.description || '').toString().trim();
+
+    if (!description) {
+      return res.status(400).json({ error: 'Description required' });
+    }
+
+    const current = req.profile.saved_descriptions || [];
+    const updated = current.filter(d => d !== description);
+
+    const { error } = await supabaseService
+      .from('profiles')
+      .update({ saved_descriptions: updated })
+      .eq('id', req.user.id);
+
+    if (error) throw error;
+
+    res.json({ success: true, saved_descriptions: updated });
+
+  } catch (err) {
+    console.error('DELETE /profile/descriptions error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // =========================================
 // ROUTES DEMANDES
 // =========================================
 
 app.post('/requests', authenticate, async (req, res) => {
   try {
-    const requestor_name = req.profile.name || req.profile.email;
+    // 🔥 Compte partagé (display_names configuré) → le client choisit son prénom
+    // Sinon → comportement inchangé, le nom vient du profil (sécurisé)
+    let requestor_name = req.profile.name || req.profile.email;
+
+    const allowedDisplayNames = req.profile.display_names || [];
+    if (allowedDisplayNames.length > 0) {
+      const submittedName = (req.body.requestor_name || '').toString().trim();
+      if (!allowedDisplayNames.includes(submittedName)) {
+        return res.status(400).json({
+          error: 'Please select who is submitting this request.',
+          allowed: allowedDisplayNames
+        });
+      }
+      requestor_name = submittedName;
+    }
     const amount_requested = Number(req.body.amount_requested);
     const description = (req.body.description || '').toString().trim();
     const payment_method = (req.body.payment_method || '').toString().trim();
