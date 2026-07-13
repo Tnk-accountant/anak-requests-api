@@ -487,9 +487,21 @@
           >
         </div>
 
-        <!-- GRID -->
-        <div id="usersGrid"
-          class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+<!-- TABLE -->
+        <div class="overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
+          <table class="min-w-full text-left border-collapse text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="py-3 pl-5 pr-3 text-gray-500 font-medium text-xs uppercase">Name</th>
+                <th class="py-3 px-3 text-gray-500 font-medium text-xs uppercase">Email</th>
+                <th class="py-3 px-3 text-gray-500 font-medium text-xs uppercase">Role</th>
+                <th class="py-3 px-3 text-gray-500 font-medium text-xs uppercase">Center(s)</th>
+                <th class="py-3 px-3 text-gray-500 font-medium text-xs uppercase">Label</th>
+                <th class="py-3 px-3 text-gray-500 font-medium text-xs uppercase text-center">Active</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody" class="divide-y divide-gray-100"></tbody>
+          </table>
         </div>
 
       </div>
@@ -799,7 +811,85 @@ CHAT LAYOUT
       </div>
     </div>
 
+<!-- EDIT USER MODAL -->
+<div id="editUserModal"
+  class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
 
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
+
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">Edit User</h3>
+      <button id="closeEditUserModal" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+
+    <div class="flex flex-col gap-3">
+
+      <input type="hidden" id="editUserId">
+
+      <div>
+        <label class="text-xs text-gray-500 block mb-1">Name</label>
+        <input id="editUserName" type="text"
+          class="border border-gray-200 rounded-lg px-3 py-2 w-full">
+      </div>
+
+      <div id="editUserEmailDisplay" class="text-xs text-gray-400"></div>
+
+      <div>
+        <label class="text-xs text-gray-500 block mb-1">Role</label>
+        <select id="editUserRole" class="border border-gray-200 rounded-lg px-3 py-2 w-full">
+          <option value="Requester">Requester</option>
+          <option value="CC">CC</option>
+          <option value="Admin">Admin</option>
+        </select>
+      </div>
+
+      <div id="editUserCentersContainer" class="hidden">
+        <label class="text-xs text-gray-500 block mb-1">Allowed centers</label>
+        <input id="editUserCenters" type="text" placeholder="Ex: RB1, RB5"
+          class="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm">
+      </div>
+
+      <div class="border-t border-gray-100 pt-3">
+        <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+          <input type="checkbox" id="editUserSharedToggle">
+          Shared account (multiple people use this login)
+        </label>
+
+        <div id="editUserSharedNamesContainer" class="hidden mt-2">
+          <input id="editUserSharedNames" type="text" placeholder="Ex: Maxence, Gabriel"
+            class="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm">
+          <p class="text-[11px] text-gray-400 mt-1">
+            Whoever uses this account will pick their name before submitting a request.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-xs text-gray-500 block mb-1">Custom label (optional badge)</label>
+        <input id="editUserLabel" type="text" placeholder="Ex: Purchasing"
+          class="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm">
+      </div>
+
+      <label class="flex items-center gap-2 text-sm mt-1">
+        <input type="checkbox" id="editUserActive">
+        Active account
+      </label>
+
+      <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+        <button id="editUserDeleteBtn" class="text-red-500 text-sm hover:underline">
+          Delete user
+        </button>
+
+        <button id="editUserSaveBtn"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-sm">
+          Save changes
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
 
 <!-- CHANGEMENT : BIENVENUE DANS LES ARCHIVES -->
 
@@ -1653,234 +1743,186 @@ async function loadUsers() {
     allUsers = users;
 
     updateUsersStats(users);
-
-    const grid = document.getElementById('usersGrid');
-    grid.innerHTML = '';
-
-    users.forEach(u => {
-
-      const card = document.createElement('div');
-      card.className = `
-        bg-white border border-gray-200 rounded-2xl p-4 shadow-sm
-        hover:shadow-md transition flex flex-col gap-3
-      `;
-
-      card.innerHTML = `
-        <div class="flex justify-between items-start gap-2">
-          <div class="flex-1 min-w-0">
-            <input class="nameInput font-semibold text-gray-800 text-sm w-full mb-1"
-              value="${u.Name || ''}">
-            <div class="flex flex-wrap gap-1">
-              ${getRoleBadgeHtml(u.role)}
-              ${getLabelBadgeHtml(u.profile_label)}
-            </div>
-          </div>
-          <input type="checkbox" class="activeToggle ml-2 mt-1"
-            ${u.is_active ? 'checked' : ''} title="Active">
-        </div>
-
-        <div class="emailText text-xs text-gray-400">${u.mail}</div>
-
-        <select class="roleSelect border px-2 py-1 rounded text-sm">
-          <option ${u.role === 'Requester' ? 'selected' : ''}>Requester</option>
-          <option ${u.role === 'CC' ? 'selected' : ''}>CC</option>
-          <option ${u.role === 'Admin' ? 'selected' : ''}>Admin</option>
-        </select>
-
-        <div class="centersContainer hidden">
-          <label class="text-xs text-gray-500 block mb-1">Allowed centers</label>
-          <input
-            class="centersInput border px-2 py-1 rounded text-sm w-full"
-            placeholder="Ex: RB1, RB5"
-          >
-        </div>
-
-        <div class="border-t border-gray-100 pt-2 mt-1">
-
-          <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
-            <input type="checkbox" class="sharedAccountToggle">
-            Shared account (multiple people use this login)
-          </label>
-
-          <div class="sharedNamesContainer hidden mt-2">
-            <input
-              class="sharedNamesInput border px-2 py-1 rounded text-sm w-full"
-              placeholder="Ex: Maxence, Gabriel"
-            >
-            <p class="text-[11px] text-gray-400 mt-1">
-              Whoever uses this account will pick their name before submitting a request.
-            </p>
-          </div>
-
-          <div class="mt-2">
-            <label class="text-xs text-gray-500 block mb-1">Custom label (optional badge)</label>
-            <input
-              class="labelInput border px-2 py-1 rounded text-sm w-full"
-              placeholder="Ex: Purchasing"
-            >
-          </div>
-
-        </div>
-
-        <div class="flex justify-between items-center mt-2">
-          <button class="saveBtn bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 text-sm">
-            Save
-          </button>
-
-          <button class="deleteBtn text-red-500 text-sm hover:underline">
-            Delete
-          </button>
-        </div>
-      `;
-
-      const roleSelect = card.querySelector('.roleSelect');
-      const centersContainer = card.querySelector('.centersContainer');
-      const centersInput = card.querySelector('.centersInput');
-
-      const sharedToggle = card.querySelector('.sharedAccountToggle');
-      const sharedNamesContainer = card.querySelector('.sharedNamesContainer');
-      const sharedNamesInput = card.querySelector('.sharedNamesInput');
-      const labelInput = card.querySelector('.labelInput');
-
-      function updateCentersVisibility() {
-        const isCC = roleSelect.value === 'CC';
-        centersContainer.classList.toggle('hidden', !isCC);
-        if (!isCC) centersInput.value = '';
-      }
-
-      updateCentersVisibility();
-
-      if (u.permissions?.allowed_centers?.length) {
-        centersInput.value = u.permissions.allowed_centers.join(', ');
-      }
-
-      roleSelect.addEventListener('change', updateCentersVisibility);
-
-      // 🔥 Compte partagé (display_names)
-      labelInput.value = u.profile_label || '';
-
-      if (u.display_names?.length) {
-        sharedToggle.checked = true;
-        sharedNamesContainer.classList.remove('hidden');
-        sharedNamesInput.value = u.display_names.join(', ');
-      }
-
-      sharedToggle.addEventListener('change', () => {
-        sharedNamesContainer.classList.toggle('hidden', !sharedToggle.checked);
-        if (!sharedToggle.checked) sharedNamesInput.value = '';
-      });
-
-      const saveBtn = card.querySelector('.saveBtn');
-      const deleteBtn = card.querySelector('.deleteBtn');
-
-      saveBtn.onclick = async () => {
-        saveBtn.textContent = "Saving...";
-        saveBtn.disabled = true;
-
-        try {
-
-          const name = card.querySelector('.nameInput').value;
-          const role = card.querySelector('.roleSelect').value;
-          const active = card.querySelector('.activeToggle').checked;
-
-          const centersRaw = card.querySelector('.centersInput').value;
-          const selectedCenters = centersRaw
-            .split(',')
-            .map(c => c.trim().toUpperCase())
-            .filter(c => c);
-
-          const displayNamesRaw = sharedNamesInput.value;
-          const displayNames = sharedToggle.checked
-            ? displayNamesRaw.split(',').map(n => n.trim()).filter(n => n)
-            : [];
-
-          const profileLabel = labelInput.value.trim();
-
-          const payload = {
-            name,
-            role,
-            is_active: active,
-            display_names: displayNames,
-            profile_label: profileLabel,
-            permissions: {
-              scope:
-                role === 'Admin'
-                  ? 'ALL'
-                  : role === 'CC'
-                    ? 'CENTER'
-                    : 'OWN',
-
-              allowed_centers:
-                role === 'CC'
-                  ? selectedCenters
-                  : [],
-
-              can_create_for_other_centers:
-                role === 'Admin' ||
-                role === 'Requester'
-            }
-          };
-
-          const res = await fetch(
-            `${API_URL}/admin/users/${u.id}`,
-            {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              credentials: 'include',
-              body: JSON.stringify(payload)
-            }
-          );
-
-          if (!res.ok) {
-            throw new Error("Update failed");
-          }
-
-          notify("User updated", "success");
-          await loadUsers();
-
-        } catch (err) {
-
-          console.error(err);
-          notify("Error updating user", "error");
-
-        } finally {
-
-          saveBtn.textContent = "Save";
-          saveBtn.disabled = false;
-
-        }
-      };
-
-      deleteBtn.onclick = async () => {
-
-        if (!confirm("Delete this user?")) return;
-
-        await fetch(
-          `${API_URL}/admin/users/${u.id}`,
-          {
-            method: 'DELETE',
-            credentials: 'include'
-          }
-        );
-
-        card.remove();
-        notify("User deleted", "info");
-        updateUsersStats(allUsers.filter(x => x.id !== u.id));
-      };
-
-      grid.appendChild(card);
-
-    });
+    renderUsersTable(users);
 
   } catch (err) {
-
     console.error(err);
     notify("Error loading users", "error");
-
   }
 }
+
+function renderUsersTable(users) {
+  const tbody = document.getElementById('usersTableBody');
+  tbody.innerHTML = '';
+
+  users.forEach(u => {
+    const tr = document.createElement('tr');
+    tr.dataset.userId = u.id;
+    tr.className = 'hover:bg-gray-50 cursor-pointer transition';
+
+    const centers = u.role === 'CC'
+      ? (u.permissions?.allowed_centers?.join(', ') || u.center_name || '—')
+      : (u.role === 'Admin' || u.role === 'Requester' ? 'All centers' : '—');
+
+    tr.innerHTML = `
+      <td class="py-2.5 pl-5 pr-3 font-medium text-gray-800">${u.Name || '—'}</td>
+      <td class="py-2.5 px-3 text-gray-500 text-xs">${u.mail}</td>
+      <td class="py-2.5 px-3">${getRoleBadgeHtml(u.role)}</td>
+      <td class="py-2.5 px-3 text-gray-600 text-xs">${centers}</td>
+      <td class="py-2.5 px-3">${getLabelBadgeHtml(u.profile_label) || '<span class="text-gray-300 text-xs">—</span>'}</td>
+      <td class="py-2.5 px-3 text-center">
+        ${u.is_active
+          ? '<span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>'
+          : '<span class="w-2.5 h-2.5 rounded-full bg-gray-300 inline-block"></span>'
+        }
+      </td>
+    `;
+
+    tr.addEventListener('click', () => openEditUserModal(u.id));
+    tbody.appendChild(tr);
+  });
+}
+
+
+function openEditUserModal(userId) {
+  const u = allUsers.find(x => x.id === userId);
+  if (!u) return;
+
+  document.getElementById('editUserId').value = u.id;
+  document.getElementById('editUserName').value = u.Name || '';
+  document.getElementById('editUserEmailDisplay').textContent = u.mail;
+  document.getElementById('editUserRole').value = u.role;
+  document.getElementById('editUserActive').checked = !!u.is_active;
+  document.getElementById('editUserLabel').value = u.profile_label || '';
+
+  const centersContainer = document.getElementById('editUserCentersContainer');
+  const centersInput = document.getElementById('editUserCenters');
+  centersContainer.classList.toggle('hidden', u.role !== 'CC');
+  centersInput.value = u.permissions?.allowed_centers?.join(', ') || '';
+
+  const sharedToggle = document.getElementById('editUserSharedToggle');
+  const sharedNamesContainer = document.getElementById('editUserSharedNamesContainer');
+  const sharedNamesInput = document.getElementById('editUserSharedNames');
+
+  const hasSharedNames = u.display_names?.length > 0;
+  sharedToggle.checked = hasSharedNames;
+  sharedNamesContainer.classList.toggle('hidden', !hasSharedNames);
+  sharedNamesInput.value = hasSharedNames ? u.display_names.join(', ') : '';
+
+  const modal = document.getElementById('editUserModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeEditUserModal() {
+  const modal = document.getElementById('editUserModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+document.getElementById('closeEditUserModal')?.addEventListener('click', closeEditUserModal);
+
+document.getElementById('editUserModal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'editUserModal') closeEditUserModal();
+});
+
+document.getElementById('editUserRole')?.addEventListener('change', (e) => {
+  document.getElementById('editUserCentersContainer')
+    .classList.toggle('hidden', e.target.value !== 'CC');
+});
+
+document.getElementById('editUserSharedToggle')?.addEventListener('change', (e) => {
+  const container = document.getElementById('editUserSharedNamesContainer');
+  container.classList.toggle('hidden', !e.target.checked);
+  if (!e.target.checked) {
+    document.getElementById('editUserSharedNames').value = '';
+  }
+});
+
+document.getElementById('editUserSaveBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('editUserSaveBtn');
+  const userId = document.getElementById('editUserId').value;
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const name = document.getElementById('editUserName').value;
+    const role = document.getElementById('editUserRole').value;
+    const active = document.getElementById('editUserActive').checked;
+
+    const centersRaw = document.getElementById('editUserCenters').value;
+    const selectedCenters = centersRaw
+      .split(',')
+      .map(c => c.trim().toUpperCase())
+      .filter(c => c);
+
+    const sharedToggle = document.getElementById('editUserSharedToggle').checked;
+    const sharedNamesRaw = document.getElementById('editUserSharedNames').value;
+    const displayNames = sharedToggle
+      ? sharedNamesRaw.split(',').map(n => n.trim()).filter(n => n)
+      : [];
+
+    const profileLabel = document.getElementById('editUserLabel').value.trim();
+
+    const payload = {
+      name,
+      role,
+      is_active: active,
+      display_names: displayNames,
+      profile_label: profileLabel,
+      permissions: {
+        scope: role === 'Admin' ? 'ALL' : role === 'CC' ? 'CENTER' : 'OWN',
+        allowed_centers: role === 'CC' ? selectedCenters : [],
+        can_create_for_other_centers: role === 'Admin' || role === 'Requester'
+      }
+    };
+
+    const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error('Update failed');
+
+    notify('User updated', 'success');
+    closeEditUserModal();
+    await loadUsers();
+
+  } catch (err) {
+    console.error(err);
+    notify('Error updating user', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save changes';
+  }
+});
+
+document.getElementById('editUserDeleteBtn')?.addEventListener('click', async () => {
+  const userId = document.getElementById('editUserId').value;
+
+  if (!confirm('Delete this user?')) return;
+
+  try {
+    const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+
+    if (!res.ok) throw new Error('Delete failed');
+
+    notify('User deleted', 'info');
+    closeEditUserModal();
+    await loadUsers();
+
+  } catch (err) {
+    console.error(err);
+    notify('Error deleting user', 'error');
+  }
+});
+
 
 //===== FONDCTION LOAD ARCHIVES ==========
 
@@ -3357,21 +3399,12 @@ document.getElementById('userSearch').addEventListener('input', (e) => {
 
   const q = e.target.value.toLowerCase().trim();
 
-  document.querySelectorAll('#usersGrid > div').forEach(card => {
-
-    const name = (card.querySelector('.nameInput')?.value || '').toLowerCase();
-    const email = (card.querySelector('.emailText')?.textContent || '').toLowerCase();
-    const role = (card.querySelector('.roleSelect')?.value || '').toLowerCase();
-    const label = (card.querySelector('.labelInput')?.value || '').toLowerCase();
-
-    const searchable = `${name} ${email} ${role} ${label}`;
-
-    card.style.display = searchable.includes(q) ? '' : 'none';
-
+  document.querySelectorAll('#usersTableBody > tr').forEach(row => {
+    const searchable = row.textContent.toLowerCase();
+    row.style.display = searchable.includes(q) ? '' : 'none';
   });
 
 });
-
 
 // ─────────────────────────────────────────
 // ARCHIVES TRANSITION
