@@ -592,23 +592,25 @@ button:active {
         >
       </div>
 
-<div class="flex items-end">
-        <div id="toLiquidateBadge"
-          class="hidden px-3 py-2 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-sm font-semibold">
-          <span id="toLiquidateCount">0</span> waiting for liquidation
-        </div>
-      </div>
 
-      <div class="flex items-end">
-        <button type="button" id="clearFiltersBtn"
-          class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-500 text-sm hover:bg-gray-50 hover:text-gray-700 transition">
-          Clear filters
-        </button>
-      </div>
+  <div class="flex items-end">
+    <button type="button" id="clearFiltersBtn"
+      class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-500 text-sm hover:bg-gray-50 hover:text-gray-700 transition">
+      Clear filters
+    </button>
+  </div>
+
+  <div class="flex items-end">
+    <div id="toLiquidateBadge"
+      class="hidden px-3 py-2 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-sm font-semibold">
+      <span id="toLiquidateCount">0</span> waiting for liquidation
+    </div>
+  </div>
+
 
 
   <!-- 📊 Table -->
-  <div class="overflow-x-auto rounded-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-sm">
+  <div class="-mx-6 md:-mx-8 overflow-x-auto rounded-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-sm">
     <table class="min-w-[900px] w-full text-sm text-left border-collapse">
 
       <!-- Header -->
