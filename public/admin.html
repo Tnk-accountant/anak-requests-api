@@ -459,11 +459,11 @@
       </button>
     </div>
 
-    <!-- ✅ USERS SECTION ICI -->
-      <div id="usersSection" class="hidden mt-6">
+    <!-- ✅ USERS MANAGEMENT SECTION  -->
+<div id="usersSection" class="hidden mt-6">
 
         <!-- HEADER -->
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-2">
           <h2 class="text-xl font-semibold text-gray-800">Users Management</h2>
 
           <button id="addUserBtn"
@@ -472,12 +472,15 @@
           </button>
         </div>
 
+        <!-- STATS -->
+        <p id="usersStats" class="text-xs text-gray-400 mb-4"></p>
+
       <!--  SEARCH BAR -->
           <div class="mb-5">
           <input
             id="userSearch"
             type="text"
-            placeholder="Search user by name or email..."
+            placeholder="Search by name, email, role or label..."
             class="w-full md:w-96 px-4 py-2.5 rounded-xl border border-gray-200 bg-white
                   focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
                   transition text-sm"
@@ -765,8 +768,26 @@ CHAT LAYOUT
             <option value="Admin">Admin</option>
           </select>
 
-          <input id="newUserCenter" type="text" placeholder="Center"
+        <input id="newUserCenter" type="text" placeholder="Center"
             class="border border-gray-200 rounded-lg px-3 py-2">
+
+          <input id="newUserLabel" type="text" placeholder="Custom label (optional, ex: Purchasing)"
+            class="border border-gray-200 rounded-lg px-3 py-2">
+
+          <div class="border-t border-gray-100 pt-3">
+            <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+              <input type="checkbox" id="newUserSharedToggle">
+              Shared account (multiple people use this login)
+            </label>
+
+            <div id="newUserSharedNamesContainer" class="hidden mt-2">
+              <input id="newUserSharedNames" type="text" placeholder="Ex: Maxence, Gabriel"
+                class="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm">
+              <p class="text-[11px] text-gray-400 mt-1">
+                Whoever uses this account will pick their name before submitting a request.
+              </p>
+            </div>
+          </div>
 
           <button id="submitUserBtn"
             class="bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition mt-2">
@@ -957,8 +978,41 @@ CHAT LAYOUT
 
   <script>
 
-    let currentRequestId = null;
+let currentRequestId = null;
     let allUsers = [];
+
+    const ROLE_BADGE_STYLES = {
+      Admin: 'bg-indigo-100 text-indigo-700',
+      CC: 'bg-blue-100 text-blue-700',
+      Requester: 'bg-gray-100 text-gray-600'
+    };
+
+    function getRoleBadgeHtml(role) {
+      const cls = ROLE_BADGE_STYLES[role] || 'bg-gray-100 text-gray-600';
+      return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${cls}">${role}</span>`;
+    }
+
+    function getLabelBadgeHtml(label) {
+      if (!label) return '';
+      return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700">${label}</span>`;
+    }
+
+    function updateUsersStats(users) {
+      const counts = { Admin: 0, CC: 0, Requester: 0 };
+      let labeled = 0;
+
+      users.forEach(u => {
+        if (counts[u.role] !== undefined) counts[u.role]++;
+        if (u.profile_label) labeled++;
+      });
+
+      const el = document.getElementById('usersStats');
+      if (!el) return;
+
+      el.textContent =
+        `${users.length} users · ${counts.Admin} Admin · ${counts.CC} CC · ${counts.Requester} Requester` +
+        (labeled ? ` · ${labeled} with custom label` : '');
+    }
 
   function notify(message, type = "info") {
   const container = document.getElementById("notificationContainer");
@@ -1598,6 +1652,8 @@ async function loadUsers() {
     const users = await res.json();
     allUsers = users;
 
+    updateUsersStats(users);
+
     const grid = document.getElementById('usersGrid');
     grid.innerHTML = '';
 
@@ -1610,14 +1666,20 @@ async function loadUsers() {
       `;
 
       card.innerHTML = `
-        <div class="flex justify-between items-center">
-          <input class="nameInput font-semibold text-gray-800 text-sm w-full"
-            value="${u.Name || ''}">
-          <input type="checkbox" class="activeToggle ml-2"
-            ${u.is_active ? 'checked' : ''}>
+        <div class="flex justify-between items-start gap-2">
+          <div class="flex-1 min-w-0">
+            <input class="nameInput font-semibold text-gray-800 text-sm w-full mb-1"
+              value="${u.Name || ''}">
+            <div class="flex flex-wrap gap-1">
+              ${getRoleBadgeHtml(u.role)}
+              ${getLabelBadgeHtml(u.profile_label)}
+            </div>
+          </div>
+          <input type="checkbox" class="activeToggle ml-2 mt-1"
+            ${u.is_active ? 'checked' : ''} title="Active">
         </div>
 
-        <div class="text-xs text-gray-400">${u.mail}</div>
+        <div class="emailText text-xs text-gray-400">${u.mail}</div>
 
         <select class="roleSelect border px-2 py-1 rounded text-sm">
           <option ${u.role === 'Requester' ? 'selected' : ''}>Requester</option>
@@ -1626,10 +1688,38 @@ async function loadUsers() {
         </select>
 
         <div class="centersContainer hidden">
+          <label class="text-xs text-gray-500 block mb-1">Allowed centers</label>
           <input
             class="centersInput border px-2 py-1 rounded text-sm w-full"
             placeholder="Ex: RB1, RB5"
           >
+        </div>
+
+        <div class="border-t border-gray-100 pt-2 mt-1">
+
+          <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+            <input type="checkbox" class="sharedAccountToggle">
+            Shared account (multiple people use this login)
+          </label>
+
+          <div class="sharedNamesContainer hidden mt-2">
+            <input
+              class="sharedNamesInput border px-2 py-1 rounded text-sm w-full"
+              placeholder="Ex: Maxence, Gabriel"
+            >
+            <p class="text-[11px] text-gray-400 mt-1">
+              Whoever uses this account will pick their name before submitting a request.
+            </p>
+          </div>
+
+          <div class="mt-2">
+            <label class="text-xs text-gray-500 block mb-1">Custom label (optional badge)</label>
+            <input
+              class="labelInput border px-2 py-1 rounded text-sm w-full"
+              placeholder="Ex: Purchasing"
+            >
+          </div>
+
         </div>
 
         <div class="flex justify-between items-center mt-2">
@@ -1647,27 +1737,38 @@ async function loadUsers() {
       const centersContainer = card.querySelector('.centersContainer');
       const centersInput = card.querySelector('.centersInput');
 
+      const sharedToggle = card.querySelector('.sharedAccountToggle');
+      const sharedNamesContainer = card.querySelector('.sharedNamesContainer');
+      const sharedNamesInput = card.querySelector('.sharedNamesInput');
+      const labelInput = card.querySelector('.labelInput');
+
       function updateCentersVisibility() {
         const isCC = roleSelect.value === 'CC';
-
         centersContainer.classList.toggle('hidden', !isCC);
-
-        if (!isCC) {
-          centersInput.value = '';
-        }
+        if (!isCC) centersInput.value = '';
       }
 
       updateCentersVisibility();
 
       if (u.permissions?.allowed_centers?.length) {
-        centersInput.value =
-          u.permissions.allowed_centers.join(', ');
+        centersInput.value = u.permissions.allowed_centers.join(', ');
       }
 
-      roleSelect.addEventListener(
-        'change',
-        updateCentersVisibility
-      );
+      roleSelect.addEventListener('change', updateCentersVisibility);
+
+      // 🔥 Compte partagé (display_names)
+      labelInput.value = u.profile_label || '';
+
+      if (u.display_names?.length) {
+        sharedToggle.checked = true;
+        sharedNamesContainer.classList.remove('hidden');
+        sharedNamesInput.value = u.display_names.join(', ');
+      }
+
+      sharedToggle.addEventListener('change', () => {
+        sharedNamesContainer.classList.toggle('hidden', !sharedToggle.checked);
+        if (!sharedToggle.checked) sharedNamesInput.value = '';
+      });
 
       const saveBtn = card.querySelector('.saveBtn');
       const deleteBtn = card.querySelector('.deleteBtn');
@@ -1682,18 +1783,25 @@ async function loadUsers() {
           const role = card.querySelector('.roleSelect').value;
           const active = card.querySelector('.activeToggle').checked;
 
-          const centersRaw =
-            card.querySelector('.centersInput').value;
-
+          const centersRaw = card.querySelector('.centersInput').value;
           const selectedCenters = centersRaw
             .split(',')
             .map(c => c.trim().toUpperCase())
             .filter(c => c);
 
+          const displayNamesRaw = sharedNamesInput.value;
+          const displayNames = sharedToggle.checked
+            ? displayNamesRaw.split(',').map(n => n.trim()).filter(n => n)
+            : [];
+
+          const profileLabel = labelInput.value.trim();
+
           const payload = {
             name,
             role,
             is_active: active,
+            display_names: displayNames,
+            profile_label: profileLabel,
             permissions: {
               scope:
                 role === 'Admin'
@@ -1730,6 +1838,7 @@ async function loadUsers() {
           }
 
           notify("User updated", "success");
+          await loadUsers();
 
         } catch (err) {
 
@@ -1758,6 +1867,7 @@ async function loadUsers() {
 
         card.remove();
         notify("User deleted", "info");
+        updateUsersStats(allUsers.filter(x => x.id !== u.id));
       };
 
       grid.appendChild(card);
@@ -2844,12 +2954,21 @@ if (!archivesMode) {
     // -----------------------------
     // RESET FORM
     // -----------------------------
-    function resetForm() {
+function resetForm() {
       document.getElementById('newUserName').value = '';
       document.getElementById('newUserEmail').value = '';
       document.getElementById('newUserPassword').value = '';
       document.getElementById('confirmPassword').value = '';
       document.getElementById('newUserCenter').value = '';
+      document.getElementById('newUserLabel').value = '';
+
+      const sharedToggle = document.getElementById('newUserSharedToggle');
+      const sharedNamesContainer = document.getElementById('newUserSharedNamesContainer');
+      const sharedNames = document.getElementById('newUserSharedNames');
+
+      if (sharedToggle) sharedToggle.checked = false;
+      if (sharedNamesContainer) sharedNamesContainer.classList.add('hidden');
+      if (sharedNames) sharedNames.value = '';
     }
 
     // -----------------------------
@@ -2870,6 +2989,18 @@ submitUserBtn.onclick = async () => {
   const confirmPassword = document.getElementById('confirmPassword')?.value;
   const role = document.getElementById('newUserRole')?.value;
   const centerRaw = document.getElementById('newUserCenter')?.value.trim();
+  const profileLabel = document.getElementById('newUserLabel')?.value.trim();
+  const isSharedAccount = document.getElementById('newUserSharedToggle')?.checked;
+  const sharedNamesRaw = document.getElementById('newUserSharedNames')?.value.trim() || '';
+
+  const displayNames = isSharedAccount
+    ? sharedNamesRaw.split(',').map(n => n.trim()).filter(n => n)
+    : [];
+
+  if (isSharedAccount && displayNames.length === 0) {
+    notify("Enter at least one name for the shared account", "error");
+    return;
+  }
 
   // -----------------------------
   // 🔒 VALIDATION
@@ -2946,7 +3077,9 @@ submitUserBtn.onclick = async () => {
         password,
         name,
         role,
-        permissions
+        permissions,
+        display_names: displayNames,
+        profile_label: profileLabel
       })
     });
 
@@ -3020,6 +3153,19 @@ function toggleCenterInput() {
 
 roleSelectCreate.addEventListener('change', toggleCenterInput);
 toggleCenterInput();
+
+// -----------------------------
+// TOGGLE SHARED ACCOUNT (CREATE MODAL)
+// -----------------------------
+const sharedToggleCreate = document.getElementById('newUserSharedToggle');
+const sharedNamesContainerCreate = document.getElementById('newUserSharedNamesContainer');
+
+sharedToggleCreate?.addEventListener('change', () => {
+  sharedNamesContainerCreate.classList.toggle('hidden', !sharedToggleCreate.checked);
+  if (!sharedToggleCreate.checked) {
+    document.getElementById('newUserSharedNames').value = '';
+  }
+});
 
 
 // ─────────────────────────────────────────
@@ -3213,18 +3359,14 @@ document.getElementById('userSearch').addEventListener('input', (e) => {
 
   document.querySelectorAll('#usersGrid > div').forEach(card => {
 
-    const name =
-      (card.querySelector('.nameInput')?.value || '')
-        .toLowerCase();
+    const name = (card.querySelector('.nameInput')?.value || '').toLowerCase();
+    const email = (card.querySelector('.emailText')?.textContent || '').toLowerCase();
+    const role = (card.querySelector('.roleSelect')?.value || '').toLowerCase();
+    const label = (card.querySelector('.labelInput')?.value || '').toLowerCase();
 
-    const email =
-      card.querySelector('.text-xs')?.textContent
-        .toLowerCase() || '';
+    const searchable = `${name} ${email} ${role} ${label}`;
 
-    const searchable = `${name} ${email}`;
-
-    card.style.display =
-      searchable.includes(q) ? '' : 'none';
+    card.style.display = searchable.includes(q) ? '' : 'none';
 
   });
 
