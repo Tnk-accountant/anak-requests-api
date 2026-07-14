@@ -681,6 +681,9 @@ else if (role === 'CC') {
     query = query.eq('center_name', userCenter);
   }
 
+  // 🔒 Exclure les demandes privées (Requester) qui ne sont pas les siennes
+  query = query.or(`visibility_scope.neq.PRIVATE,created_by.eq.${userId}`);
+
 }
 
     // 👤 REQUESTER → voit uniquement ses demandes
