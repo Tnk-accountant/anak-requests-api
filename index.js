@@ -266,13 +266,13 @@ app.post('/signup', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    const { error: profileError } = await supabaseService
+const { error: profileError } = await supabaseService
       .from('profiles')
       .insert({
         id: user.user.id,
         mail: email,
         Name: name.trim(),
-        role: null,
+        role: '',
         center_name: '',
         permissions: { scope: 'OWN' },
         is_active: true,
