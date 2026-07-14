@@ -284,6 +284,57 @@ button:active {
     padding-bottom: 4px;
   }
 
+  /* =========================
+   NAME TOGGLE (segmented control)
+========================= */
+.name-toggle {
+  position: relative;
+  display: flex;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 2px;
+}
+
+.name-toggle-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 10px;
+  background: white;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1), width 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+.name-toggle-option {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: color 180ms ease;
+  white-space: nowrap;
+}
+
+.name-toggle-option.is-active {
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.name-toggle-option:active {
+  transform: scale(0.97);
+}
+
 
 </style>
 
@@ -363,10 +414,10 @@ button:active {
     <h1 class="text-xl font-bold text-indigo-700 mb-4">Submit a request</h1>
 
     <form id="requestForm" class="space-y-4">
-    <div>
-      <label class="block text-gray-700 font-semibold mb-1">Requested by</label>
-      <input type="text" id="requestor_name" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-      <div id="sharedNameButtons" class="hidden flex flex-wrap gap-2 mt-2"></div>
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Requested by</label>
+          <input type="text" id="requestor_name" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <div id="sharedNameButtons" class="hidden name-toggle mt-1"></div>
     </div>
 
       <div>
@@ -1391,40 +1442,61 @@ let mobileDateFilter = '';
 
 function setupRequestorName(profile) {
   const input = document.getElementById('requestor_name');
-  const namesContainer = document.getElementById('sharedNameButtons');
+  const toggle = document.getElementById('sharedNameButtons');
   const names = profile.display_names || [];
 
   if (names.length > 0) {
-    // 🔀 Compte partagé → toggle
+    // 🔀 Compte partagé → segmented toggle
     input.classList.add('hidden');
     input.required = false; // validation manuelle au submit
-    namesContainer.classList.remove('hidden');
-    namesContainer.innerHTML = '';
+    toggle.classList.remove('hidden');
+    toggle.innerHTML = '';
 
     const storageKey = `shared_name_${profile.email}`;
     const stored = localStorage.getItem(storageKey);
-    const preselected = names.includes(stored) ? stored : null;
+    let activeIndex = names.includes(stored) ? names.indexOf(stored) : 0;
 
-    names.forEach(name => {
+    // Thumb (fond blanc glissant)
+    const thumb = document.createElement('div');
+    thumb.className = 'name-toggle-thumb';
+    toggle.appendChild(thumb);
+
+    const buttons = [];
+
+    function positionThumb(index) {
+      const btn = buttons[index];
+      if (!btn) return;
+      thumb.style.width = `${btn.offsetWidth}px`;
+      thumb.style.transform = `translateX(${btn.offsetLeft - 4}px)`;
+    }
+
+    function setActive(index) {
+      activeIndex = index;
+      buttons.forEach((b, i) => b.classList.toggle('is-active', i === index));
+      input.value = names[index];
+      localStorage.setItem(storageKey, names[index]);
+      positionThumb(index);
+    }
+
+    names.forEach((name, index) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.textContent = name;
-      btn.className = 'payment-btn' + (name === preselected ? ' payment-active' : '');
-
-      btn.addEventListener('click', () => {
-        namesContainer.querySelectorAll('button').forEach(b => b.classList.remove('payment-active'));
-        btn.classList.add('payment-active');
-        input.value = name;
-        localStorage.setItem(storageKey, name);
-      });
-
-      namesContainer.appendChild(btn);
+      btn.className = 'name-toggle-option';
+      btn.addEventListener('click', () => setActive(index));
+      toggle.appendChild(btn);
+      buttons.push(btn);
     });
 
-    if (preselected) input.value = preselected;
+    // Position initiale (après render, pour avoir les bonnes largeurs)
+    requestAnimationFrame(() => setActive(activeIndex));
+
+    // Repositionner le thumb si la fenêtre est redimensionnée
+    window.addEventListener('resize', () => positionThumb(activeIndex));
 
   } else {
     // Comportement inchangé (compte individuel)
+    input.classList.remove('hidden');
     input.value = profile.name || profile.email;
     input.readOnly = true;
     input.classList.add('bg-gray-100', 'cursor-not-allowed');
