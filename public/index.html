@@ -1122,14 +1122,15 @@ async function addTemplate() {
       return;
     }
 
-    savedDescriptions = result.saved_descriptions;
+savedDescriptions = result.saved_descriptions;
     titleInput.value = '';
     textInput.value = '';
     renderTemplatesList();
     renderTemplatesDropdown();
     notify("Template saved", "success");
   } catch (err) {
-    notify("Server error", "error");
+    console.error("addTemplate crash:", err);
+    notify("Client error: " + err.message, "error");
   }
 }
 
@@ -1148,34 +1149,12 @@ async function deleteTemplate(raw) {
       return;
     }
 
-    savedDescriptions = result.saved_descriptions;
+savedDescriptions = result.saved_descriptions;
     renderTemplatesList();
     renderTemplatesDropdown();
   } catch (err) {
-    notify("Server error", "error");
-  }
-}
-
-async function deleteTemplate(description) {
-  try {
-    const res = await fetchWithAuth(`${API_URL}/profile/descriptions`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description })
-    });
-    const result = await res.json();
-
-    if (!res.ok) {
-      notify(result.error || "Error deleting template", "error");
-      return;
-    }
-
-    savedDescriptions = result.saved_descriptions;
-    renderTemplatesList();
-    renderTemplateChips();
-  } catch (err) {
-    notify("Server error", "error");
+    console.error("deleteTemplate crash:", err);
+    notify("Client error: " + err.message, "error");
   }
 }
 
