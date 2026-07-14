@@ -612,12 +612,12 @@ button:active {
 <div class="overflow-x-auto rounded-2xl border border-gray-100 bg-white/80 backdrop-blur shadow-sm">
     <table class="w-full table-fixed text-sm text-left border-collapse">
 <colgroup>
-  <col style="width: 13%">  <!-- Date -->
-  <col style="width: 37%">  <!-- Description -->
-  <col style="width: 15%">  <!-- Amount -->
-  <col style="width: 12%">  <!-- Payment -->
-  <col style="width: 13%">  <!-- Status -->
-  <col style="width: 10%">  <!-- Action -->
+  <col style="width: 10%">  <!-- Date -->
+  <col style="width: 45%">  <!-- Description -->
+  <col style="width: 13%">  <!-- Amount -->
+  <col style="width: 11%">  <!-- Payment -->
+  <col style="width: 12%">  <!-- Status -->
+  <col style="width: 9%">  <!-- Action -->
 </colgroup>
 
       <!-- Header -->
@@ -2383,7 +2383,7 @@ card.innerHTML = `
             ${req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : ''}
           </p>
           <p class="text-xs text-gray-400 truncate mt-0.5">
-            ${truncateText(req.description, 40)}
+            ${truncateText(req.description, 80)}
           </p>
         </div>
 
@@ -2639,7 +2639,7 @@ myTableBody.insertBefore(row, myTableBody.firstChild);
   if (statusCell) statusCell.innerHTML = statusHtml;
 
   const descCell = row.querySelector('.description_cell');
-  if (descCell) descCell.textContent = truncateText(req.description, 40);
+  if (descCell) descCell.textContent = truncateText(req.description, 80);
 
   const amountCell = row.querySelector('.amount_requested');
   if (amountCell) amountCell.textContent = formatAmount(req.amount_requested);

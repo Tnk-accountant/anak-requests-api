@@ -215,7 +215,7 @@
     </div>
 
     <!-- TABS/ONGLETS -->
-    <div class="inline-flex items-center p-1 bg-white border border-gray-200 rounded-2xl shadow-sm mb-6 shrink-0">
+   <div class="inline-flex w-fit items-center p-1 bg-white border border-gray-200 rounded-2xl shadow-sm mb-6 shrink-0">
 
       <button id="tabAll"
         class="tab-btn px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200">
@@ -244,31 +244,31 @@
           id="searchName"
           type="text"
           placeholder="Requested by"
-          class="h-11 px-4 rounded-xl border border-gray-100 bg-gray-50 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition w-full sm:w-52"
+          class="h-11 px-4 rounded-xl border border-gray-300 bg-gray-50 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition w-full sm:w-52"
         >
         <input
           id="searchCenter"
           type="text"
           placeholder="Center"
-          class="h-11 px-4 rounded-xl border border-gray-100 bg-gray-50 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition w-full sm:w-44"
+          class="h-11 px-4 rounded-xl border border-gray-300 bg-gray-50 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition w-full sm:w-44"
         >
         <input
           id="minAmount"
           type="number"
           placeholder="Amount"
-          class="h-11 px-4 rounded-xl border border-gray-100 bg-gray-50 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition w-full sm:w-32"
+          class="h-11 px-4 rounded-xl border border-gray-300 bg-gray-50 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition w-full sm:w-32"
         >
 
         <!-- TOTAL -->
-        <div id="liquidateCard" class="h-11 flex items-center gap-3 px-4 rounded-xl bg-gray-50 border border-gray-100">
+      <div id="liquidateCard" class="h-11 flex items-center gap-3 px-4 rounded-xl bg-purple-50 border border-purple-200">
 
-          <div class="text-xs text-gray-400">
+          <div class="text-xs text-purple-500">
             To Liquidate
           </div>
 
           <div
             id="totalToLiquidate"
-            class="text-sm font-semibold text-gray-900">
+            class="text-sm font-semibold text-purple-700">
             0.00 PHP
           </div>
 
@@ -2112,8 +2112,8 @@ document.getElementById('editUserDeleteBtn')?.addEventListener('click', async ()
   data.forEach(req => {
     const tr = document.createElement('tr');
 
-    tr.className =
-    'group text-sm text-gray-700 border-b border-gray-100 transition-colors duration-75 hover:bg-gray-50 hover:border-l-gray-200';
+   tr.className =
+    'group text-sm text-gray-700 border-b border-gray-100 transition-colors duration-75 hover:bg-gray-100 hover:border-l-gray-200';
 
     tr.innerHTML = `
       <td class="pl-6 pr-4 font-medium text-gray-700">${req.request_id}</td>
@@ -2467,10 +2467,6 @@ if (!archivesMode) {
           return;
         }
 
-        if (approved_amount > req.amount_requested) {
-          approved_amount = req.amount_requested;
-        }
-
         disableButtons([approveBtn, rejectBtn]);
 
         await updateRequest(
@@ -2654,9 +2650,6 @@ if (!archivesMode) {
             return;
           }
 
-          if (approved_amount > req.amount_requested) {
-            approved_amount = req.amount_requested;
-          }
 
           disableButtons([approveBtn, rejectBtn]);
           await updateRequest(
