@@ -234,9 +234,8 @@
 
     </div>
 
-    <!-- FILTER CARD -->
    <div id="filtersCard"
-  class="bg-white/80 backdrop-blur border border-gray-200 rounded-2xl p-4 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+  class="relative z-20 bg-white/80 backdrop-blur border border-gray-200 rounded-2xl p-4 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
   
   <!-- LEFT -->
      <div id="archiveFilters" class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -1246,7 +1245,7 @@ const API_URL = 'https://anak-requests-api.onrender.com';
           return;
         }
 
-        const data = await res.json();
+       const data = await res.json();
 
         const role = (data.role || '').toLowerCase().trim();
 
@@ -1258,6 +1257,8 @@ const API_URL = 'https://anak-requests-api.onrender.com';
         return;
       }
 
+      currentAdmin = data.Name || data.name || 'Admin';
+
       hideLoader(); // ✅ IMPORTANT
 
       } catch (err) {
@@ -1267,9 +1268,10 @@ const API_URL = 'https://anak-requests-api.onrender.com';
       }
     }
 
-    async function initAdminPage() {
+async function initAdminPage() {
       await checkAdminAccess(); // 🔒 vérifie admin AVANT tout
 
+      setActiveTab('all');      // ✅ sélectionne "All Requests" par défaut
       fetchRequests();          // 📊 charge les données
       setupSSE();               // 🔁 active le temps réel
     }
@@ -1493,7 +1495,7 @@ document
     let currentPage = 1;
     const rowsPerPage = 20;
     let filteredRequests = [];
-    const currentAdmin = "Father";
+    const currentAdmin = "Admin";
 
     const statusClasses = {
       Pending: 'bg-yellow-400',
@@ -2798,11 +2800,11 @@ if (!archivesMode) {
       const exportMenu = document.getElementById("exportMenu");
            
       
-
       exportMenuBtn.addEventListener("click", (e) => {
 
         e.stopPropagation();
 
+        closeActionsMenu();
         exportMenu.classList.toggle("hidden");
 
       });
@@ -3418,6 +3420,7 @@ actionsBtn?.addEventListener('click', (e) => {
 
   e.stopPropagation();
 
+  exportMenu.classList.add('hidden');
   toggleActionsMenu();
 
 });
