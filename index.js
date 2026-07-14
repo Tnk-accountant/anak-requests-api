@@ -2123,7 +2123,7 @@ app.post('/request-password-reset', async (req, res) => {
 
   try {
     const redirectTo = process.env.NODE_ENV === 'production'
-      ? 'https://YOUR-FRONTEND-DOMAIN.com/reset-password.html'
+      ? 'https://anak-requests-api.onrender.com/reset-password.html'
       : 'http://localhost:5500/reset-password.html';
 
     const { error } = await supabaseAuth.auth.resetPasswordForEmail(email, {
