@@ -587,30 +587,74 @@ button:active {
 <!-- 📱 MOBILE : filtres -->
 <div class="mb-3 md:hidden space-y-2">
   <input
-    type="number"
-    inputmode="decimal"
-    id="mobileAmountSearch"
-    placeholder="Filter by amount"
-    class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-  >
-
-  <input
     type="text"
     id="mobileDescriptionSearch"
     placeholder="Filter by description"
     class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
   >
 
-<input
-    type="date"
-    id="mobileDateSearch"
-    class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-  >
+  <button type="button" id="filtersBtnMobile"
+    class="w-full h-[42px] px-4 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium flex items-center justify-center gap-2 shadow-sm">
+    Status / Amount / Date
+    <span id="filtersCountBadgeMobile" class="hidden bg-indigo-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full"></span>
+  </button>
 
   <button type="button" id="clearFiltersBtnMobile"
     class="w-full text-center text-gray-500 text-xs py-1 hover:text-gray-700">
     Clear filters
   </button>
+</div>
+
+<!-- 📱 MOBILE : Filters bottom sheet -->
+<div id="filtersPopoverMobile" class="hidden fixed inset-0 z-50 md:hidden">
+  <div id="filtersOverlayMobile" class="absolute inset-0 bg-black/40"></div>
+  <div class="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl p-4 max-h-[80vh] overflow-y-auto">
+
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-sm font-semibold text-gray-800">Filters</h3>
+      <button type="button" id="closeFiltersMobileBtn" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+
+    <div class="mb-4">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Status</div>
+      <div id="statusCheckboxesMobile" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <div class="mb-4">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Amount</div>
+      <select id="amountOpMobile" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full mb-2">
+        <option value="">Any amount</option>
+        <option value="eq">Equals</option>
+        <option value="gt">Greater than</option>
+        <option value="lt">Less than</option>
+        <option value="between">Between</option>
+      </select>
+      <div class="flex gap-2">
+        <input id="amountVal1Mobile" type="number" placeholder="Amount" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
+        <input id="amountVal2Mobile" type="number" placeholder="and" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
+      </div>
+    </div>
+
+    <div class="mb-2">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Date</div>
+      <select id="dateOpMobile" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full mb-2">
+        <option value="">Any date</option>
+        <option value="on">On</option>
+        <option value="before">Before</option>
+        <option value="after">After</option>
+        <option value="between">Between</option>
+      </select>
+      <div class="flex gap-2">
+        <input id="dateVal1Mobile" type="date" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
+        <input id="dateVal2Mobile" type="date" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
+      </div>
+    </div>
+
+    <button id="clearFiltersPopoverBtnMobile" class="w-full text-center text-xs text-gray-500 hover:text-red-600 py-2 border-t border-gray-100 mt-2">
+      Clear all filters
+    </button>
+
+  </div>
 </div>
 
 <!-- 📱 MOBILE : loader -->
@@ -704,25 +748,6 @@ button:active {
       </div>
     </div>
     </div>
-
-  <div>
-        <label for="dateSearch" class="block text-sm font-semibold text-gray-700 mb-1">
-          Filter by date
-        </label>
-        <input
-          type="date"
-          id="dateSearch"
-          class="w-52 px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-        >
-      </div>
-
-
-    <div class="flex items-end">
-      <button type="button" id="clearFiltersBtn" class="px-2 py-1 rounded-md border border-gray-200 bg-white text-gray-500 text-xs hover:bg-gray-50 hover:text-gray-700 transition">
-        Clear filters
-      </button>
-    </div>
-
 
 <div class="flex items-end">
     <div id="toLiquidateBadge"
@@ -1477,9 +1502,7 @@ let currentRequestId = null;
 
 let mobilePage = 1;
 const mobilePerPage = 20;
-let mobileAmountFilter = '';
 let mobileDescriptionFilter = '';
-let mobileDateFilter = '';
 
 
 // ==============================
@@ -1717,32 +1740,14 @@ console.log("DOM ready, script chargé");
 
     document.getElementById('addTemplateBtn')?.addEventListener('click', addTemplate);
     
-  const mobileAmountInput = document.getElementById('mobileAmountSearch');
-    if (mobileAmountInput) {
-      mobileAmountInput.addEventListener('input', () => {
-        mobileAmountFilter = mobileAmountInput.value.trim();
-        mobilePage = 1; // reset pagination
-        renderMobileCards();
-      });
-    }
-
-    const mobileDescriptionInput = document.getElementById('mobileDescriptionSearch');
-    if (mobileDescriptionInput) {
-      mobileDescriptionInput.addEventListener('input', () => {
-        mobileDescriptionFilter = mobileDescriptionInput.value.trim().toLowerCase();
-        mobilePage = 1;
-        renderMobileCards();
-      });
-    }
-
-    const mobileDateInput = document.getElementById('mobileDateSearch');
-    if (mobileDateInput) {
-      mobileDateInput.addEventListener('change', () => {
-        mobileDateFilter = mobileDateInput.value; // format YYYY-MM-DD
-        mobilePage = 1;
-        renderMobileCards();
-      });
-    }
+  const mobileDescriptionInput = document.getElementById('mobileDescriptionSearch');
+      if (mobileDescriptionInput) {
+        mobileDescriptionInput.addEventListener('input', () => {
+          mobileDescriptionFilter = mobileDescriptionInput.value.trim().toLowerCase();
+          mobilePage = 1;
+          renderMobileCards();
+        });
+      }
 
 await populateCenters((profile.center_name || "").trim().toUpperCase());
 setupCenterSelect(profile);
@@ -2309,19 +2314,12 @@ document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
 });
 
 document.getElementById('clearFiltersBtnMobile')?.addEventListener('click', () => {
-  const mobileAmount = document.getElementById('mobileAmountSearch');
   const mobileDesc = document.getElementById('mobileDescriptionSearch');
-  const mobileDate = document.getElementById('mobileDateSearch');
-
-  if (mobileAmount) mobileAmount.value = '';
   if (mobileDesc) mobileDesc.value = '';
-  if (mobileDate) mobileDate.value = '';
 
-  mobileAmountFilter = '';
   mobileDescriptionFilter = '';
-  mobileDateFilter = '';
   mobilePage = 1;
-  renderMobileCards();
+  clearAllFilters();
 });
 
 // ==============================
@@ -2685,32 +2683,46 @@ function isCancelEligible(status) {
   function getMobileRequestsFiltered() {
       let requests = Array.from(requestsMap.values());
 
-      if (mobileAmountFilter) {
-        const target = parseFloat(mobileAmountFilter);
+      if (activeFilters.statuses.length > 0) {
+        requests = requests.filter(r => activeFilters.statuses.includes(r.status));
+      }
 
-        if (!isNaN(target)) {
-          requests = requests.filter(r => {
-            const approved = Number(r.approved_amount || 0);
-            const requested = Number(r.amount_requested || 0);
+      if (activeFilters.amountOp) {
+        requests = requests.filter(r => {
+          const approved = Number(r.approved_amount || 0);
+          const requested = Number(r.amount_requested || 0);
+          const value = approved > 0 ? approved : requested;
 
-            const amount = approved > 0 ? approved : requested;
-            return amount === target;
-          });
-        }
+          switch (activeFilters.amountOp) {
+            case 'eq': return value === activeFilters.amountMin;
+            case 'gt': return value > activeFilters.amountMin;
+            case 'lt': return value < activeFilters.amountMin;
+            case 'between': return value >= activeFilters.amountMin && value <= activeFilters.amountMax;
+            default: return true;
+          }
+        });
+      }
+
+      if (activeFilters.dateOp) {
+        requests = requests.filter(r => {
+          const raw = r.timestamp || r.created_at;
+          if (!raw) return false;
+          const rowDate = raw.slice(0, 10);
+
+          switch (activeFilters.dateOp) {
+            case 'on': return rowDate === activeFilters.dateFrom;
+            case 'before': return rowDate < activeFilters.dateFrom;
+            case 'after': return rowDate > activeFilters.dateFrom;
+            case 'between': return rowDate >= activeFilters.dateFrom && rowDate <= activeFilters.dateTo;
+            default: return true;
+          }
+        });
       }
 
       if (mobileDescriptionFilter) {
         requests = requests.filter(r =>
           (r.description || '').toLowerCase().includes(mobileDescriptionFilter)
         );
-      }
-
-      if (mobileDateFilter) {
-        requests = requests.filter(r => {
-          const rawDate = r.timestamp || r.created_at;
-          if (!rawDate) return false;
-          return rawDate.slice(0, 10) === mobileDateFilter;
-        });
       }
 
       return requests;
@@ -3890,59 +3902,101 @@ let activeFilters = {
   dateTo: null
 };
 
-function renderStatusCheckboxes() {
-  const container = document.getElementById('statusCheckboxes');
-  if (!container) return;
-  container.innerHTML = '';
+// -------------------------------------------
+// Rafraîchit desktop + mobile en même temps
+// -------------------------------------------
+function applyFiltersAndRender() {
+  currentPage = 1;
+  mobilePage = 1;
+  renderTable();
+  renderMobileCards();
+}
 
-  ALL_STATUSES.forEach(st => {
-    const isChecked = activeFilters.statuses.includes(st);
-    const chip = document.createElement('label');
-    chip.className = `flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs cursor-pointer border transition ${
-      isChecked ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-    }`;
-    chip.innerHTML = `
-      <input type="checkbox" class="hidden" value="${st}" ${isChecked ? 'checked' : ''}>
-      ${st}
-    `;
-    chip.querySelector('input').addEventListener('change', (e) => {
-      if (e.target.checked) activeFilters.statuses.push(st);
-      else activeFilters.statuses = activeFilters.statuses.filter(s => s !== st);
-      renderStatusCheckboxes();
-      updateFiltersBadge();
-      currentPage = 1;
-      renderTable();
+function renderStatusCheckboxes() {
+  ['statusCheckboxes', 'statusCheckboxesMobile'].forEach(containerId => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+
+    ALL_STATUSES.forEach(st => {
+      const isChecked = activeFilters.statuses.includes(st);
+      const chip = document.createElement('label');
+      chip.className = `flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs cursor-pointer border transition ${
+        isChecked ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+      }`;
+      chip.innerHTML = `
+        <input type="checkbox" class="hidden" value="${st}" ${isChecked ? 'checked' : ''}>
+        ${st}
+      `;
+      chip.querySelector('input').addEventListener('change', (e) => {
+        if (e.target.checked) activeFilters.statuses.push(st);
+        else activeFilters.statuses = activeFilters.statuses.filter(s => s !== st);
+        renderStatusCheckboxes();
+        updateFiltersBadge();
+        applyFiltersAndRender();
+      });
+      container.appendChild(chip);
     });
-    container.appendChild(chip);
   });
 }
 
 function updateFiltersBadge() {
   const count = activeFilters.statuses.length + (activeFilters.amountOp ? 1 : 0) + (activeFilters.dateOp ? 1 : 0);
-  const badge = document.getElementById('filtersCountBadge');
-  if (!badge) return;
-  if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
-  else { badge.classList.add('hidden'); }
+  ['filtersCountBadge', 'filtersCountBadgeMobile'].forEach(id => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+    else { badge.classList.add('hidden'); }
+  });
+}
+
+// -------------------------------------------
+// Synchronise les 2 popovers (desktop + mobile)
+// -------------------------------------------
+function syncFilterUI() {
+  const amountOpEls = [document.getElementById('amountOp'), document.getElementById('amountOpMobile')];
+  const amountVal1Els = [document.getElementById('amountVal1'), document.getElementById('amountVal1Mobile')];
+  const amountVal2Els = [document.getElementById('amountVal2'), document.getElementById('amountVal2Mobile')];
+  const dateOpEls = [document.getElementById('dateOp'), document.getElementById('dateOpMobile')];
+  const dateVal1Els = [document.getElementById('dateVal1'), document.getElementById('dateVal1Mobile')];
+  const dateVal2Els = [document.getElementById('dateVal2'), document.getElementById('dateVal2Mobile')];
+
+  amountOpEls.forEach(el => { if (el) el.value = activeFilters.amountOp; });
+  amountVal1Els.forEach(el => {
+    if (!el) return;
+    el.value = activeFilters.amountMin ?? '';
+    el.classList.toggle('hidden', !activeFilters.amountOp);
+  });
+  amountVal2Els.forEach(el => {
+    if (!el) return;
+    el.value = activeFilters.amountMax ?? '';
+    el.classList.toggle('hidden', activeFilters.amountOp !== 'between');
+  });
+
+  dateOpEls.forEach(el => { if (el) el.value = activeFilters.dateOp; });
+  dateVal1Els.forEach(el => {
+    if (!el) return;
+    el.value = activeFilters.dateFrom ?? '';
+    el.classList.toggle('hidden', !activeFilters.dateOp);
+  });
+  dateVal2Els.forEach(el => {
+    if (!el) return;
+    el.value = activeFilters.dateTo ?? '';
+    el.classList.toggle('hidden', activeFilters.dateOp !== 'between');
+  });
 }
 
 function clearAllFilters() {
   activeFilters = { statuses: [], amountOp: '', amountMin: null, amountMax: null, dateOp: '', dateFrom: null, dateTo: null };
-  document.getElementById('amountOp').value = '';
-  document.getElementById('dateOp').value = '';
-  document.getElementById('amountVal1').value = '';
-  document.getElementById('amountVal2').value = '';
-  document.getElementById('dateVal1').value = '';
-  document.getElementById('dateVal2').value = '';
-  document.getElementById('amountVal1').classList.add('hidden');
-  document.getElementById('amountVal2').classList.add('hidden');
-  document.getElementById('dateVal1').classList.add('hidden');
-  document.getElementById('dateVal2').classList.add('hidden');
+  syncFilterUI();
   renderStatusCheckboxes();
   updateFiltersBadge();
-  currentPage = 1;
-  renderTable();
+  applyFiltersAndRender();
 }
 
+// -------------------------------------------
+// Ouverture / fermeture des popovers
+// -------------------------------------------
 const filtersBtnEl = document.getElementById('filtersBtn');
 const filtersPopoverEl = document.getElementById('filtersPopover');
 
@@ -3959,67 +4013,94 @@ document.addEventListener('click', (e) => {
   }
 });
 
-const amountOpSelect = document.getElementById('amountOp');
-const amountVal1 = document.getElementById('amountVal1');
-const amountVal2 = document.getElementById('amountVal2');
+const filtersBtnMobileEl = document.getElementById('filtersBtnMobile');
+const filtersPopoverMobileEl = document.getElementById('filtersPopoverMobile');
 
-amountOpSelect?.addEventListener('change', () => {
-  activeFilters.amountOp = amountOpSelect.value;
-  amountVal1.classList.toggle('hidden', !activeFilters.amountOp);
-  amountVal2.classList.toggle('hidden', activeFilters.amountOp !== 'between');
-  activeFilters.amountMin = null;
-  activeFilters.amountMax = null;
-  amountVal1.value = '';
-  amountVal2.value = '';
-  updateFiltersBadge();
-  currentPage = 1;
-  renderTable();
+filtersBtnMobileEl?.addEventListener('click', () => {
+  filtersPopoverMobileEl.classList.remove('hidden');
 });
 
-amountVal1?.addEventListener('input', () => {
-  activeFilters.amountMin = amountVal1.value ? parseFloat(amountVal1.value) : null;
-  currentPage = 1;
-  renderTable();
+document.getElementById('closeFiltersMobileBtn')?.addEventListener('click', () => {
+  filtersPopoverMobileEl.classList.add('hidden');
 });
 
-amountVal2?.addEventListener('input', () => {
-  activeFilters.amountMax = amountVal2.value ? parseFloat(amountVal2.value) : null;
-  currentPage = 1;
-  renderTable();
+document.getElementById('filtersOverlayMobile')?.addEventListener('click', () => {
+  filtersPopoverMobileEl.classList.add('hidden');
 });
 
-const dateOpSelect = document.getElementById('dateOp');
-const dateVal1 = document.getElementById('dateVal1');
-const dateVal2 = document.getElementById('dateVal2');
+// -------------------------------------------
+// Amount (desktop + mobile, même logique)
+// -------------------------------------------
+function bindAmountControls(opId, val1Id, val2Id) {
+  const opSelect = document.getElementById(opId);
+  const val1 = document.getElementById(val1Id);
+  const val2 = document.getElementById(val2Id);
+  if (!opSelect) return;
 
-dateOpSelect?.addEventListener('change', () => {
-  activeFilters.dateOp = dateOpSelect.value;
-  dateVal1.classList.toggle('hidden', !activeFilters.dateOp);
-  dateVal2.classList.toggle('hidden', activeFilters.dateOp !== 'between');
-  activeFilters.dateFrom = null;
-  activeFilters.dateTo = null;
-  dateVal1.value = '';
-  dateVal2.value = '';
-  updateFiltersBadge();
-  currentPage = 1;
-  renderTable();
-});
+  opSelect.addEventListener('change', () => {
+    activeFilters.amountOp = opSelect.value;
+    activeFilters.amountMin = null;
+    activeFilters.amountMax = null;
+    syncFilterUI();
+    updateFiltersBadge();
+    applyFiltersAndRender();
+  });
 
-dateVal1?.addEventListener('input', () => {
-  activeFilters.dateFrom = dateVal1.value || null;
-  currentPage = 1;
-  renderTable();
-});
+  val1?.addEventListener('input', () => {
+    activeFilters.amountMin = val1.value ? parseFloat(val1.value) : null;
+    syncFilterUI();
+    applyFiltersAndRender();
+  });
 
-dateVal2?.addEventListener('input', () => {
-  activeFilters.dateTo = dateVal2.value || null;
-  currentPage = 1;
-  renderTable();
-});
+  val2?.addEventListener('input', () => {
+    activeFilters.amountMax = val2.value ? parseFloat(val2.value) : null;
+    syncFilterUI();
+    applyFiltersAndRender();
+  });
+}
+
+bindAmountControls('amountOp', 'amountVal1', 'amountVal2');
+bindAmountControls('amountOpMobile', 'amountVal1Mobile', 'amountVal2Mobile');
+
+// -------------------------------------------
+// Date (desktop + mobile, même logique)
+// -------------------------------------------
+function bindDateControls(opId, val1Id, val2Id) {
+  const opSelect = document.getElementById(opId);
+  const val1 = document.getElementById(val1Id);
+  const val2 = document.getElementById(val2Id);
+  if (!opSelect) return;
+
+  opSelect.addEventListener('change', () => {
+    activeFilters.dateOp = opSelect.value;
+    activeFilters.dateFrom = null;
+    activeFilters.dateTo = null;
+    syncFilterUI();
+    updateFiltersBadge();
+    applyFiltersAndRender();
+  });
+
+  val1?.addEventListener('input', () => {
+    activeFilters.dateFrom = val1.value || null;
+    syncFilterUI();
+    applyFiltersAndRender();
+  });
+
+  val2?.addEventListener('input', () => {
+    activeFilters.dateTo = val2.value || null;
+    syncFilterUI();
+    applyFiltersAndRender();
+  });
+}
+
+bindDateControls('dateOp', 'dateVal1', 'dateVal2');
+bindDateControls('dateOpMobile', 'dateVal1Mobile', 'dateVal2Mobile');
 
 document.getElementById('clearFiltersPopoverBtn')?.addEventListener('click', clearAllFilters);
+document.getElementById('clearFiltersPopoverBtnMobile')?.addEventListener('click', clearAllFilters);
 
 renderStatusCheckboxes();
+
 
 function renderTable() {
   const tableBody = document.getElementById('myRequestsTable');
