@@ -698,15 +698,35 @@ else if (role === 'CC') {
       query = query.eq('status', req.query.status);
     }
 
-    // ==============================
+// ==============================
     // 🚀 EXECUTION
     // ==============================
     const { data, error, count } = await query;
 
     if (error) throw error;
 
+    // ==============================
+    // 🏷️ ENRICHIR AVEC LE LABEL DU PROFIL (ex: "Purchaser")
+    // ==============================
+    const createdByIds = [...new Set((data || []).map(r => r.created_by).filter(Boolean))];
+    let labelMap = {};
+
+    if (createdByIds.length > 0) {
+      const { data: profs } = await supabaseService
+        .from('profiles')
+        .select('id, profile_label')
+        .in('id', createdByIds);
+
+      (profs || []).forEach(p => { labelMap[p.id] = p.profile_label; });
+    }
+
+    const dataWithLabels = (data || []).map(r => ({
+      ...r,
+      profile_label: labelMap[r.created_by] || null
+    }));
+
     return res.json({
-      data: data || [],
+      data: dataWithLabels,
       pagination: {
         limit,
         offset,
