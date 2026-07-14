@@ -2969,23 +2969,23 @@ if (!row) {
 
 
 row.innerHTML = `
-      <td class="px-4 py-3 align-top border-b border-gray-100">
+      <td class="px-4 py-3 align-middle border-b border-gray-100">
         ${req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : ''}
       </td>
 
-      <td class="px-4 py-3 align-top border-b border-gray-100 description_cell">
-        ${truncateText(req.description, 55)}
+    <td class="px-4 py-3 align-middle border-b border-gray-100 description_cell">
+        <span class="description-cell-content" title="${(req.description || '').replace(/"/g, '&quot;')}">${truncateText(req.description, 55)}</span>
       </td>
 
-      <td class="px-4 py-3 align-top border-b border-gray-100 amount_requested">
+      <td class="px-4 py-3 align-middle border-b border-gray-100 amount_requested">
         ${formatAmount(req.amount_requested)}
       </td>
 
-      <td class="px-4 py-3 align-top border-b border-gray-100 payment_method">
+      <td class="px-4 py-3 align-middle border-b border-gray-100 payment_method">
         ${paymentText}
       </td>
 
-      <td class="px-4 py-3 align-top border-b border-gray-100 status">
+      <td class="px-4 py-3 align-middle border-b border-gray-100 status">
         ${statusHtml}
       </td>
     `;
