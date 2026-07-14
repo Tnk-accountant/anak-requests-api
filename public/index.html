@@ -434,7 +434,7 @@ button:active {
           <option value="">Select a center</option>
         </select>
 
-        <label class="flex items-center gap-2 mt-3 cursor-pointer">
+        <label id="additionalCentersLabel" class="flex items-center gap-2 mt-3 cursor-pointer">
 
           <input
             type="checkbox"
@@ -603,58 +603,6 @@ button:active {
     class="w-full text-center text-gray-500 text-xs py-1 hover:text-gray-700">
     Clear filters
   </button>
-</div>
-
-<!-- 📱 MOBILE : Filters bottom sheet -->
-<div id="filtersPopoverMobile" class="hidden fixed inset-0 z-50 md:hidden">
-  <div id="filtersOverlayMobile" class="absolute inset-0 bg-black/40"></div>
-  <div class="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl p-4 max-h-[80vh] overflow-y-auto">
-
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-sm font-semibold text-gray-800">Filters</h3>
-      <button type="button" id="closeFiltersMobileBtn" class="text-gray-400 hover:text-gray-600">✕</button>
-    </div>
-
-    <div class="mb-4">
-      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Status</div>
-      <div id="statusCheckboxesMobile" class="flex flex-wrap gap-2"></div>
-    </div>
-
-    <div class="mb-4">
-      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Amount</div>
-      <select id="amountOpMobile" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full mb-2">
-        <option value="">Any amount</option>
-        <option value="eq">Equals</option>
-        <option value="gt">Greater than</option>
-        <option value="lt">Less than</option>
-        <option value="between">Between</option>
-      </select>
-      <div class="flex gap-2">
-        <input id="amountVal1Mobile" type="number" placeholder="Amount" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
-        <input id="amountVal2Mobile" type="number" placeholder="and" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
-      </div>
-    </div>
-
-    <div class="mb-2">
-      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Date</div>
-      <select id="dateOpMobile" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full mb-2">
-        <option value="">Any date</option>
-        <option value="on">On</option>
-        <option value="before">Before</option>
-        <option value="after">After</option>
-        <option value="between">Between</option>
-      </select>
-      <div class="flex gap-2">
-        <input id="dateVal1Mobile" type="date" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
-        <input id="dateVal2Mobile" type="date" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
-      </div>
-    </div>
-
-    <button id="clearFiltersPopoverBtnMobile" class="w-full text-center text-xs text-gray-500 hover:text-red-600 py-2 border-t border-gray-100 mt-2">
-      Clear all filters
-    </button>
-
-  </div>
 </div>
 
 <!-- 📱 MOBILE : loader -->
@@ -1065,6 +1013,58 @@ button:active {
   </div>
 </div>
 
+<!-- 📱 MOBILE : Filters bottom sheet -->
+<div id="filtersPopoverMobile" class="hidden fixed inset-0 z-50 md:hidden">
+  <div id="filtersOverlayMobile" class="absolute inset-0 bg-black/40"></div>
+  <div class="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl p-4 max-h-[80vh] overflow-y-auto">
+
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-sm font-semibold text-gray-800">Filters</h3>
+      <button type="button" id="closeFiltersMobileBtn" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+
+    <div class="mb-4">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Status</div>
+      <div id="statusCheckboxesMobile" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <div class="mb-4">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Amount</div>
+      <select id="amountOpMobile" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full mb-2">
+        <option value="">Any amount</option>
+        <option value="eq">Equals</option>
+        <option value="gt">Greater than</option>
+        <option value="lt">Less than</option>
+        <option value="between">Between</option>
+      </select>
+      <div class="flex gap-2">
+        <input id="amountVal1Mobile" type="number" placeholder="Amount" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
+        <input id="amountVal2Mobile" type="number" placeholder="and" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
+      </div>
+    </div>
+
+    <div class="mb-2">
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Date</div>
+      <select id="dateOpMobile" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-full mb-2">
+        <option value="">Any date</option>
+        <option value="on">On</option>
+        <option value="before">Before</option>
+        <option value="after">After</option>
+        <option value="between">Between</option>
+      </select>
+      <div class="flex gap-2">
+        <input id="dateVal1Mobile" type="date" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
+        <input id="dateVal2Mobile" type="date" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm flex-1 hidden">
+      </div>
+    </div>
+
+    <button id="clearFiltersPopoverBtnMobile" class="w-full text-center text-xs text-gray-500 hover:text-red-600 py-2 border-t border-gray-100 mt-2">
+      Clear all filters
+    </button>
+
+  </div>
+</div>
+
     <!-- 📸 SCAN MODAL -->
 <div id="scanModal"
      class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-sm transition-opacity duration-200">
@@ -1433,7 +1433,7 @@ async function displayUserProfile() {
   }
 }
 
-  function setupCenterSelect(profile) {
+function setupCenterSelect(profile) {
     const centerSelect = document.getElementById("center_name");
     if (!centerSelect) return;
 
@@ -1441,10 +1441,17 @@ async function displayUserProfile() {
     const userCenter = (profile.center_name || '').trim().toUpperCase();
     const allowedCenters = profile.permissions?.allowed_centers || [];
 
+    const additionalCentersLabel = document.getElementById('additionalCentersLabel');
+    const multipleCentersCheck = document.getElementById('multipleCentersCheck');
+    const multipleCentersBox = document.getElementById('multipleCentersBox');
+
     // 👤 REQUESTER
     if (role === 'requester') {
       centerSelect.disabled = false;
       if (userCenter) centerSelect.value = userCenter;
+
+      // Requester peut toujours ajouter des centres additionnels
+      additionalCentersLabel?.classList.remove('hidden');
     }
 
 // 🏠 CC
@@ -1472,11 +1479,23 @@ async function displayUserProfile() {
           }
         });
       }
+
+      // 🔥 CC avec un seul centre autorisé → rien à ajouter, on cache l'option
+      if (allowedCenters.length <= 1) {
+        additionalCentersLabel?.classList.add('hidden');
+        if (multipleCentersCheck) multipleCentersCheck.checked = false;
+        multipleCentersBox?.classList.add('hidden');
+      } else {
+        additionalCentersLabel?.classList.remove('hidden');
+      }
     }
 
     // 👑 ADMIN
     else if (role === 'admin') {
       centerSelect.disabled = false;
+
+      // Admin peut toujours ajouter des centres additionnels
+      additionalCentersLabel?.classList.remove('hidden');
     }
   }
 
