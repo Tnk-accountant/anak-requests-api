@@ -192,15 +192,21 @@ app.post('/login', async (req, res) => {
     const user = data.user;
     const session = data.session;
 
-    const { data: profile } = await supabaseService
+const { data: profile } = await supabaseService
       .from('profiles')
-      .select('role, center_name, is_active')
+      .select('role, center_name, is_active, approval_status')
       .eq('id', user.id)
       .maybeSingle();
 
       if (profile?.is_active === false) {
   return res.status(403).json({
     error: 'Your account has been deactivated. Please contact an administrator.'
+  });
+}
+
+      if (profile?.approval_status === 'pending') {
+  return res.status(403).json({
+    error: 'Your account is awaiting admin approval.'
   });
 }
 
@@ -232,6 +238,61 @@ app.post('/login', async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ==============================
+// 📝 SIGNUP (compte public, en attente d'approbation)
+// ==============================
+app.post('/signup', async (req, res) => {
+  const { email, password, name } = req.body;
+
+  if (!email || !password || !name) {
+    return res.status(400).json({ error: 'Name, email and password are required' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
+
+  try {
+    const { data: user, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    const { error: profileError } = await supabaseService
+      .from('profiles')
+      .insert({
+        id: user.user.id,
+        mail: email,
+        Name: name.trim(),
+        role: null,
+        center_name: '',
+        permissions: { scope: 'OWN' },
+        is_active: true,
+        approval_status: 'pending',
+        display_names: [],
+        saved_descriptions: []
+      });
+
+    if (profileError) {
+      return res.status(400).json({ error: profileError.message });
+    }
+
+    res.json({
+      success: true,
+      message: 'Account created. Please wait for admin approval before logging in.'
+    });
+
+  } catch (err) {
+    console.error('SIGNUP error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -462,6 +523,61 @@ const { role, center_name, permissions, is_active, name, display_names, profile_
       }
     });
 
+// GET PENDING USERS
+    app.get('/admin/pending-users', authenticate, async (req, res) => {
+      try {
+        if (req.profile.role !== 'Admin') {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        const { data, error } = await supabaseService
+          .from('profiles')
+          .select('id, mail, "Name", created_at')
+          .eq('approval_status', 'pending')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        res.json(data);
+
+      } catch (err) {
+        console.error('GET PENDING USERS error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    });
+
+    // APPROVE USER
+    app.patch('/admin/users/:id/approve', authenticate, async (req, res) => {
+      try {
+        if (req.profile.role !== 'Admin') {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        const { role, center_name, permissions } = req.body;
+
+        if (!role) {
+          return res.status(400).json({ error: 'Role is required to approve this account' });
+        }
+
+        const { error } = await supabaseService
+          .from('profiles')
+          .update({
+            role,
+            center_name: center_name || '',
+            permissions: permissions || { scope: role === 'Admin' ? 'ALL' : role === 'CC' ? 'CENTER' : 'OWN' },
+            approval_status: 'approved'
+          })
+          .eq('id', req.params.id);
+
+        if (error) throw error;
+
+        res.json({ success: true });
+
+      } catch (err) {
+        console.error('APPROVE USER error:', err);
+        res.status(500).json({ error: err.message });
+      }
+    });
 
     // DELETE USER ADMIN SIDE
 app.delete('/admin/users/:id', authenticate, async (req, res) => {
@@ -1994,6 +2110,37 @@ app.patch('/requests/:request_id/validate-cancel', authenticate, async (req, res
   }
 });
 
+
+// =========================================
+// 🔑 REQUEST PASSWORD RESET (public)
+// =========================================
+app.post('/request-password-reset', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    const redirectTo = process.env.NODE_ENV === 'production'
+      ? 'https://YOUR-FRONTEND-DOMAIN.com/reset-password.html'
+      : 'http://localhost:5500/reset-password.html';
+
+    const { error } = await supabaseAuth.auth.resetPasswordForEmail(email, {
+      redirectTo
+    });
+
+    // ⚠️ On répond toujours "success" même si l'email n'existe pas
+    // (évite de révéler quels emails sont enregistrés dans le système)
+    if (error) console.warn('Reset password warning:', error.message);
+
+    res.json({ success: true, message: 'If this email exists, a reset link has been sent.' });
+
+  } catch (err) {
+    console.error('REQUEST PASSWORD RESET error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // =========================================
 // LOGOUT

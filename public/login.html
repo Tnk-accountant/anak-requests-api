@@ -370,7 +370,12 @@ body {
     <button type="submit">Log in</button>
   </form>
 
-  <div class="alert" id="loginAlert"></div>
+<div class="alert" id="loginAlert"></div>
+
+  <div style="margin-top:1.2rem; display:flex; justify-content:space-between; font-size:0.85rem;">
+    <a href="signup.html" style="color:#4f46e5; text-decoration:none; font-weight:500;">Create account</a>
+    <a href="#" id="forgotPasswordLink" style="color:#6b7280; text-decoration:none;">Forgot password?</a>
+  </div>
 </div>
 
 <div id="notificationContainer" class="notification-container"></div>
@@ -507,6 +512,32 @@ togglePassword.addEventListener('click',()=>{
     togglePassword.innerHTML=eyeOpen;
   }
 });
+
+document.getElementById('forgotPasswordLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+
+  if (!email) {
+    notify('Enter your email above first', 'error');
+    return;
+  }
+
+  try {
+    showLoader(true);
+    const res = await fetch(`${API_URL}/request-password-reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    await res.json();
+    notify('If this email exists, a reset link has been sent.', 'info');
+  } catch (err) {
+    notify('Server error', 'error');
+  } finally {
+    showLoader(false);
+  }
+});
+
 </script>
 </body>
 </html>
