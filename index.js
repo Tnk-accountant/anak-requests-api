@@ -1039,7 +1039,7 @@ app.post('/profile/descriptions', authenticate, async (req, res) => {
     if (!description) {
       return res.status(400).json({ error: 'Description required' });
     }
-    if (description.length > 200) {
+    if (description.length > 300) {
       return res.status(400).json({ error: 'Description too long (max 200 characters)' });
     }
 
