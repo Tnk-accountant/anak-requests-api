@@ -1123,6 +1123,45 @@ CHAT LAYOUT
 
 </div>
 
+<!-- CONFIRM MODAL (remplace window.confirm) -->
+<div id="confirmModal"
+     class="fixed inset-0 hidden items-center justify-center z-[9999]">
+
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+
+  <div class="relative bg-white rounded-3xl shadow-2xl p-6 w-[400px]">
+
+    <div class="text-center">
+
+      <div id="confirmModalIcon" class="text-5xl mb-3">⚠️</div>
+
+      <h3 id="confirmModalTitle" class="text-xl font-semibold text-slate-800">
+        Are you sure?
+      </h3>
+
+      <p id="confirmModalMessage" class="text-sm text-slate-500 mt-2 whitespace-pre-line">
+      </p>
+
+      <div class="flex justify-end gap-3 mt-6">
+
+        <button id="confirmModalCancel"
+          class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-sm font-medium">
+          Cancel
+        </button>
+
+        <button id="confirmModalConfirm"
+          class="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 text-sm font-medium">
+          Confirm
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
 
 </body>
 
@@ -1266,6 +1305,51 @@ tabUsers.onclick = () => {
       loadPendingUsers();
     };
 
+
+    // ==============================
+    // CONFIRM MODAL (remplace window.confirm)
+    // ==============================
+function showConfirmModal({ title = 'Are you sure?', message = '', icon = '⚠️', confirmText = 'Confirm', danger = true } = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmModalTitle');
+    const messageEl = document.getElementById('confirmModalMessage');
+    const iconEl = document.getElementById('confirmModalIcon');
+    const confirmBtn = document.getElementById('confirmModalConfirm');
+    const cancelBtn = document.getElementById('confirmModalCancel');
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    iconEl.textContent = icon;
+    confirmBtn.textContent = confirmText;
+
+    confirmBtn.className = danger
+      ? 'px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 text-sm font-medium'
+      : 'px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium';
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    function cleanup(result) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      confirmBtn.removeEventListener('click', onConfirm);
+      cancelBtn.removeEventListener('click', onCancel);
+      modal.removeEventListener('click', onBackdrop);
+      resolve(result);
+    }
+
+    function onConfirm() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    function onBackdrop(e) { if (e.target === modal) cleanup(false); }
+
+    confirmBtn.addEventListener('click', onConfirm);
+    cancelBtn.addEventListener('click', onCancel);
+    modal.addEventListener('click', onBackdrop);
+  });
+}
+
+
     // ==============================
     // PENDING APPROVALS
     // ==============================
@@ -1327,7 +1411,13 @@ pending.forEach(u => {
     }
 
     async function rejectPendingUser(u) {
-      if (!confirm(`Reject and delete the account request from ${u.Name || u.mail}?\n\nThis cannot be undone.`)) return;
+      const ok = await showConfirmModal({
+        title: 'Reject this request?',
+        message: `Reject and delete the account request from ${u.Name || u.mail}?\n\nThis cannot be undone.`,
+        icon: '🚫',
+        confirmText: 'Reject'
+      });
+      if (!ok) return;
 
       try {
         const res = await fetch(`${API_URL}/admin/users/${u.id}`, {
@@ -2102,8 +2192,15 @@ document.getElementById('editUserToggleActiveBtn')?.addEventListener('click', as
   const currentState = btn.dataset.currentState === 'active';
   const newState = !currentState;
 
-  const actionLabel = newState ? 'enable' : 'disable';
-  if (!confirm(`Are you sure you want to ${actionLabel} this account?`)) return;
+const actionLabel = newState ? 'enable' : 'disable';
+  const ok = await showConfirmModal({
+    title: `${newState ? 'Enable' : 'Disable'} this account?`,
+    message: `Are you sure you want to ${actionLabel} this account?`,
+    icon: newState ? '✅' : '⛔',
+    confirmText: newState ? 'Enable' : 'Disable',
+    danger: !newState
+  });
+  if (!ok) return;
 
   btn.disabled = true;
 
@@ -2192,7 +2289,13 @@ document.getElementById('editUserDeleteBtn')?.addEventListener('click', async ()
   const userId = document.getElementById('editUserId').value;
   const userName = document.getElementById('editUserName').value || 'this user';
 
-  if (!confirm(`⚠️ This will PERMANENTLY delete ${userName}. This cannot be undone.\n\nAre you sure?`)) return;
+  const ok = await showConfirmModal({
+    title: 'Delete this user?',
+    message: `This will PERMANENTLY delete ${userName}. This cannot be undone.`,
+    icon: '🗑️',
+    confirmText: 'Delete permanently'
+  });
+  if (!ok) return;
 
   try {
     const res = await fetch(`${API_URL}/admin/users/${userId}`, {
