@@ -530,11 +530,11 @@ const { role, center_name, permissions, is_active, name, display_names, profile_
           return res.status(403).json({ error: 'Forbidden' });
         }
 
-        const { data, error } = await supabaseService
+const { data, error } = await supabaseService
           .from('profiles')
-          .select('id, mail, "Name", created_at')
+          .select('id, mail, "Name"')
           .eq('approval_status', 'pending')
-          .order('created_at', { ascending: true });
+          .order('"Name"', { ascending: true });
 
         if (error) throw error;
 
