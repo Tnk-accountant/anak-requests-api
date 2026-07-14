@@ -588,24 +588,38 @@ app.delete('/admin/users/:id', authenticate, async (req, res) => {
 
     const userId = req.params.id;
 
-    // 🔒 empêcher un admin de se supprimer lui-même
     if (userId === req.user.id) {
       return res.status(400).json({
         error: 'You cannot delete your own account'
       });
     }
 
-    const { error: authError } =
-      await supabaseAdmin.auth.admin.deleteUser(userId);
+    // 🔒 Vérifier AVANT toute suppression : des demandes liées existent-elles ?
+    const { count, error: countError } = await supabaseService
+      .from('Requests')
+      .select('request_id', { count: 'exact', head: true })
+      .eq('created_by', userId);
 
-    if (authError) throw authError;
+    if (countError) throw countError;
 
+    if (count > 0) {
+      return res.status(400).json({
+        error: `Cannot delete: this user has ${count} request(s) linked to their account. Disable the account instead to preserve history.`
+      });
+    }
+
+    // ✅ Aucune demande liée → suppression sûre
     const { error: profileError } = await supabaseService
       .from('profiles')
       .delete()
       .eq('id', userId);
 
     if (profileError) throw profileError;
+
+    const { error: authError } =
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (authError) throw authError;
 
     res.json({ success: true });
 
