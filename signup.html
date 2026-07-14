@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="icon" href="/favicon_io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon_io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon_io/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon_io/apple-touch-icon.png">
+<link rel="manifest" href="/favicon_io/site.webmanifest">
+<title>Welcome – Anak Requests</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+
+  html, body { height: 100%; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background:
+      radial-gradient(circle at 20% 20%, #e0e7ff 0%, transparent 40%),
+      radial-gradient(circle at 80% 0%, #c7d2fe 0%, transparent 40%),
+      linear-gradient(135deg, #f8fafc, #eef2ff);
+
+    background-size: 120% 120%, 120% 120%, 100% 100%;
+    animation: backgroundMove 20s ease-in-out infinite;
+
+    color: #1f2937;
+    -webkit-font-smoothing: antialiased;
+    padding: 1.5rem;
+  }
+
+  @keyframes backgroundMove {
+    0% { background-position: 20% 20%, 80% 0%, 0% 0%; }
+    50% { background-position: 25% 25%, 75% 5%, 0% 0%; }
+    100% { background-position: 20% 20%, 80% 0%, 0% 0%; }
+  }
+
+  @media (min-width: 900px) {
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.03;
+      background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+      mix-blend-mode: overlay;
+    }
+  }
+
+  .card {
+    backdrop-filter: blur(14px);
+    background: rgba(255,255,255,0.8);
+
+    width: 100%;
+    max-width: 460px;
+    max-height: 92vh;
+    overflow-y: auto;
+
+    padding: 2.2rem 2rem;
+    border-radius: 28px;
+    border: 1px solid rgba(255,255,255,0.6);
+
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.12),
+      0 8px 20px rgba(0,0,0,0.08);
+
+    animation: fadeUp 0.6s ease;
+    position: relative;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(20px); }
+    to { opacity:1; transform: translateY(0); }
+  }
+
+  .fade-step { animation: fadeStep 0.35s ease; }
+  @keyframes fadeStep {
+    from { opacity:0; transform: translateX(12px); }
+    to { opacity:1; transform: translateX(0); }
+  }
+
+  .progress {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.6rem;
+  }
+  .progress .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d1d5db;
+    transition: all 0.3s ease;
+  }
+  .progress .dot.active { background: #4f46e5; width: 22px; border-radius: 6px; }
+  .progress .dot.done { background: #a5b4fc; }
+
+  .logo-wrap { text-align: center; margin-bottom: 1rem; }
+  .logo-wrap img { max-width: 130px; width: 100%; height: auto; }
+
+  h1 {
+    font-size: 1.55rem;
+    color: #111827;
+    text-align: center;
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.92rem;
+    margin-bottom: 1.6rem;
+    line-height: 1.5;
+  }
+
+  .feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 18px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .feature-icon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+  }
+  .feature-icon.blue { background: #e0e7ff; }
+  .feature-icon.green { background: #d1fae5; }
+  .feature-icon.amber { background: #fef3c7; }
+
+  .feature-text h3 { font-size: 0.95rem; color: #111827; margin-bottom: 0.15rem; }
+  .feature-text p { font-size: 0.82rem; color: #6b7280; line-height: 1.4; }
+
+  form { display:flex; flex-direction:column; gap:0.9rem; }
+
+  label.field-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: -0.5rem;
+    margin-left: 0.2rem;
+  }
+
+  input {
+    padding: 0.9rem 1rem;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    font-size: 1rem;
+    width: 100%;
+
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(6px);
+    transition: all 0.2s ease;
+  }
+
+  input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
+    transform: scale(1.01);
+    outline: none;
+  }
+
+  .password-wrapper { position: relative; width: 100%; }
+  .password-wrapper input { padding-right: 2.6rem; }
+
+  .toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 0.9rem;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    color: #555;
+  }
+  .toggle-password svg { display:block; width:100%; height:100%; }
+
+  button {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff;
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 10px 25px rgba(99,102,241,0.3);
+  }
+
+  button:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(99,102,241,0.4);
+  }
+  button:active { transform: scale(0.96); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: transparent;
+    color: #6366f1;
+    box-shadow: none;
+    border: 1.5px solid #e0e7ff;
+  }
+  .btn-secondary:hover { background: #eef2ff; box-shadow: none; }
+
+  .btn-row { display: flex; gap: 0.7rem; margin-top: 0.3rem; }
+  .btn-row button { flex: 1; }
+
+  .alert {
+    margin-top: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    font-weight: 500;
+    color: #b91c1c;
+    background: #fee2e2;
+    display: none;
+    font-size: 0.88rem;
+  }
+
+  .back-link {
+    display: block;
+    text-align: center;
+    margin-top: 1.4rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+    text-decoration: none;
+  }
+  .back-link:hover { color: #4f46e5; }
+
+  .success-icon {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #34d399, #10b981);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    margin: 0 auto 1.2rem auto;
+    box-shadow: 0 10px 25px rgba(16,185,129,0.35);
+    animation: pop 0.5s cubic-bezier(.22,1.4,.36,1);
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .steps-next {
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 18px;
+    padding: 1rem 1.1rem;
+    margin-top: 1rem;
+    text-align: left;
+  }
+  .steps-next .step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.5rem 0;
+  }
+  .steps-next .step-num {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #4f46e5;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps-next .step-row p { font-size: 0.85rem; color: #374151; line-height: 1.4; }
+  .steps-next .step-row strong { color: #111827; }
+
+  .notification-container {
+    position: fixed;
+    top: 1rem; right: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 1000;
+  }
+  .notification {
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 500;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    animation: fadein 0.3s ease;
+  }
+  .notification.info { background: #004f9f; }
+  .notification.success { background: #16a34a; }
+  .notification.error { background: #b91c1c; }
+  @keyframes fadein { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
+
+  #loader {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(6px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: #4f46e5;
+    border-radius: 28px;
+    z-index: 10;
+  }
+
+  @media (max-width: 600px) {
+    .card { padding: 1.8rem 1.4rem; border-radius: 20px; }
+    h1 { font-size: 1.35rem; }
+    .notification-container { left: 1rem; right: 1rem; top: 0.75rem; }
+    .notification { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div id="loader">⏳ Loading...</div>
+
+  <div class="progress" id="progressDots">
+    <div class="dot active" data-step="1"></div>
+    <div class="dot" data-step="2"></div>
+    <div class="dot" data-step="3"></div>
+  </div>
+
+  <!-- ============================= -->
+  <!-- STEP 1 : WELCOME / EXPLAINER  -->
+  <!-- ============================= -->
+  <div id="step1" class="fade-step">
+    <div class="logo-wrap">
+      <img src="https://www.anak-tnk.org/images-ong-enfants-manille/2023/05/Logo-ANAK-Tnk-01-ombre-site-500x200-1.png" alt="Logo Anak">
+    </div>
+
+    <h1>Welcome to Anak Requests 👋</h1>
+    <p class="subtitle">
+      One simple app to ask for money, get approved, and report how it was spent — all in a few taps.
+    </p>
+
+    <div class="feature">
+      <div class="feature-icon blue">📝</div>
+      <div class="feature-text">
+        <h3>1. Submit a request</h3>
+        <p>Need cash for your center? Fill a short form — amount, reason, done.</p>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon amber">✅</div>
+      <div class="feature-text">
+        <h3>2. Get approved</h3>
+        <p>Track your request in real time: Pending → Approved → Closed.</p>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon green">📤</div>
+      <div class="feature-text">
+        <h3>3. Report your expenses</h3>
+        <p>Snap a photo of your receipts with your phone. That's it!</p>
+      </div>
+    </div>
+
+  <button type="button" id="toStep2Btn" style="margin-top:1.2rem; display:block; margin-left:auto; margin-right:auto;">Let's get started →</button>
+
+    <a href="login.html" class="back-link">Already have an account? Log in</a>
+  </div>
+
+  <!-- ============================= -->
+  <!-- STEP 2 : CREATE ACCOUNT FORM -->
+  <!-- ============================= -->
+  <div id="step2" class="fade-step" style="display:none;">
+    <h1>Create your account</h1>
+    <p class="subtitle">It only takes 30 seconds.</p>
+
+    <form id="signupForm">
+      <label class="field-label">Full name</label>
+      <input type="text" id="signupName" placeholder="Ex: Maria Santos" required autocomplete="name">
+
+      <label class="field-label">Email address</label>
+      <input type="email" id="signupEmail" placeholder="you@example.com" required inputmode="email" autocomplete="email">
+
+      <label class="field-label">Password</label>
+      <div class="password-wrapper">
+        <input type="password" id="signupPassword" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password">
+        <span class="toggle-password" data-target="signupPassword">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8-10-8-10-8z"></path>
+          </svg>
+        </span>
+      </div>
+
+      <label class="field-label">Confirm password</label>
+      <div class="password-wrapper">
+        <input type="password" id="signupConfirmPassword" placeholder="Type it again" required minlength="6" autocomplete="new-password">
+        <span class="toggle-password" data-target="signupConfirmPassword">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8-10-8-10-8z"></path>
+          </svg>
+        </span>
+      </div>
+
+      <div class="btn-row" style="margin-top:0.4rem;">
+        <button type="button" class="btn-secondary" id="backToStep1Btn">← Back</button>
+        <button type="submit" id="signupSubmitBtn">Create account</button>
+      </div>
+    </form>
+
+    <div class="alert" id="signupAlert"></div>
+  </div>
+
+  <!-- ============================= -->
+  <!-- STEP 3 : SUCCESS / NEXT STEPS -->
+  <!-- ============================= -->
+  <div id="step3" class="fade-step" style="display:none; text-align:center;">
+    <div class="success-icon">🎉</div>
+
+    <h1>You're almost in!</h1>
+    <p class="subtitle">Your account has been created. Here's what happens next:</p>
+
+    <div class="steps-next">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <p>An <strong>administrator will review</strong> your account.</p>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <p>They will <strong>assign you to your center(s)</strong> and your role.</p>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <p>Once approved, you'll be able to <strong>log in and start submitting requests</strong> right away.</p>
+      </div>
+    </div>
+
+    <a href="login.html" style="margin-top:1.4rem; display:block;">
+      <button type="button" style="width:100%;">Go to login page</button>
+    </a>
+  </div>
+
+</div>
+
+<div id="notificationContainer" class="notification-container"></div>
+
+<script>
+const API_URL =
+  window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : 'https://anak-requests-api.onrender.com';
+
+const loader = document.getElementById('loader');
+const notifyContainer = document.getElementById('notificationContainer');
+
+function showLoader(show = true) {
+  loader.style.display = show ? 'flex' : 'none';
+}
+
+function notify(msg, type = 'info') {
+  const note = document.createElement('div');
+  note.className = `notification ${type}`;
+  note.textContent = msg;
+  notifyContainer.appendChild(note);
+  setTimeout(() => note.remove(), 4000);
+}
+
+function goToStep(stepNumber) {
+  [1, 2, 3].forEach(n => {
+    document.getElementById(`step${n}`).style.display = n === stepNumber ? 'block' : 'none';
+  });
+
+  document.querySelectorAll('.progress .dot').forEach(dot => {
+    const n = parseInt(dot.dataset.step, 10);
+    dot.classList.remove('active', 'done');
+    if (n === stepNumber) dot.classList.add('active');
+    else if (n < stepNumber) dot.classList.add('done');
+  });
+}
+
+document.getElementById('toStep2Btn').addEventListener('click', () => goToStep(2));
+document.getElementById('backToStep1Btn').addEventListener('click', () => goToStep(1));
+
+const signupForm = document.getElementById('signupForm');
+const signupAlert = document.getElementById('signupAlert');
+
+signupForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  signupAlert.style.display = 'none';
+
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const confirmPassword = document.getElementById('signupConfirmPassword').value;
+
+  if (password !== confirmPassword) {
+    signupAlert.textContent = '❌ Passwords do not match';
+    signupAlert.style.display = 'block';
+    return;
+  }
+
+  if (password.length < 6) {
+    signupAlert.textContent = '❌ Password must be at least 6 characters';
+    signupAlert.style.display = 'block';
+    return;
+  }
+
+  const submitBtn = document.getElementById('signupSubmitBtn');
+  submitBtn.disabled = true;
+  showLoader(true);
+
+  try {
+    const res = await fetch(`${API_URL}/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+
+    const data = await res.json();
+    showLoader(false);
+
+    if (!res.ok) throw new Error(data.error || 'Server error');
+
+    notify('Account created!', 'success');
+    goToStep(3);
+
+  } catch (err) {
+    showLoader(false);
+    signupAlert.textContent = '❌ ' + err.message;
+    signupAlert.style.display = 'block';
+    notify('Signup failed', 'error');
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+document.querySelectorAll('.toggle-password').forEach(toggle => {
+  const eyeOpen = `
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+  <circle cx="12" cy="12" r="3"/>
+</svg>`;
+  const eyeClosed = `
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+  <circle cx="12" cy="12" r="3"/>
+  <line x1="4" y1="4" x2="20" y2="20"/>
+</svg>`;
+
+  toggle.innerHTML = eyeOpen;
+  toggle.addEventListener('click', () => {
+    const input = document.getElementById(toggle.dataset.target);
+    if (input.type === 'password') {
+      input.type = 'text';
+      toggle.innerHTML = eyeClosed;
+    } else {
+      input.type = 'password';
+      toggle.innerHTML = eyeOpen;
+    }
+  });
+});
+</script>
+</body>
+</html>
