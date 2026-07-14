@@ -186,7 +186,7 @@ app.post('/login', async (req, res) => {
     });
 
     if (error || !data?.session) {
-      return res.status(401).json({ error: 'Échec de l’authentification' });
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const user = data.user;
@@ -2138,6 +2138,46 @@ app.post('/request-password-reset', async (req, res) => {
 
   } catch (err) {
     console.error('REQUEST PASSWORD RESET error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// =========================================
+// 🔑 CONFIRM PASSWORD RESET (public)
+// =========================================
+app.post('/reset-password', async (req, res) => {
+  const { access_token, refresh_token, new_password } = req.body;
+
+  if (!access_token || !new_password) {
+    return res.status(400).json({ error: 'Missing token or new password' });
+  }
+
+  if (new_password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
+
+  try {
+    const { data: sessionData, error: sessionError } = await supabaseAuth.auth.setSession({
+      access_token,
+      refresh_token
+    });
+
+    if (sessionError || !sessionData?.session) {
+      return res.status(401).json({ error: 'This reset link is invalid or has expired.' });
+    }
+
+    const { error: updateError } = await supabaseAuth.auth.updateUser({
+      password: new_password
+    });
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error('RESET PASSWORD error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
