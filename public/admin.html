@@ -480,7 +480,7 @@
               🔔 Pending Approvals
               <span id="pendingCountBadge" class="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
             </h3>
-            <div id="pendingApprovalsList" class="flex flex-col gap-2"></div>
+            <div id="pendingApprovalsList" class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1"></div>
           </div>
 
       <!--  SEARCH BAR -->
@@ -1303,21 +1303,50 @@ tabUsers.onclick = () => {
 
       section.classList.remove('hidden');
 
-      pending.forEach(u => {
+pending.forEach(u => {
         const row = document.createElement('div');
-        row.className = 'flex items-center justify-between bg-white border border-amber-100 rounded-xl px-4 py-3';
+        row.className = 'flex items-center justify-between gap-2 bg-white border border-amber-100 rounded-xl px-4 py-3';
         row.innerHTML = `
-          <div>
-            <div class="text-sm font-medium text-gray-800">${u.Name || '—'}</div>
-            <div class="text-xs text-gray-500">${u.mail}</div>
+          <div class="min-w-0">
+            <div class="text-sm font-medium text-gray-800 truncate">${u.Name || '—'}</div>
+            <div class="text-xs text-gray-500 truncate">${u.mail}</div>
           </div>
-          <button class="reviewPendingBtn bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-indigo-700 transition">
-            Review
-          </button>
+          <div class="flex items-center gap-2 shrink-0">
+            <button class="reviewPendingBtn bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-indigo-700 transition">
+              Review
+            </button>
+            <button class="rejectPendingBtn bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-50 transition">
+              Reject
+            </button>
+          </div>
         `;
         row.querySelector('.reviewPendingBtn').addEventListener('click', () => openApproveModal(u));
+        row.querySelector('.rejectPendingBtn').addEventListener('click', () => rejectPendingUser(u));
         list.appendChild(row);
       });
+    }
+
+    async function rejectPendingUser(u) {
+      if (!confirm(`Reject and delete the account request from ${u.Name || u.mail}?\n\nThis cannot be undone.`)) return;
+
+      try {
+        const res = await fetch(`${API_URL}/admin/users/${u.id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        if (!res.ok) {
+          const result = await res.json();
+          throw new Error(result.error || 'Failed to reject');
+        }
+
+        notify('Account rejected', 'info');
+        await loadPendingUsers();
+
+      } catch (err) {
+        console.error(err);
+        notify(err.message, 'error');
+      }
     }
 
     function openApproveModal(u) {
