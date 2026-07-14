@@ -471,8 +471,17 @@
           </button>
         </div>
 
-        <!-- STATS -->
-        <p id="usersStats" class="text-xs text-gray-400 mb-4"></p>
+  <!-- STATS -->
+          <p id="usersStats" class="text-xs text-gray-400 mb-4"></p>
+
+          <!-- 🔔 PENDING APPROVALS -->
+          <div id="pendingApprovalsSection" class="hidden mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <h3 class="text-sm font-semibold text-amber-800 flex items-center gap-2 mb-3">
+              🔔 Pending Approvals
+              <span id="pendingCountBadge" class="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+            </h3>
+            <div id="pendingApprovalsList" class="flex flex-col gap-2"></div>
+          </div>
 
       <!--  SEARCH BAR -->
           <div class="mb-5">
@@ -900,6 +909,48 @@ CHAT LAYOUT
   </div>
 </div>
 
+<!-- APPROVE USER MODAL -->
+<div id="approveUserModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
+
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">Approve Account</h3>
+      <button id="closeApproveUserModal" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <input type="hidden" id="approveUserId">
+
+      <div class="bg-gray-50 rounded-lg px-3 py-2 text-sm">
+        <div id="approveUserName" class="font-medium text-gray-800"></div>
+        <div id="approveUserEmail" class="text-xs text-gray-500"></div>
+      </div>
+
+      <div>
+        <label class="text-xs text-gray-500 block mb-1">Role</label>
+        <select id="approveUserRole" class="border border-gray-200 rounded-lg px-3 py-2 w-full">
+          <option value="">Select a role</option>
+          <option value="Requester">Requester</option>
+          <option value="CC">CC</option>
+          <option value="Admin">Admin</option>
+        </select>
+      </div>
+
+      <div id="approveUserCentersContainer" class="hidden">
+        <label class="text-xs text-gray-500 block mb-1">Allowed centers</label>
+        <input id="approveUserCenters" type="text" placeholder="Ex: RB1, RB5"
+          class="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm">
+      </div>
+
+      <button id="confirmApproveBtn"
+        class="bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition mt-2">
+        Approve account
+      </button>
+    </div>
+
+  </div>
+</div>
+
 <!-- CHANGEMENT : BIENVENUE DANS LES ARCHIVES -->
 
 <div id="archiveTransition"
@@ -1201,7 +1252,7 @@ let currentRequestId = null;
       applyAdvancedFilters();
     };
 
-    tabUsers.onclick = () => {
+tabUsers.onclick = () => {
       activeTab = 'users';
       setActiveTab('users');
 
@@ -1212,7 +1263,153 @@ let currentRequestId = null;
       document.getElementById('pagination').classList.add('hidden');
 
       loadUsers();
+      loadPendingUsers();
     };
+
+    // ==============================
+    // PENDING APPROVALS
+    // ==============================
+    async function loadPendingUsers() {
+      try {
+        const res = await fetch(`${API_URL}/admin/pending-users`, {
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+        });
+
+        if (res.status === 401) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const pending = await res.json();
+        renderPendingApprovals(pending);
+
+      } catch (err) {
+        console.error('loadPendingUsers error:', err);
+      }
+    }
+
+    function renderPendingApprovals(pending) {
+      const section = document.getElementById('pendingApprovalsSection');
+      const list = document.getElementById('pendingApprovalsList');
+      const badge = document.getElementById('pendingCountBadge');
+
+      badge.textContent = pending.length;
+      list.innerHTML = '';
+
+      if (!pending.length) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      section.classList.remove('hidden');
+
+      pending.forEach(u => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between bg-white border border-amber-100 rounded-xl px-4 py-3';
+        row.innerHTML = `
+          <div>
+            <div class="text-sm font-medium text-gray-800">${u.Name || '—'}</div>
+            <div class="text-xs text-gray-500">${u.mail}</div>
+          </div>
+          <button class="reviewPendingBtn bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-indigo-700 transition">
+            Review
+          </button>
+        `;
+        row.querySelector('.reviewPendingBtn').addEventListener('click', () => openApproveModal(u));
+        list.appendChild(row);
+      });
+    }
+
+    function openApproveModal(u) {
+      document.getElementById('approveUserId').value = u.id;
+      document.getElementById('approveUserName').textContent = u.Name || '—';
+      document.getElementById('approveUserEmail').textContent = u.mail;
+      document.getElementById('approveUserRole').value = '';
+      document.getElementById('approveUserCenters').value = '';
+      document.getElementById('approveUserCentersContainer').classList.add('hidden');
+
+      const modal = document.getElementById('approveUserModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeApproveModal() {
+      const modal = document.getElementById('approveUserModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    document.getElementById('closeApproveUserModal')?.addEventListener('click', closeApproveModal);
+
+    document.getElementById('approveUserModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'approveUserModal') closeApproveModal();
+    });
+
+    document.getElementById('approveUserRole')?.addEventListener('change', (e) => {
+      document.getElementById('approveUserCentersContainer')
+        .classList.toggle('hidden', e.target.value !== 'CC');
+    });
+
+    document.getElementById('confirmApproveBtn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('confirmApproveBtn');
+      const userId = document.getElementById('approveUserId').value;
+      const role = document.getElementById('approveUserRole').value;
+
+      if (!role) {
+        notify('Select a role', 'error');
+        return;
+      }
+
+      const centersRaw = document.getElementById('approveUserCenters').value;
+      const allowedCenters = centersRaw
+        .split(',')
+        .map(c => c.trim().toUpperCase())
+        .filter(c => c);
+
+      if (role === 'CC' && allowedCenters.length === 0) {
+        notify('CC must have at least 1 center', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Approving...';
+
+      try {
+        const res = await fetch(`${API_URL}/admin/users/${userId}/approve`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+          },
+          body: JSON.stringify({
+            role,
+            center_name: allowedCenters[0] || '',
+            permissions: {
+              scope: role === 'Admin' ? 'ALL' : role === 'CC' ? 'CENTER' : 'OWN',
+              allowed_centers: role === 'CC' ? allowedCenters : [],
+              can_create_for_other_centers: role === 'Admin' || role === 'Requester'
+            }
+          })
+        });
+
+        if (!res.ok) {
+          const result = await res.json();
+          throw new Error(result.error || 'Approval failed');
+        }
+
+        notify('Account approved', 'success');
+        closeApproveModal();
+        await loadPendingUsers();
+        await loadUsers();
+
+      } catch (err) {
+        console.error(err);
+        notify(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Approve account';
+      }
+    });
 
 
 const API_URL = 'https://anak-requests-api.onrender.com';
