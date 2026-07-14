@@ -473,11 +473,20 @@ button:active {
       </div>
 
 
-      <div>
+    <div>
         <label class="block text-gray-700 font-semibold mb-1">Description</label>
         <textarea id="description" rows="3" required
          class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+
+        <div class="flex flex-wrap items-center gap-2 mt-2">
+          <div id="templateChips" class="flex flex-wrap gap-2"></div>
+          <button type="button" id="manageTemplatesBtn"
+            class="text-xs text-indigo-600 hover:underline whitespace-nowrap">
+            ⚙️ Manage templates
+          </button>
+        </div>
       </div>
+
         <button
           id="submitRequestBtn"
           type="submit"
@@ -884,6 +893,30 @@ button:active {
 
 
 
+<!-- 📝 TEMPLATES MODAL -->
+<div id="templatesModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
+
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">My Templates</h3>
+      <button id="closeTemplatesModal" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+
+    <div id="templatesList" class="flex flex-col gap-2 mb-4 max-h-64 overflow-y-auto"></div>
+
+    <div class="flex gap-2">
+      <input id="newTemplateInput" type="text" maxlength="200" placeholder="New template text..."
+        class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <button id="addTemplateBtn"
+        class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">
+        Add
+      </button>
+    </div>
+    <p class="text-[11px] text-gray-400 mt-2">Max 20 templates, 200 characters each.</p>
+
+  </div>
+</div>
+
     <!-- 📸 SCAN MODAL -->
 <div id="scanModal"
      class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-sm transition-opacity duration-200">
@@ -965,7 +998,101 @@ button:active {
     return false;
   }
 }
+
 let requestorInput, form, status, generatedIdEl, myTableBody, amountSearchInput, descriptionSearchInput, dateSearchInput;
+let savedDescriptions = [];
+
+function renderTemplateChips() {
+  const container = document.getElementById('templateChips');
+  if (!container) return;
+  container.innerHTML = '';
+
+  savedDescriptions.forEach(desc => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs hover:bg-indigo-100 transition truncate max-w-[160px]';
+    chip.textContent = desc;
+    chip.title = desc;
+    chip.addEventListener('click', () => {
+      document.getElementById('description').value = desc;
+    });
+    container.appendChild(chip);
+  });
+}
+
+function renderTemplatesList() {
+  const container = document.getElementById('templatesList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!savedDescriptions.length) {
+    container.innerHTML = `<p class="text-sm text-gray-400 text-center py-4">No templates yet</p>`;
+    return;
+  }
+
+  savedDescriptions.forEach(desc => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2';
+    row.innerHTML = `
+      <span class="text-sm text-gray-700 truncate">${desc}</span>
+      <button class="deleteTemplateBtn text-gray-400 hover:text-red-600 text-xs shrink-0">✕</button>
+    `;
+    row.querySelector('.deleteTemplateBtn').addEventListener('click', () => deleteTemplate(desc));
+    container.appendChild(row);
+  });
+}
+
+async function addTemplate() {
+  const input = document.getElementById('newTemplateInput');
+  const description = input.value.trim();
+  if (!description) return;
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/profile/descriptions`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description })
+    });
+    const result = await res.json();
+
+    if (!res.ok) {
+      notify(result.error || "Error adding template", "error");
+      return;
+    }
+
+    savedDescriptions = result.saved_descriptions;
+    input.value = '';
+    renderTemplatesList();
+    renderTemplateChips();
+    notify("Template saved", "success");
+  } catch (err) {
+    notify("Server error", "error");
+  }
+}
+
+async function deleteTemplate(description) {
+  try {
+    const res = await fetchWithAuth(`${API_URL}/profile/descriptions`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description })
+    });
+    const result = await res.json();
+
+    if (!res.ok) {
+      notify(result.error || "Error deleting template", "error");
+      return;
+    }
+
+    savedDescriptions = result.saved_descriptions;
+    renderTemplatesList();
+    renderTemplateChips();
+  } catch (err) {
+    notify("Server error", "error");
+  }
+}
 
   function notify(message, type = "info") {
     const container = document.getElementById("notificationContainer");
@@ -1320,12 +1447,44 @@ let mobileDateFilter = '';
       });
 
 
-    console.log("DOM ready, script chargé");
+console.log("DOM ready, script chargé");
     const profile = await displayUserProfile();
     if (!profile) {
       window.location.replace('login.html');
       return;
     }
+
+    savedDescriptions = profile.saved_descriptions || [];
+    renderTemplateChips();
+
+    document.getElementById('manageTemplatesBtn')?.addEventListener('click', () => {
+      renderTemplatesList();
+      const modal = document.getElementById('templatesModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    });
+
+    document.getElementById('closeTemplatesModal')?.addEventListener('click', () => {
+      const modal = document.getElementById('templatesModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    });
+
+    document.getElementById('templatesModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'templatesModal') {
+        e.target.classList.add('hidden');
+        e.target.classList.remove('flex');
+      }
+    });
+
+    document.getElementById('addTemplateBtn')?.addEventListener('click', addTemplate);
+
+    document.getElementById('newTemplateInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addTemplate();
+      }
+    });
     
   const mobileAmountInput = document.getElementById('mobileAmountSearch');
     if (mobileAmountInput) {
