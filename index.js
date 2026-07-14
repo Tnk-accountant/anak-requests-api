@@ -1364,15 +1364,15 @@ app.post('/requests', authenticate, async (req, res) => {
       });
     }
 
-    // ==============================
-    // 👁️ VISIBILITY
-    // ==============================
+  // ==============================
+  // 👁️ VISIBILITY
+  // ==============================
 
-    let visibility_scope = "CENTER";
+  let visibility_scope = "CENTER";
 
-    if (perms.scope === "OWN") {
-      visibility_scope = "PRIVATE";
-    }
+  if (perms.scope === "OWN" || role === "admin") {
+    visibility_scope = "PRIVATE";
+  }
 
     // ==============================
     // 🔎 VALIDATION CENTRE
