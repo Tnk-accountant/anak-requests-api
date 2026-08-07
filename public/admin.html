@@ -234,6 +234,7 @@
 
     </div>
 
+   <div class="hidden md:block">
    <div id="filtersCard"
   class="relative z-20 bg-white/80 backdrop-blur border border-gray-200 rounded-2xl p-4 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
   
@@ -370,6 +371,7 @@
       </div>
 
     </div>
+   </div>
 
 
   <!-- ARCHIVE BANNER -->
@@ -419,7 +421,86 @@
 
     </div>
 
+    <!-- ============================================= -->
+    <!-- 📱 MOBILE : requests (badge + filters + cartes) -->
+    <!-- ============================================= -->
+    <div id="mobileRequestsSection" class="md:hidden flex-1 min-h-0 flex flex-col">
+
+      <div class="flex items-center gap-2 mb-4">
+
+        <button type="button" id="filtersBtnMobile"
+          class="flex-1 h-11 px-4 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium flex items-center justify-center gap-2 shadow-sm">
+          Filters
+          <span id="filtersCountBadgeMobile" class="hidden bg-indigo-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full"></span>
+        </button>
+
+        <div class="h-11 flex items-center gap-2 px-4 rounded-xl bg-purple-50 border border-purple-200 whitespace-nowrap">
+          <span class="text-xs text-purple-500">To Liquidate</span>
+          <span id="totalToLiquidateMobile" class="text-sm font-semibold text-purple-700">0.00 PHP</span>
+        </div>
+
+      </div>
+
+      <div id="mobileRequestsContainer" class="flex-1 min-h-0 overflow-y-auto space-y-3 pb-4"></div>
+
+      <div id="emptyStateMobileAdmin" class="hidden text-center py-12 text-gray-400 text-sm">
+        No request found.
+      </div>
+
+    </div>
+
+    <!-- ============================================= -->
+    <!-- 📱 MOBILE : Filters bottom sheet -->
+    <!-- ============================================= -->
+    <div id="filtersPopoverMobileAdmin" class="hidden fixed inset-0 z-50 md:hidden">
+      <div id="filtersOverlayMobileAdmin" class="absolute inset-0 bg-black/40"></div>
+      <div class="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl p-4 max-h-[80vh] overflow-y-auto">
+
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-sm font-semibold text-gray-800">Filters</h3>
+          <button type="button" id="closeFiltersMobileAdminBtn" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+
+        <div class="space-y-3 mb-4">
+          <input
+            id="searchNameMobile"
+            type="text"
+            placeholder="Requested by"
+            class="w-full h-11 px-4 rounded-xl border border-gray-300 bg-gray-50 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+          >
+          <input
+            id="searchCenterMobile"
+            type="text"
+            placeholder="Center"
+            class="w-full h-11 px-4 rounded-xl border border-gray-300 bg-gray-50 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+          >
+          <input
+            id="minAmountMobile"
+            type="number"
+            placeholder="Amount"
+            class="w-full h-11 px-4 rounded-xl border border-gray-300 bg-gray-50 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+          >
+          <select id="filterStatusMobile"
+            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            <option value="">All statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+            <option value="ToLiquidate">To liquidate</option>
+            <option value="PendingValidation">Pending Validation</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+
+        <button id="clearFiltersMobileAdminBtn" class="w-full text-center text-xs text-gray-500 hover:text-red-600 py-2 border-t border-gray-100 mt-2">
+          Clear all filters
+        </button>
+
+      </div>
+    </div>
+
     <!-- TABLE -->
+<div class="hidden md:block">
 <div id="tableCard"
   class="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
   <table class="min-w-full text-left border-collapse">
@@ -442,6 +523,7 @@
         <tbody id="requestsTableBody" class="divide-y divide-gray-100"></tbody>
       </table>
     </div>
+</div>
 
     <!-- PAGINATION -->
     <div id="pagination" class="flex justify-center items-center mt-6 gap-3 shrink-0">
@@ -1237,6 +1319,7 @@ let currentRequestId = null;
     const tabUsers = document.getElementById('tabUsers');
     const usersSection = document.getElementById('usersSection');
     const tableSection = document.querySelector('.overflow-x-auto');
+    const mobileRequestsSection = document.getElementById('mobileRequestsSection');
 
     function setActiveTab(active) {
 
@@ -1274,6 +1357,7 @@ let currentRequestId = null;
       usersSection.classList.add('hidden');
       tableSection.classList.remove('hidden');
       filtersBar.classList.remove('hidden');
+      mobileRequestsSection?.classList.remove('hidden');
 
       document.getElementById('pagination').classList.remove('hidden');
 
@@ -1287,6 +1371,7 @@ let currentRequestId = null;
       usersSection.classList.add('hidden');
       tableSection.classList.remove('hidden');
       filtersBar.classList.remove('hidden');
+      mobileRequestsSection?.classList.remove('hidden');
 
       applyAdvancedFilters();
     };
@@ -1299,6 +1384,7 @@ tabUsers.onclick = () => {
       tableSection.classList.add('hidden');
 
       filtersBar.classList.add('hidden'); // 🔥 C'EST ÇA QUE TU VOULAIS
+      mobileRequestsSection?.classList.add('hidden');
       document.getElementById('pagination').classList.add('hidden');
 
       loadUsers();
@@ -1933,6 +2019,9 @@ document
 
       document.getElementById("totalToLiquidate").textContent =
         `${formatAmount(total)} PHP`;
+
+      const mobileTotal = document.getElementById("totalToLiquidateMobile");
+      if (mobileTotal) mobileTotal.textContent = `${formatAmount(total)} PHP`;
     }
 
     function applyAdvancedFilters() {
@@ -2445,6 +2534,482 @@ document.getElementById('editUserDeleteBtn')?.addEventListener('click', async ()
 
 });
 
+// =========================================================
+// BIND ROW ACTIONS — réutilisé par le tableau ET les cartes mobiles
+// =========================================================
+function bindRowActions(req, tr) {
+
+  // CLICK → ouvre modal
+  const openDescBtn = tr.querySelector('.openDescription');
+
+  if (openDescBtn) {
+    openDescBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+
+      // ==============================
+      // SET CONTEXT
+      // ==============================
+      currentRequestId = req.request_id;
+
+      // ==============================
+      // DESCRIPTION
+      // ==============================
+      const descriptionEl = document.getElementById('descriptionContent');
+      descriptionEl.textContent = req.description || 'No description';
+
+      const centersBox = document.getElementById("centersConcerned");
+
+      if (req.other_centers?.length > 0) {
+
+        centersBox.classList.remove("hidden");
+
+        let html = `
+          <div class="flex items-center gap-2">
+
+            <span class="text-[10px] uppercase tracking-wider text-gray-400">
+              Centers
+            </span>
+
+            <div class="flex flex-wrap gap-1">
+              <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
+                ${req.center_name}
+              </span>
+        `;
+
+        req.other_centers.forEach(center => {
+
+        html += `
+          <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
+            ${center}
+          </span>
+        `;
+
+        });
+
+        html += `
+            </div>
+
+          </div>
+        `;
+
+        centersBox.innerHTML = html;
+
+      } else {
+
+        centersBox.classList.add("hidden");
+
+      }
+
+      // ==============================
+      // CONVERSATION / CLARIFICATION
+      // ==============================
+      const convoBox = document.getElementById('adminConversation');
+
+      convoBox.innerHTML = '';
+
+      if (req.conversation?.length) {
+
+        convoBox.innerHTML = '';
+
+        req.conversation.forEach((msg) => {
+          const isAdmin = msg.sender === 'admin';
+          const senderName = isAdmin ? 'Father' : (msg.sender_name || msg.sender);
+
+          const row = document.createElement('div');
+          row.className = `w-full flex ${isAdmin ? 'justify-end' : 'justify-start'}`;
+
+          const bubble = document.createElement('div');
+          bubble.className = `
+            chat-bubble text-sm leading-relaxed break-words animate-fade-in shadow-sm
+            ${isAdmin
+              ? 'bg-indigo-500 text-white rounded-[18px] rounded-br-[4px]'
+              : 'bg-white text-gray-800 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
+            }
+            px-4 py-2
+          `;
+
+          bubble.innerHTML = `
+            <div class="text-[10px] opacity-60 mb-1">${senderName}</div>
+            <div class="break-words whitespace-pre-wrap">${msg.message}</div>
+          `;
+
+          row.appendChild(bubble);
+          convoBox.appendChild(row);
+        });
+
+        convoBox.scrollTop = convoBox.scrollHeight;
+        convoBox.scrollTop = convoBox.scrollHeight;
+
+      } else {
+        convoBox.innerHTML = `
+          <div class="text-xs text-gray-400 text-center py-8">
+            No conversation yet
+          </div>
+        `;
+      }
+
+      // ==============================
+      // RESET INPUT
+      // ==============================
+      const feedbackInput = document.getElementById('feedbackInput');
+      feedbackInput.value = '';
+      feedbackInput.style.height = 'auto';
+
+      // ==============================
+      // OPEN MODAL
+      // ==============================
+      const modal = document.getElementById('descriptionModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    });
+  }
+
+  if (!archivesMode) {
+    const approveBtn = tr.querySelector('.approveBtn');
+    const rejectBtn = tr.querySelector('.rejectBtn');
+    const approvedAmountInput = tr.querySelector('.approvedAmount');
+
+    const validateBtn = tr.querySelector('.validateBtn');
+    const validateCancelBtn = tr.querySelector('.validateCancelBtn');
+
+    approvedAmountInput.addEventListener('keydown', async (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      if (approveBtn.disabled) return;
+
+      let approved_amount = Number(
+        approvedAmountInput.value.replace(/,/g, '')
+      );
+
+      if (isNaN(approved_amount) || approved_amount <= 0) {
+        notify("Invalid approved amount", "error");
+        return;
+      }
+
+      disableButtons([approveBtn, rejectBtn]);
+      await updateRequest(req, 'Approved', currentAdmin, approved_amount, tr);
+      enableButtons([approveBtn, rejectBtn]);
+    });
+
+    if (activeTab === 'liquidation') {
+      if (approveBtn) approveBtn.style.display = 'none';
+      if (rejectBtn) rejectBtn.style.display = 'none';
+      if (approvedAmountInput) approvedAmountInput.style.display = 'none';
+    }
+
+    if (validateBtn) {
+      validateBtn.addEventListener('click', async () => {
+        if (validateBtn.disabled) return;
+
+        validateBtn.disabled = true;
+        validateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        validateBtn.textContent = '⏳...';
+
+        try {
+          const token = localStorage.getItem('access_token');
+
+          const res = await fetch(`${API_URL}/requests/${req.request_id}/validate-liquidation`, {
+            method: 'PATCH',
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+
+          if (res.status === 401) {
+            localStorage.removeItem('access_token');
+            window.location.href = 'login.html';
+            return;
+          }
+
+          const result = await res.json();
+
+          if (!res.ok) {
+            validateBtn.disabled = false;
+            validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            validateBtn.textContent = '✅ Validate';
+            notify(result.error || "Error validating", "error");
+            return;
+          }
+
+          req.status = 'Closed';
+
+          tr.style.transition = 'all 0.3s ease';
+          tr.style.opacity = '0';
+
+          setTimeout(() => {
+            applyAdvancedFilters();
+          }, 300);
+
+          updateToLiquidateSummary();
+          notify("Liquidation validated", "success");
+
+        } catch (err) {
+          console.error(err);
+          validateBtn.disabled = false;
+          validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          validateBtn.textContent = '✅ Validate';
+          notify("Server error", "error");
+        }
+      });
+    }
+
+    if (validateCancelBtn) {
+      validateCancelBtn.addEventListener('click', async () => {
+        if (req.status !== 'PendingCancel') return;
+        if (validateCancelBtn.disabled) return;
+
+        validateCancelBtn.disabled = true;
+        validateCancelBtn.classList.add('opacity-50');
+        validateCancelBtn.textContent = '⏳...';
+
+        try {
+          const token = localStorage.getItem('access_token');
+
+          const res = await fetch(`${API_URL}/requests/${req.request_id}/validate-cancel`, {
+            method: 'PATCH',
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+
+          if (res.status === 401) {
+            localStorage.removeItem('access_token');
+            window.location.href = 'login.html';
+            return;
+          }
+
+          const result = await res.json();
+
+          if (!res.ok) {
+            validateCancelBtn.disabled = false;
+            validateCancelBtn.textContent = '❌ Validate Cancel';
+            notify(result.error || "Error", "error");
+            return;
+          }
+
+          const updated = result?.data || req;
+          req.status = updated.status || 'Cancelled';
+
+          tr.style.transition = 'all 0.3s ease';
+          tr.style.opacity = '0';
+
+          setTimeout(() => {
+            applyAdvancedFilters();
+          }, 300);
+
+          notify("Request cancelled", "success");
+
+        } catch (err) {
+          console.error(err);
+          validateCancelBtn.disabled = false;
+          validateCancelBtn.textContent = '❌ Validate Cancel';
+          notify("Server error", "error");
+        }
+      });
+    }
+
+    setRowActionState(req, tr);
+
+    tr.addEventListener('dblclick', () => {
+      if (req.status !== 'Approved') return;
+
+      approvedAmountInput.readOnly = false;
+      approvedAmountInput.value = approvedAmountInput.dataset.raw || '';
+      approvedAmountInput.classList.remove('opacity-50', 'cursor-not-allowed');
+
+      approveBtn.disabled = false;
+      rejectBtn.disabled = false;
+      approveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      rejectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+      approvedAmountInput.focus();
+    });
+
+    if (approveBtn) {
+      approveBtn.addEventListener('click', async () => {
+        let approved_amount = Number(
+          approvedAmountInput.value.replace(/,/g, '')
+        );
+
+        if (isNaN(approved_amount) || approved_amount <= 0) {
+          notify("Invalid approved amount", "error");
+          return;
+        }
+
+        disableButtons([approveBtn, rejectBtn]);
+        await updateRequest(req, 'Approved', currentAdmin, approved_amount, tr);
+        enableButtons([approveBtn, rejectBtn]);
+      });
+    }
+
+    rejectBtn.addEventListener('click', async () => {
+      disableButtons([approveBtn, rejectBtn]);
+      await updateRequest(req, 'Rejected', currentAdmin, null, tr);
+      enableButtons([approveBtn, rejectBtn]);
+    });
+  }
+}
+
+// =========================================================
+// 📱 MOBILE — cartes des requêtes
+// =========================================================
+function renderMobileCards(data) {
+  const container = document.getElementById('mobileRequestsContainer');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  document.getElementById('emptyStateMobileAdmin')?.classList.toggle('hidden', data.length > 0);
+
+  data.forEach(req => {
+    const isPurchaser = (req.profile_label || '').toLowerCase().includes('purchas');
+
+    const card = document.createElement('div');
+    card.className = `
+      bg-white rounded-2xl border border-gray-200 shadow-sm p-4
+      ${isPurchaser ? 'bg-orange-50 border-orange-200' : ''}
+    `;
+
+    const paymentLabel =
+      req.payment_method === 'cash' ? '💵 Cash' :
+      req.payment_method === 'cheque' ? '🧾 Check' :
+      req.payment_method === 'card' ? '💳 Card' : '—';
+
+    card.innerHTML = `
+      <div class="flex justify-between items-start mb-2">
+        <div class="min-w-0">
+          <p class="font-semibold text-gray-800 truncate">${req.requestor_name}</p>
+          <p class="text-xs text-gray-500">
+            ${req.center_name}
+            ${req.other_centers?.length ? `<span class="text-indigo-600 font-semibold">(+${req.other_centers.length})</span>` : ''}
+            · ${new Date(req.timestamp).toLocaleDateString('fr-FR')}
+          </p>
+        </div>
+        <div class="status-cell shrink-0">
+          <span class="px-2 py-1 rounded-full text-white text-xs ${statusClasses[req.status] || ''}">
+            ${req.status || ''}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center text-sm mb-2">
+        <span class="text-gray-500">${paymentLabel}</span>
+        <span class="font-semibold text-gray-800">${formatAmount(req.amount_requested)} PHP</span>
+      </div>
+
+      <div class="flex justify-between items-center text-xs text-gray-500 mb-3">
+        <span class="openDescription text-indigo-600 hover:underline cursor-pointer">
+          ${req.description ? 'View description' : 'No description'}
+        </span>
+        <span>
+          Approved: <span class="approved-amount-cell font-medium text-gray-700">${req.approved_amount != null ? formatAmount(req.approved_amount) : '—'}</span>
+          · By <span class="approved-by-cell font-medium text-gray-700">${req.approved_by || '—'}</span>
+        </span>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap border-t border-gray-100 pt-3">
+        <input
+          type="text"
+          class="approvedAmount flex-1 min-w-[80px] p-2 border border-gray-200 rounded-lg text-center text-sm"
+          autocomplete="off"
+          name="approved-amount-no-autofill"
+          data-lpignore="true"
+        />
+        <button class="approveBtn bg-green-500 text-white px-3 py-2 rounded-lg text-sm">✅</button>
+        <button class="rejectBtn bg-red-500 text-white px-3 py-2 rounded-lg text-sm">❌</button>
+        ${
+          activeTab === 'liquidation' && req.status === 'PendingValidation'
+            ? `<button class="validateBtn bg-green-600 text-white px-3 py-2 rounded-lg text-sm w-full mt-1">✔ Validate</button>`
+            : ''
+        }
+        ${
+          activeTab === 'liquidation' && req.status === 'PendingCancel'
+            ? `<button class="validateCancelBtn bg-red-600 text-white px-3 py-2 rounded-lg text-sm w-full mt-1">✖ Validate Cancel</button>`
+            : ''
+        }
+      </div>
+    `;
+
+    container.appendChild(card);
+    bindRowActions(req, card);
+  });
+}
+
+// -------------------------------------------
+// Bottom sheet filtres mobile — miroir des filtres desktop
+// -------------------------------------------
+document.getElementById('filtersBtnMobile')?.addEventListener('click', () => {
+  document.getElementById('filtersPopoverMobileAdmin')?.classList.remove('hidden');
+});
+
+document.getElementById('closeFiltersMobileAdminBtn')?.addEventListener('click', () => {
+  document.getElementById('filtersPopoverMobileAdmin')?.classList.add('hidden');
+});
+
+document.getElementById('filtersOverlayMobileAdmin')?.addEventListener('click', () => {
+  document.getElementById('filtersPopoverMobileAdmin')?.classList.add('hidden');
+});
+
+function updateMobileFiltersBadge() {
+  const count =
+    (searchName.value.trim() ? 1 : 0) +
+    (searchCenter.value.trim() ? 1 : 0) +
+    (minAmount.value ? 1 : 0) +
+    (filterStatus.value ? 1 : 0);
+
+  const badge = document.getElementById('filtersCountBadgeMobile');
+  if (!badge) return;
+
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+// Chaque input mobile écrit dans l'input desktop correspondant,
+// puis déclenche exactement la même logique de filtrage existante.
+document.getElementById('searchNameMobile')?.addEventListener('input', (e) => {
+  searchName.value = e.target.value;
+  applyAdvancedFilters();
+  updateMobileFiltersBadge();
+});
+
+document.getElementById('searchCenterMobile')?.addEventListener('input', (e) => {
+  searchCenter.value = e.target.value;
+  applyAdvancedFilters();
+  updateMobileFiltersBadge();
+});
+
+document.getElementById('minAmountMobile')?.addEventListener('input', (e) => {
+  minAmount.value = e.target.value;
+  applyAdvancedFilters();
+  updateMobileFiltersBadge();
+});
+
+document.getElementById('filterStatusMobile')?.addEventListener('change', (e) => {
+  filterStatus.value = e.target.value;
+  fetchRequests();
+  updateMobileFiltersBadge();
+});
+
+document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click', () => {
+  const searchNameMobileEl = document.getElementById('searchNameMobile');
+  const searchCenterMobileEl = document.getElementById('searchCenterMobile');
+  const minAmountMobileEl = document.getElementById('minAmountMobile');
+  const filterStatusMobileEl = document.getElementById('filterStatusMobile');
+
+  if (searchNameMobileEl) searchNameMobileEl.value = '';
+  if (searchCenterMobileEl) searchCenterMobileEl.value = '';
+  if (minAmountMobileEl) minAmountMobileEl.value = '';
+  if (filterStatusMobileEl) filterStatusMobileEl.value = '';
+
+  searchName.value = '';
+  searchCenter.value = '';
+  minAmount.value = '';
+  filterStatus.value = '';
+
+  applyAdvancedFilters();
+  updateMobileFiltersBadge();
+});
+
   function renderTable(data) {   
   requestsTableBody.innerHTML = '';
   data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -2649,371 +3214,7 @@ document.getElementById('editUserDeleteBtn')?.addEventListener('click', async ()
 }
 
 
- // CLICK → ouvre modal
-const openDescBtn = tr.querySelector('.openDescription');
-
-if (openDescBtn) {
-  openDescBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-
-    // ==============================
-    // SET CONTEXT
-    // ==============================
-    currentRequestId = req.request_id;
-
-    // ==============================
-    // DESCRIPTION
-    // ==============================
-    const descriptionEl = document.getElementById('descriptionContent');
-    descriptionEl.textContent = req.description || 'No description';
-
-    const centersBox = document.getElementById("centersConcerned");
-
-    if (req.other_centers?.length > 0) {
-
-      centersBox.classList.remove("hidden");
-
-      let html = `
-        <div class="flex items-center gap-2">
-
-          <span class="text-[10px] uppercase tracking-wider text-gray-400">
-            Centers
-          </span>
-
-          <div class="flex flex-wrap gap-1">
-            <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
-              ${req.center_name}
-            </span>
-      `;
-
-      req.other_centers.forEach(center => {
-
-      html += `
-        <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
-          ${center}
-        </span>
-      `;
-
-      });
-
-      html += `
-          </div>
-
-        </div>
-      `;
-
-      centersBox.innerHTML = html;
-
-    } else {
-
-      centersBox.classList.add("hidden");
-
-    }
-
-    // ==============================
-    // CONVERSATION / CLARIFICATION
-    // ==============================
-    const convoBox = document.getElementById('adminConversation');
-
-    // reset
-    convoBox.innerHTML = '';
-
-// ─────────────────────────────────────────
-// CONVERSATION RENDER
-// ─────────────────────────────────────────
-if (req.conversation?.length) {
-
-  convoBox.innerHTML = '';
-
-  req.conversation.forEach((msg) => {
-    const isAdmin = msg.sender === 'admin';
-    const senderName = isAdmin ? 'Father' : (msg.sender_name || msg.sender);
-
-    const row = document.createElement('div');
-    row.className = `w-full flex ${isAdmin ? 'justify-end' : 'justify-start'}`;
-
-    const bubble = document.createElement('div');
-    bubble.className = `
-      chat-bubble text-sm leading-relaxed break-words animate-fade-in shadow-sm
-      ${isAdmin
-        ? 'bg-indigo-500 text-white rounded-[18px] rounded-br-[4px]'
-        : 'bg-white text-gray-800 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
-      }
-      px-4 py-2
-    `;
-
-    bubble.innerHTML = `
-      <div class="text-[10px] opacity-60 mb-1">${senderName}</div>
-      <div class="break-words whitespace-pre-wrap">${msg.message}</div>
-    `;
-
-    row.appendChild(bubble);
-    convoBox.appendChild(row);
-  });
-
-  convoBox.scrollTop = convoBox.scrollHeight;
-
-  // ------------------------------
-  // AUTO SCROLL (une seule fois)
-  // ------------------------------
-  convoBox.scrollTop = convoBox.scrollHeight;
-  
-} else {
-  convoBox.innerHTML = `
-    <div class="text-xs text-gray-400 text-center py-8">
-      No conversation yet
-    </div>
-  `;
-}
-
-    // ==============================
-    // RESET INPUT
-    // ==============================
-    const feedbackInput =
-      document.getElementById('feedbackInput');
-
-    feedbackInput.value = '';
-    feedbackInput.style.height = 'auto';
-
-    // ==============================
-    // OPEN MODAL
-    // ==============================
-    const modal = document.getElementById('descriptionModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-  });
-}
-
-if (!archivesMode) {
-        const approveBtn = tr.querySelector('.approveBtn');
-        const rejectBtn = tr.querySelector('.rejectBtn');
-        const approvedAmountInput = tr.querySelector('.approvedAmount');
-
-        const validateBtn = tr.querySelector('.validateBtn');
-        const validateCancelBtn = tr.querySelector('.validateCancelBtn');
-
-
-        // PRESS TOUCH ENTER => VALID  THE AMOUNT
-        approvedAmountInput.addEventListener('keydown', async (e) => {
-        if (e.key !== 'Enter') return;
-
-        e.preventDefault();
-
-        // 🔒 empêche si bouton désactivé (sécurité)
-        if (approveBtn.disabled) return;
-
-        let approved_amount = Number(
-          approvedAmountInput.value.replace(/,/g, '')
-        );
-
-        if (isNaN(approved_amount) || approved_amount <= 0) {
-          notify("Invalid approved amount", "error");
-          return;
-        }
-
-        disableButtons([approveBtn, rejectBtn]);
-
-        await updateRequest(
-          req,
-          'Approved',
-          currentAdmin,
-          approved_amount,
-          tr
-        );
-
-        enableButtons([approveBtn, rejectBtn]);
-      });
-
-        // 🔥 ONGLET LIQUIDATION → UI CLEAN
-      if (activeTab === 'liquidation') {
-        if (approveBtn) approveBtn.style.display = 'none';
-        if (rejectBtn) rejectBtn.style.display = 'none';
-        if (approvedAmountInput) approvedAmountInput.style.display = 'none';
-      }
-
-
-      //Validation btn vert dans liquidation 
-
-      if (validateBtn) {
-          validateBtn.addEventListener('click', async () => {
-
-            // 🚫 empêche double clic
-            if (validateBtn.disabled) return;
-
-            validateBtn.disabled = true;
-            validateBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            validateBtn.textContent = '⏳...';
-
-            try {
-              const token = localStorage.getItem('access_token');
-
-              const res = await fetch(`${API_URL}/requests/${req.request_id}/validate-liquidation`, {
-                method: 'PATCH',
-                headers: {
-                  'Authorization': 'Bearer ' + token
-                }
-              });
-
-              if (res.status === 401) {
-                localStorage.removeItem('access_token');
-                window.location.href = 'login.html';
-                return;
-              }
-
-              const result = await res.json();
-
-              if (!res.ok) {
-                // 🔁 réactive si erreur
-                validateBtn.disabled = false;
-                validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                validateBtn.textContent = '✅ Validate';
-
-                notify(result.error || "Error validating", "error");
-                return;
-              }
-
-              // ✅ succès
-              req.status = 'Closed';
-
-              tr.style.transition = 'all 0.3s ease';
-              tr.style.opacity = '0';
-
-              setTimeout(() => {
-                applyAdvancedFilters();
-              }, 300);
-
-              updateToLiquidateSummary();
-
-              notify("Liquidation validated", "success");
-
-            } catch (err) {
-              console.error(err);
-
-              // 🔁 réactive si crash
-              validateBtn.disabled = false;
-              validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-              validateBtn.textContent = '✅ Validate';
-
-              notify("Server error", "error");
-            }
-          });
-        }
-
-          if (validateCancelBtn) {
-            validateCancelBtn.addEventListener('click', async () => {
-
-              // 🔥 AJOUT ICI
-              if (req.status !== 'PendingCancel') return;
-
-              if (validateCancelBtn.disabled) return;
-
-              validateCancelBtn.disabled = true;
-              validateCancelBtn.classList.add('opacity-50');
-              validateCancelBtn.textContent = '⏳...';
-
-            try {
-              const token = localStorage.getItem('access_token');
-
-              const res = await fetch(`${API_URL}/requests/${req.request_id}/validate-cancel`, {
-                method: 'PATCH',
-                headers: {
-                  'Authorization': 'Bearer ' + token
-                }
-              });
-
-              if (res.status === 401) {
-                localStorage.removeItem('access_token');
-                window.location.href = 'login.html';
-                return;
-              }
-
-              const result = await res.json();
-
-              if (!res.ok) {
-                validateCancelBtn.disabled = false;
-                validateCancelBtn.textContent = '❌ Validate Cancel';
-                notify(result.error || "Error", "error");
-                return;
-              }
-
-              // ✅ update local
-              const updated = result?.data || req;
-              req.status = updated.status || 'Cancelled';
-
-              tr.style.transition = 'all 0.3s ease';
-              tr.style.opacity = '0';
-
-              setTimeout(() => {
-                applyAdvancedFilters();
-              }, 300);
-
-              notify("Request cancelled", "success");
-
-            } catch (err) {
-              console.error(err);
-
-              validateCancelBtn.disabled = false;
-              validateCancelBtn.textContent = '❌ Validate Cancel';
-
-              notify("Server error", "error");
-            }
-          });
-        }
-
-        // Appliquer état initial propre
-        setRowActionState(req, tr);
-
-        // Double click => édition uniquement si Approved
-          tr.addEventListener('dblclick', () => {
-            if (req.status !== 'Approved') return;
-
-            approvedAmountInput.readOnly = false;
-            approvedAmountInput.value = approvedAmountInput.dataset.raw || '';
-
-            approvedAmountInput.classList.remove('opacity-50', 'cursor-not-allowed');
-
-            approveBtn.disabled = false;
-            rejectBtn.disabled = false;
-
-            approveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            rejectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-
-            approvedAmountInput.focus();
-          });
-
-
-
-        if (approveBtn) {
-        approveBtn.addEventListener('click', async () => {
-          let approved_amount = Number(
-            approvedAmountInput.value.replace(/,/g, '')
-          );
-
-          if (isNaN(approved_amount) || approved_amount <= 0) {
-            notify("Invalid approved amount", "error");
-            return;
-          }
-
-
-          disableButtons([approveBtn, rejectBtn]);
-          await updateRequest(
-            req,
-            'Approved',
-            currentAdmin,
-            approved_amount,
-            tr
-            );
-          enableButtons([approveBtn, rejectBtn]);
-        });
-        }
-
-        rejectBtn.addEventListener('click', async () => {
-          disableButtons([approveBtn, rejectBtn]);
-          await updateRequest(req, 'Rejected', currentAdmin, null, tr);
-          enableButtons([approveBtn, rejectBtn]);
-        });
-        } 
+bindRowActions(req, tr);
       });
     }
 
@@ -3021,6 +3222,7 @@ if (!archivesMode) {
       const start = (currentPage-1)*rowsPerPage;
       const paginatedData = filteredRequests.slice(start, start+rowsPerPage);
       renderTable(paginatedData);
+      renderMobileCards(paginatedData);
     }
 
     const prevPageBtn = document.getElementById('prevPage');
@@ -3282,7 +3484,7 @@ if (!archivesMode) {
         return;
       }
 
-      // 🔁 éviter doublons : fermer l’ancienne connexion
+      // 🔁 éviter doublons : fermer l'ancienne connexion
       if (evtSource) {
         try { evtSource.close(); } catch {}
         evtSource = null;
