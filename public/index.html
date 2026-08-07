@@ -695,7 +695,7 @@ button:active {
 
       </div>
     </div>
-<div class="flex items-end">
+    <div class="flex items-end">
       <div id="toLiquidateBadge"
         class="hidden px-3 py-2 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-sm font-semibold">
         <span id="toLiquidateCount">0</span> waiting for liquidation
@@ -1323,7 +1323,7 @@ savedDescriptions = result.saved_descriptions;
     notify("Template saved", "success");
   } catch (err) {
     console.error("addTemplate crash:", err);
-    notify("Client error: " + err.message, "error");
+   notify(friendlyError(err), "error");
   }
 }
 
@@ -1349,6 +1349,28 @@ savedDescriptions = result.saved_descriptions;
     console.error("deleteTemplate crash:", err);
     notify("Client error: " + err.message, "error");
   }
+}
+
+// =========================================================
+// Traduit une erreur technique en message compréhensible
+// =========================================================
+function friendlyError(err) {
+  const msg = (err?.message || '').toLowerCase();
+
+  if (
+    msg.includes('load failed') ||
+    msg.includes('failed to fetch') ||
+    msg.includes('networkerror') ||
+    msg.includes('instable')
+  ) {
+    return 'Connexion réseau instable, réessaie dans quelques secondes.';
+  }
+
+  if (msg.includes('abort') || msg.includes('timeout')) {
+    return 'La connexion a mis trop de temps à répondre, réessaie.';
+  }
+
+  return 'Une erreur est survenue. Réessaie, et si ça persiste, contacte l\u2019équipe.';
 }
 
   function notify(message, type = "info") {
@@ -1412,6 +1434,165 @@ savedDescriptions = result.saved_descriptions;
   let isSwitchingPanel = false;
   let activeActionCard = null;
   let capturedPhotos = [];
+
+  /* =====================================================================
+   LIQUIDATION DRAFT PERSISTENCE (IndexedDB)
+   =====================================================================
+
+   PROBLÈME RÉSOLU :
+   Pendant une liquidation, les photos capturées (capturedPhotos) et les
+   montants saisis vivent uniquement en mémoire JS. Si le téléphone se
+   verrouille trop longtemps, si l'appli est tuée par le système
+   (fréquent sur Android d'entrée de gamme), ou si la page est
+   rechargée par erreur, tout le travail est perdu — y compris pour
+   quelqu'un qui vient de scanner 20+ reçus.
+
+   CE QUE FAIT CE MODULE :
+   1. Sauvegarde automatiquement (avec un léger délai) les photos
+      compressées + montants + note dans IndexedDB, à chaque
+      modification, tant qu'une liquidation est en cours pour une
+      requête donnée.
+   2. Restaure ce brouillon automatiquement si tu rouvres le modal de
+      liquidation pour la même requête (même après un refresh complet
+      de la page).
+   3. Supprime le brouillon une fois la liquidation soumise avec succès.
+   4. Avertit avant de fermer/rafraîchir la page s'il y a des photos
+      non soumises (beforeunload).
+
+   OÙ L'INSTALLER :
+   Colle tout ce bloc dans index.html, juste après la déclaration de
+   `capturedPhotos` (cherche : "let capturedPhotos = [];").
+   ===================================================================== */
+
+const DRAFT_DB_NAME = 'AnakDrafts';
+const DRAFT_STORE_NAME = 'liquidations';
+
+function openDraftDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DRAFT_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(DRAFT_STORE_NAME)) {
+        db.createObjectStore(DRAFT_STORE_NAME, { keyPath: 'request_id' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function dataUrlToFile(dataUrl, filename, mimeType) {
+  const arr = dataUrl.split(',');
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mimeType || 'image/jpeg' });
+}
+
+async function saveLiquidationDraft(requestId) {
+  if (!requestId) return;
+
+  try {
+    const db = await openDraftDB();
+
+    // Compresse chaque photo avant stockage pour limiter la taille
+    // occupée dans IndexedDB (compressImage existe déjà dans ton code)
+    const photos = await Promise.all(
+      capturedPhotos.map(async (file, i) => {
+        const compressed = await compressImage(file);
+        const dataUrl = await fileToDataUrl(compressed);
+        return {
+          name: file.name || `photo_${i}.jpg`,
+          type: compressed.type || 'image/jpeg',
+          dataUrl
+        };
+      })
+    );
+
+    const draft = {
+      request_id: requestId,
+      photos,
+      spent: document.getElementById('liqSpent')?.value || '',
+      returned: document.getElementById('liqAmount')?.value || '',
+      note: document.getElementById('liqNote')?.value || '',
+      savedAt: Date.now()
+    };
+
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(DRAFT_STORE_NAME, 'readwrite');
+      tx.objectStore(DRAFT_STORE_NAME).put(draft);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+
+  } catch (err) {
+    // Une sauvegarde de brouillon qui échoue ne doit jamais bloquer
+    // l'utilisateur — on log juste en silencieux.
+    console.warn('saveLiquidationDraft failed:', err);
+  }
+}
+
+async function getLiquidationDraft(requestId) {
+  if (!requestId) return null;
+
+  try {
+    const db = await openDraftDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(DRAFT_STORE_NAME, 'readonly');
+      const req = tx.objectStore(DRAFT_STORE_NAME).get(requestId);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.warn('getLiquidationDraft failed:', err);
+    return null;
+  }
+}
+
+async function deleteLiquidationDraft(requestId) {
+  if (!requestId) return;
+
+  try {
+    const db = await openDraftDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(DRAFT_STORE_NAME, 'readwrite');
+      tx.objectStore(DRAFT_STORE_NAME).delete(requestId);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.warn('deleteLiquidationDraft failed:', err);
+  }
+}
+
+// Sauvegarde différée (pour ne pas écrire dans IndexedDB à chaque
+// frappe clavier ou chaque photo ajoutée trop rapidement)
+let draftSaveTimer = null;
+function scheduleDraftSave(requestId) {
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(() => saveLiquidationDraft(requestId), 600);
+}
+
+// Avertir avant de quitter la page s'il y a des photos non soumises
+window.addEventListener('beforeunload', (e) => {
+  if (capturedPhotos.length > 0) {
+    e.preventDefault();
+    e.returnValue = ''; // requis par certains navigateurs pour afficher la boîte de dialogue
+  }
+});
+
 
   function isMobileView() {
   return window.innerWidth < 768;
@@ -1723,8 +1904,16 @@ function setupRequestorName(profile) {
         const returned = approved - spent;
         liqReturnedInputAuto.value = returned >= 0 ? returned.toFixed(2) : '';
       }
+      scheduleDraftSave(currentRequestId); 
     });
 
+    document.getElementById('liqAmount')?.addEventListener('input', () => {
+      scheduleDraftSave(currentRequestId);
+    });
+
+    document.getElementById('liqNote')?.addEventListener('input', () => {
+      scheduleDraftSave(currentRequestId);
+    });
 
       document.getElementById('liqReceipts').addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []);
@@ -1742,6 +1931,7 @@ function setupRequestorName(profile) {
 
       // 🔥 afficher direct dans le scan modal
       renderScanPreview();
+      scheduleDraftSave(currentRequestId);
       updateReceiptsUI();
       updateScanUI();
 
@@ -2343,6 +2533,7 @@ setupSSE();
 
       capturedPhotos.push(file);
       renderScanPreview(); 
+      scheduleDraftSave(currentRequestId);  
 
         // 📳 feedback mobile (optionnel mais premium)
         navigator.vibrate?.(50);
@@ -2676,6 +2867,7 @@ function isCancelEligible(status) {
         del.onclick = () => {
           capturedPhotos.splice(index, 1);
           renderScanPreview();
+          scheduleDraftSave(currentRequestId);  
           updateScanUI();
           updateReceiptsUI();
         };
@@ -3464,6 +3656,34 @@ function showPanel(action) {
   }
 
   // ==============================
+  // 💾 RESTAURER UN BROUILLON DE LIQUIDATION (si présent)
+  // ==============================
+  if (req.status === 'ToLiquidate') {
+    getLiquidationDraft(request_id).then(draft => {
+      // Sécurité : si l'utilisateur a déjà changé de modal entre temps
+      if (!draft || currentRequestId !== request_id) return;
+
+      if (draft.spent) liqSpentInput.value = draft.spent;
+      if (draft.returned) liqReturnedInput.value = draft.returned;
+      if (draft.note) liqNoteInput.value = draft.note;
+
+      if (draft.photos?.length) {
+        capturedPhotos = draft.photos.map((p, i) =>
+          dataUrlToFile(p.dataUrl, p.name || `photo_${i}.jpg`, p.type)
+        );
+        renderScanPreview();
+        updateReceiptsUI(req);
+        updateScanUI();
+
+        notify(
+          `Brouillon restauré (${capturedPhotos.length} reçu${capturedPhotos.length > 1 ? 's' : ''})`,
+          'info'
+        );
+      }
+    });
+  }
+
+  // ==============================
   // PANEL CANCEL
   // ==============================
   document.getElementById('cancelRequestorNamePanel').value = req.requestor_name;
@@ -3660,7 +3880,7 @@ function closeModal() {
     notify("Money received", "success");
   } catch (err) {
       console.error(err);
-      notify("Server error: " + err.message, "error");
+      notify(friendlyError(err), "error");
     } finally {
       unlockButton(btn);
     }
@@ -3826,6 +4046,7 @@ if (window.innerWidth < 768) renderMobileCards();
 
 
 notify("Liquidation submitted – waiting for validation", "info");
+deleteLiquidationDraft(reqId);  
 
 
 // ==============================
