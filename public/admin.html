@@ -1441,9 +1441,7 @@ function showConfirmModal({ title = 'Are you sure?', message = '', icon = '⚠�
     // ==============================
     async function loadPendingUsers() {
       try {
-        const res = await fetch(`${API_URL}/admin/pending-users`, {
-          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
-        });
+        const res = await fetchWithAuth(`${API_URL}/admin/pending-users`);
 
         if (res.status === 401) {
           window.location.href = 'login.html';
@@ -1580,11 +1578,10 @@ pending.forEach(u => {
       btn.textContent = 'Approving...';
 
       try {
-        const res = await fetch(`${API_URL}/admin/users/${userId}/approve`, {
+        const res = await fetchWithAuth(`${API_URL}/admin/users/${userId}/approve`, {
           method: 'PATCH',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             role,
@@ -1619,10 +1616,64 @@ pending.forEach(u => {
 
 const API_URL = 'https://anak-requests-api.onrender.com';
 
+// =========================================================
+// fetchWithAuth — AUTH UNIFIÉE PAR COOKIE (comme index.html)
+// =========================================================
+// Remplace l'ancien système Bearer token / localStorage.access_token.
+// Toutes les requêtes passent maintenant par le cookie httpOnly,
+// avec retry réseau + refresh automatique sur 401, comme côté
+// requestor. Garde la même signature que window.fetch pour un
+// remplacement simple partout dans le fichier.
+async function fetchWithAuth(url, options = {}, retries = 1, timeoutMs = 15000) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      let res = await fetch(url, {
+        ...options,
+        credentials: 'include',
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+
+      if (res.status === 401) {
+        console.warn("🔁 Session expirée → refresh");
+
+        const refreshRes = await fetch(`${API_URL}/refresh`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        if (refreshRes.ok) {
+          res = await fetch(url, { ...options, credentials: 'include' });
+        } else {
+          window.location.replace('login.html');
+          return res;
+        }
+      }
+
+      return res;
+
+    } catch (err) {
+      clearTimeout(timer);
+      const isLastAttempt = attempt === retries;
+
+      if (isLastAttempt) {
+        console.error('fetchWithAuth network error:', err);
+        throw new Error('Connexion réseau instable, réessaie dans quelques secondes.');
+      }
+
+      console.warn(`fetchWithAuth: tentative ${attempt + 1} échouée, retry...`, err);
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+}
+
 // 🔄 Réveil de la connexion quand l'admin revient sur l'app
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    fetch(`${API_URL}/profile`, { credentials: 'include' }).catch(() => {
+    fetchWithAuth(`${API_URL}/profile`).catch(() => {
       // silencieux
     });
   }
@@ -1765,16 +1816,9 @@ document
 
     try {
 
-      const res = await fetch(
+      const res = await fetchWithAuth(
         `${API_URL}/requests/${window.restoreRequestId}/restore`,
-        {
-          method: 'PATCH',
-          headers: {
-            Authorization:
-              'Bearer ' +
-              localStorage.getItem('access_token')
-          }
-        }
+        { method: 'PATCH' }
       );
 
       if (!res.ok) {
@@ -1818,16 +1862,9 @@ document
 
           exportBtn.click();
 
-          const archiveRes = await fetch(
+          const archiveRes = await fetchWithAuth(
             `${API_URL}/requests/archive-completed`,
-            {
-              method: 'POST',
-              headers: {
-                Authorization:
-                  'Bearer ' +
-                  localStorage.getItem('access_token')
-              }
-            }
+            { method: 'POST' }
           );
 
           if (!archiveRes.ok) {
@@ -1857,15 +1894,8 @@ document
 
       try {
 
-        const statsRes = await fetch(
-          `${API_URL}/requests/archive-stats`,
-          {
-            headers: {
-              Authorization:
-                'Bearer ' +
-                localStorage.getItem('access_token')
-            }
-          }
+        const statsRes = await fetchWithAuth(
+          `${API_URL}/requests/archive-stats`
         );
 
         const stats = await statsRes.json();
@@ -2105,19 +2135,8 @@ document
    let url = `${API_URL}/requests`;
     if (filterStatus.value) url += `?status=${filterStatus.value}`;
 
-    // Appel à l'API avec token
-    const res = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      }
-    });
-
-    // Vérifie si le token est invalide ou expiré
-  if (res.status === 401) {
-    localStorage.removeItem('access_token');
-    window.location.href = 'login.html';
-    return;
-  }
+    // Appel à l'API (cookie httpOnly géré par fetchWithAuth)
+    const res = await fetchWithAuth(url);
 
     const data = await res.json();
     allRequests = data.data || [];
@@ -2154,16 +2173,7 @@ document
 
 async function loadUsers() {
   try {
-    const res = await fetch(`${API_URL}/admin/users`, {
-      headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
-      }
-    });
-
-    if (res.status === 401) {
-      window.location.href = 'login.html';
-      return;
-    }
+    const res = await fetchWithAuth(`${API_URL}/admin/users`);
 
     const users = await res.json();
     allUsers = users;
@@ -2420,12 +2430,7 @@ document.getElementById('editUserDeleteBtn')?.addEventListener('click', async ()
 
     try {
 
-      const res = await fetch(`${API_URL}/requests/archives`, {
-        headers: {
-          'Authorization':
-            'Bearer ' + localStorage.getItem('access_token')
-        }
-      });
+      const res = await fetchWithAuth(`${API_URL}/requests/archives`);
 
       const json = await res.json();
 
@@ -2706,18 +2711,9 @@ function bindRowActions(req, tr) {
         validateBtn.textContent = '⏳...';
 
         try {
-          const token = localStorage.getItem('access_token');
-
-          const res = await fetch(`${API_URL}/requests/${req.request_id}/validate-liquidation`, {
-            method: 'PATCH',
-            headers: { 'Authorization': 'Bearer ' + token }
+          const res = await fetchWithAuth(`${API_URL}/requests/${req.request_id}/validate-liquidation`, {
+            method: 'PATCH'
           });
-
-          if (res.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = 'login.html';
-            return;
-          }
 
           const result = await res.json();
 
@@ -2761,18 +2757,9 @@ function bindRowActions(req, tr) {
         validateCancelBtn.textContent = '⏳...';
 
         try {
-          const token = localStorage.getItem('access_token');
-
-          const res = await fetch(`${API_URL}/requests/${req.request_id}/validate-cancel`, {
-            method: 'PATCH',
-            headers: { 'Authorization': 'Bearer ' + token }
+          const res = await fetchWithAuth(`${API_URL}/requests/${req.request_id}/validate-cancel`, {
+            method: 'PATCH'
           });
-
-          if (res.status === 401) {
-            localStorage.removeItem('access_token');
-            window.location.href = 'login.html';
-            return;
-          }
 
           const result = await res.json();
 
@@ -3175,16 +3162,9 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
 
     try {
 
-      const res = await fetch(
+      const res = await fetchWithAuth(
         `${API_URL}/requests/${req.request_id}/restore`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization':
-              'Bearer ' +
-              localStorage.getItem('access_token')
-          }
-        }
+        { method: 'PATCH' }
       );
 
       if (!res.ok) {
@@ -3248,21 +3228,13 @@ bindRowActions(req, tr);
     const bodyData = { status, approved_by };
     if (approved_amount !== null) bodyData.approved_amount = approved_amount;
 
-    const res = await fetch(`${API_URL}/requests/${req.request_id}`, {
+    const res = await fetchWithAuth(`${API_URL}/requests/${req.request_id}`, {
       method: 'PATCH',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}` // Ajout du token
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(bodyData)
     });
-
-    // Vérifie si le token est invalide
-    if (res.status === 401) {
-      localStorage.removeItem('access_token');
-      window.location.href = 'login.html';
-      return;
-    }
 
     const result = await res.json();
 
@@ -3476,13 +3448,6 @@ bindRowActions(req, tr);
 // SSE — mises à jour en temps réel (admin) + reconnexion auto
 // -------------------------
     function setupSSE() {
-      const token = localStorage.getItem('access_token');
-
-      // pas de token → pas de SSE
-      if (!token) {
-        console.warn("SSE non lancé : aucun token trouvé.");
-        return;
-      }
 
       // 🔁 éviter doublons : fermer l'ancienne connexion
       if (evtSource) {
@@ -3496,9 +3461,10 @@ bindRowActions(req, tr);
         sseReconnectTimer = null;
       }
 
-      // Création EventSource
+      // Création EventSource (cookie httpOnly, comme index.html)
       evtSource = new EventSource(
-        `${API_URL}/requests/stream?token=${encodeURIComponent(token)}`
+        `${API_URL}/requests/stream`,
+        { withCredentials: true }
       );
 
       evtSource.onmessage = (event) => {
@@ -3705,16 +3671,11 @@ submitUserBtn.onclick = async () => {
   setLoading(true);
 
   try {
-    const token = localStorage.getItem('access_token');
-
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: 'Bearer ' + token } : {})
-    };
-
-    const res = await fetch(`${API_URL}/admin/users`, {
+    const res = await fetchWithAuth(`${API_URL}/admin/users`, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         email,
         password,
@@ -3879,11 +3840,10 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
   `;
 
   try {
-    const res = await fetch(`${API_URL}/requests/${currentRequestId}/feedback`, {
+    const res = await fetchWithAuth(`${API_URL}/requests/${currentRequestId}/feedback`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ message })
     });
