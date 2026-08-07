@@ -827,6 +827,7 @@ button:active {
       <!-- Panel Liquidate -->
       <div id="panel-liquidate" class="action-panel hidden">
         <h4 class="font-semibold mb-3">📤 Liquidation</h4>
+         <div id="liqRejectedBanner" class="hidden mb-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-3"></div>
         <div class="grid grid-cols-2 gap-3 mb-3">
           <div>
             <label class="block text-sm text-gray-700">Amount spent</label>
@@ -3625,6 +3626,17 @@ function showPanel(action) {
   liqReturnedInput.value = req.returned_amount ?? '';
   liqNoteInput.value = req.liquidation_note ?? '';
   liqReceiptsInput.value = '';
+
+   // 🔶 Bannière si cette liquidation a été rejetée par l'admin
+  const liqRejectedBanner = document.getElementById('liqRejectedBanner');
+  const rejectMatch = (req.liquidation_note || '').match(/^⚠️ Rejected by admin: (.+?)\n---\n/s);
+
+  if (rejectMatch && req.status === 'ToLiquidate') {
+    liqRejectedBanner.innerHTML = `⚠️ <strong>Sent back for correction:</strong> ${rejectMatch[1]}`;
+    liqRejectedBanner.classList.remove('hidden');
+  } else {
+    liqRejectedBanner.classList.add('hidden');
+  }
 
   const isLocked = req.status === 'Closed' || req.status === 'Cancelled';
 
