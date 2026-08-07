@@ -1711,7 +1711,14 @@ const { data: existing, error: getError } = await supabaseService
       return res.status(400).json({ error: 'This request has not been confirmed as received.' });
     }
 
-    if (existing.status !== 'ToLiquidate') {
+// 🔓 Un Admin peut corriger une liquidation déjà soumise
+    // (PendingValidation) avant de la valider, sans repasser par
+    // ToLiquidate. Un Requester/CC garde le comportement inchangé.
+    const allowedStatuses = role === 'admin'
+      ? ['ToLiquidate', 'PendingValidation']
+      : ['ToLiquidate'];
+
+    if (!allowedStatuses.includes(existing.status)) {
       return res.status(400).json({ error: `Unable to liquidate: current status = '${existing.status}'.` });
     }
 
@@ -1959,6 +1966,66 @@ app.patch('/requests/:request_id/request-cancel', authenticate, async (req, res)
         res.status(500).json({ error: err.message });
       }
     });
+
+    // PATCH REJET LIQUIDATION (renvoie au centre pour correction)
+app.patch('/requests/:request_id/reject-liquidation', authenticate, async (req, res) => {
+  try {
+    const { request_id } = req.params;
+    const { reason } = req.body;
+
+    // 🔒 Admin only
+    if (req.profile.role !== 'Admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ error: 'Rejection reason is required.' });
+    }
+
+    const { data: existing, error: fetchError } = await supabaseService
+      .from('Requests')
+      .select('status, liquidation_note')
+      .eq('request_id', request_id)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+    if (!existing) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+
+    if (existing.status !== 'PendingValidation') {
+      return res.status(400).json({
+        error: `Cannot reject liquidation from status '${existing.status}'`
+      });
+    }
+
+    const newNote =
+      `⚠️ Rejected by admin: ${reason.trim()}\n---\n${existing.liquidation_note || ''}`;
+
+    const { data, error } = await supabaseService
+      .from('Requests')
+      .update({
+        status: 'ToLiquidate',
+        liquidation_note: newNote
+      })
+      .eq('request_id', request_id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+
+    notifyAdmins(data);
+
+    res.json({
+      message: 'Liquidation rejected, sent back to center',
+      data
+    });
+
+  } catch (err) {
+    console.error('reject-liquidation error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // PATCH VALIDATION LIQUIDATION
 app.patch('/requests/:request_id/validate-liquidation', authenticate, async (req, res) => {
