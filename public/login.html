@@ -467,6 +467,28 @@ function showLoader(show = true) {
   loader.style.display = show ? 'flex' : 'none';
 }
 
+// =========================================================
+// Traduit une erreur technique en message compréhensible
+// =========================================================
+function friendlyError(err) {
+  const msg = (err?.message || '').toLowerCase();
+
+  if (
+    msg.includes('load failed') ||
+    msg.includes('failed to fetch') ||
+    msg.includes('networkerror') ||
+    msg.includes('instable')
+  ) {
+    return 'Connexion réseau instable, réessaie dans quelques secondes.';
+  }
+
+  if (msg.includes('abort') || msg.includes('timeout')) {
+    return 'La connexion a mis trop de temps à répondre, réessaie.';
+  }
+
+  return 'Une erreur est survenue. Réessaie, et si ça persiste, contacte l\u2019équipe.';
+}
+
 function notify(msg, type = 'info') {
   const note = document.createElement('div');
   note.className = `notification ${type}`;
@@ -552,7 +574,7 @@ loginForm.addEventListener('submit',async e=>{
 
   }catch(err){
     showLoader(false);
-    loginAlert.textContent='❌ '+err.message;
+    loginAlert.textContent='❌ '+friendlyError(err);
     loginAlert.style.display='block';
     notify('Login failed','error');
   }finally{ submitBtn.disabled=false; }
