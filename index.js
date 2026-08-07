@@ -1499,6 +1499,12 @@ app.get('/admin/requests/open', authenticate, async (req, res) => {
 // PATCH mise à jour générale
 app.patch('/requests/:request_id', authenticate, async (req, res) => {
   try {
+
+     // 🔒 Ajoute ceci
+    if (req.profile.role !== 'Admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+    
     const { request_id } = req.params;
     const { status, approved_by, approved_amount, certified_by, certified_at } = req.body;
 
