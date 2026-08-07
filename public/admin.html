@@ -516,7 +516,7 @@
             <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Status</th>
             <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">Approved</th>
             <th class="py-3 px-4 text-gray-500 font-medium text-xs uppercase">By</th>
-            <th class="py-3 px-2 text-gray-500 font-medium text-xs uppercase text-center">Actions</th>
+            <th class="py-3 px-2 text-gray-500 font-medium text-xs uppercase text-center sticky right-0 z-20 bg-gray-50 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.15)]">Actions</th>
           </tr>
         </thead>
 
@@ -3075,7 +3075,7 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
   ${req.approved_by || ''}
 </td>
 
-<td class="actions-cell">
+<td class="actions-cell sticky right-0 z-10 group-hover:bg-gray-100 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.15)] ${isPurchaser ? 'bg-orange-50' : 'bg-white'}">
 
   ${
     archivesMode
