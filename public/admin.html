@@ -3955,10 +3955,13 @@ document.getElementById('reviewApproveBtn')?.addEventListener('click', async () 
     return;
   }
 
+  const originalNote = (req.liquidation_note || '').trim();
+  const numEpsilon = 0.01;
+
   const changed =
-    spent !== Number(req.amount_spent) ||
-    returned !== Number(req.returned_amount) ||
-    note !== (req.liquidation_note || '');
+    Math.abs(spent - Number(req.amount_spent || 0)) > numEpsilon ||
+    Math.abs(returned - Number(req.returned_amount || 0)) > numEpsilon ||
+    note !== originalNote;
 
   btn.disabled = true;
   rejectBtn.disabled = true;
@@ -3979,7 +3982,16 @@ document.getElementById('reviewApproveBtn')?.addEventListener('click', async () 
       });
       if (!patchRes.ok) {
         const result = await patchRes.json().catch(() => ({}));
-        throw new Error(result.error || 'Failed to update liquidation values');
+        const rawError = result.error || 'Failed to update liquidation values';
+
+        // Message clair si le backend n'a pas encore le patch nécessaire
+        if (rawError.includes('current status')) {
+          throw new Error(
+            "Backend not updated yet: /liquidate still refuses admin edits from " +
+            "'PendingValidation'. Apply GUIDE_backend_liquidation_review.md (Modification 1) first."
+          );
+        }
+        throw new Error(rawError);
       }
     }
 
