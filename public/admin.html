@@ -622,7 +622,7 @@ CHAT LAYOUT
   REQUEST DESCRIPTION
   ========================================= -->
 
-  <div class="mb-4 shrink-0">
+  <div id="descriptionBlock" class="mb-3 shrink-0">
 
     <div class="flex items-center gap-2 mb-2">
 
@@ -654,10 +654,12 @@ CHAT LAYOUT
       class="mt-2 hidden">
     </div>
 
-    <!-- =========================================
-    LIQUIDATION REVIEW (visible seulement si PendingValidation)
-    ========================================= -->
-    <div id="liquidationReviewSection" class="hidden mt-4 border border-purple-200 bg-purple-50 rounded-2xl p-4">
+  </div>
+
+  <!-- =========================================
+  LIQUIDATION REVIEW (visible seulement si PendingValidation)
+  ========================================= -->
+  <div id="liquidationReviewSection" class="hidden flex-1 min-h-0 overflow-y-auto mb-3 border border-purple-200 bg-purple-50 rounded-2xl p-4">
 
       <div class="text-xs font-semibold uppercase tracking-wider text-purple-500 mb-3">
         📤 Liquidation submitted — review before closing
@@ -699,8 +701,6 @@ CHAT LAYOUT
         </button>
       </div>
 
-    </div>
-
   </div>
 
 
@@ -708,14 +708,14 @@ CHAT LAYOUT
   CHAT THREAD
   ========================================= -->
 
-  <div class="flex-1 flex flex-col min-h-0">
+  <div id="chatThreadWrapper" class="flex-1 flex flex-col min-h-0">
 
     <!-- HEADER -->
     <div class="flex items-center justify-between mb-3 shrink-0">
 
       <div class="flex items-center gap-3">
 
-        <div class="relative">
+        <div id="chatAvatarWrapper" class="relative">
 
           <div class="w-10 h-10 rounded-full bg-orange-100
                       flex items-center justify-center
@@ -734,11 +734,11 @@ CHAT LAYOUT
 
         <div>
 
-          <div class="text-sm font-semibold text-gray-800">
+          <div id="chatTitleText" class="text-sm font-semibold text-gray-800">
             Clarification thread
           </div>
 
-          <div class="text-xs text-gray-400">
+          <div id="chatSubtitleText" class="text-xs text-gray-400">
             Live conversation with center
           </div>
 
@@ -772,6 +772,7 @@ CHAT LAYOUT
   class="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-3 bg-[#f5f7fb] min-h-0">
 
     <!-- messages injectés ici -->
+
 
   </div>
 
@@ -2711,6 +2712,11 @@ function bindRowActions(req, tr) {
       // 🔍 LIQUIDATION REVIEW (si applicable)
       // ==============================
       const reviewSection = document.getElementById('liquidationReviewSection');
+      const descContentEl = document.getElementById('descriptionContent');
+      const chatWrapper = document.getElementById('chatThreadWrapper');
+      const chatAvatarWrapper = document.getElementById('chatAvatarWrapper');
+      const chatTitleText = document.getElementById('chatTitleText');
+      const chatSubtitleText = document.getElementById('chatSubtitleText');
 
       if (req.status === 'PendingValidation') {
         reviewSection.classList.remove('hidden');
@@ -2719,8 +2725,38 @@ function bindRowActions(req, tr) {
         document.getElementById('reviewReturned').value = req.returned_amount ?? '';
         document.getElementById('reviewNote').value = req.liquidation_note ?? '';
         document.getElementById('rejectReason').value = '';
+
+        // 🔽 Description + conversation passent en petit format : le
+        // panneau de review prend la priorité visuelle.
+        descContentEl.style.maxHeight = '40px';
+        descContentEl.style.padding = '8px 12px';
+        descContentEl.style.fontSize = '12px';
+
+        chatWrapper.classList.remove('flex-1');
+        chatWrapper.classList.add('shrink-0');
+        chatWrapper.style.height = '110px';
+
+        chatAvatarWrapper.style.display = 'none';
+        chatTitleText.classList.add('text-xs');
+        chatTitleText.classList.remove('text-sm');
+        chatSubtitleText.classList.add('hidden');
+
       } else {
         reviewSection.classList.add('hidden');
+
+        // 🔼 Retour au format normal pour les autres statuts
+        descContentEl.style.maxHeight = '';
+        descContentEl.style.padding = '';
+        descContentEl.style.fontSize = '';
+
+        chatWrapper.classList.add('flex-1');
+        chatWrapper.classList.remove('shrink-0');
+        chatWrapper.style.height = '';
+
+        chatAvatarWrapper.style.display = '';
+        chatTitleText.classList.remove('text-xs');
+        chatTitleText.classList.add('text-sm');
+        chatSubtitleText.classList.remove('hidden');
       }
 
       // ==============================
