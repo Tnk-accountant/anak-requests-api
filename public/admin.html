@@ -654,6 +654,53 @@ CHAT LAYOUT
       class="mt-2 hidden">
     </div>
 
+    <!-- =========================================
+    LIQUIDATION REVIEW (visible seulement si PendingValidation)
+    ========================================= -->
+    <div id="liquidationReviewSection" class="hidden mt-4 border border-purple-200 bg-purple-50 rounded-2xl p-4">
+
+      <div class="text-xs font-semibold uppercase tracking-wider text-purple-500 mb-3">
+        📤 Liquidation submitted — review before closing
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Amount spent</label>
+          <input id="reviewSpent" type="number" step="0.01"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Amount returned</label>
+          <input id="reviewReturned" type="number" step="0.01"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="block text-xs text-gray-600 mb-1">Note (center)</label>
+        <textarea id="reviewNote" rows="2"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="block text-xs text-red-600 mb-1">Reason if rejecting (sent back to the center)</label>
+        <textarea id="rejectReason" rows="2" placeholder="Ex: receipt missing for the hardware purchase..."
+          class="w-full border border-red-200 rounded-lg px-3 py-2 text-sm bg-white"></textarea>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="reviewApproveBtn" type="button"
+          class="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700">
+          ✅ Approve &amp; Close
+        </button>
+        <button id="reviewRejectBtn" type="button"
+          class="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700">
+          ↩ Reject &amp; send back
+        </button>
+      </div>
+
+    </div>
+
   </div>
 
 
@@ -2661,6 +2708,22 @@ function bindRowActions(req, tr) {
       feedbackInput.style.height = 'auto';
 
       // ==============================
+      // 🔍 LIQUIDATION REVIEW (si applicable)
+      // ==============================
+      const reviewSection = document.getElementById('liquidationReviewSection');
+
+      if (req.status === 'PendingValidation') {
+        reviewSection.classList.remove('hidden');
+
+        document.getElementById('reviewSpent').value = req.amount_spent ?? '';
+        document.getElementById('reviewReturned').value = req.returned_amount ?? '';
+        document.getElementById('reviewNote').value = req.liquidation_note ?? '';
+        document.getElementById('rejectReason').value = '';
+      } else {
+        reviewSection.classList.add('hidden');
+      }
+
+      // ==============================
       // OPEN MODAL
       // ==============================
       const modal = document.getElementById('descriptionModal');
@@ -2674,7 +2737,6 @@ function bindRowActions(req, tr) {
     const rejectBtn = tr.querySelector('.rejectBtn');
     const approvedAmountInput = tr.querySelector('.approvedAmount');
 
-    const validateBtn = tr.querySelector('.validateBtn');
     const validateCancelBtn = tr.querySelector('.validateCancelBtn');
 
     approvedAmountInput.addEventListener('keydown', async (e) => {
@@ -2700,51 +2762,6 @@ function bindRowActions(req, tr) {
       if (approveBtn) approveBtn.style.display = 'none';
       if (rejectBtn) rejectBtn.style.display = 'none';
       if (approvedAmountInput) approvedAmountInput.style.display = 'none';
-    }
-
-    if (validateBtn) {
-      validateBtn.addEventListener('click', async () => {
-        if (validateBtn.disabled) return;
-
-        validateBtn.disabled = true;
-        validateBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        validateBtn.textContent = '⏳...';
-
-        try {
-          const res = await fetchWithAuth(`${API_URL}/requests/${req.request_id}/validate-liquidation`, {
-            method: 'PATCH'
-          });
-
-          const result = await res.json();
-
-          if (!res.ok) {
-            validateBtn.disabled = false;
-            validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            validateBtn.textContent = '✅ Validate';
-            notify(result.error || "Error validating", "error");
-            return;
-          }
-
-          req.status = 'Closed';
-
-          tr.style.transition = 'all 0.3s ease';
-          tr.style.opacity = '0';
-
-          setTimeout(() => {
-            applyAdvancedFilters();
-          }, 300);
-
-          updateToLiquidateSummary();
-          notify("Liquidation validated", "success");
-
-        } catch (err) {
-          console.error(err);
-          validateBtn.disabled = false;
-          validateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-          validateBtn.textContent = '✅ Validate';
-          notify("Server error", "error");
-        }
-      });
     }
 
     if (validateCancelBtn) {
@@ -2881,8 +2898,8 @@ function renderMobileCards(data) {
       </div>
 
       <div class="flex justify-between items-center text-xs text-gray-500 mb-3">
-        <span class="openDescription text-indigo-600 hover:underline cursor-pointer">
-          ${req.description ? 'View description' : 'No description'}
+        <span class="openDescription text-indigo-600 hover:underline cursor-pointer font-medium">
+          ${req.status === 'PendingValidation' ? '🔍 Review liquidation' : (req.description ? 'View description' : 'No description')}
         </span>
         <span>
           Approved: <span class="approved-amount-cell font-medium text-gray-700">${req.approved_amount != null ? formatAmount(req.approved_amount) : '—'}</span>
@@ -2900,11 +2917,6 @@ function renderMobileCards(data) {
         />
         <button class="approveBtn bg-green-500 text-white px-3 py-2 rounded-lg text-sm">✅</button>
         <button class="rejectBtn bg-red-500 text-white px-3 py-2 rounded-lg text-sm">❌</button>
-        ${
-          activeTab === 'liquidation' && req.status === 'PendingValidation'
-            ? `<button class="validateBtn bg-green-600 text-white px-3 py-2 rounded-lg text-sm w-full mt-1">✔ Validate</button>`
-            : ''
-        }
         ${
           activeTab === 'liquidation' && req.status === 'PendingCancel'
             ? `<button class="validateCancelBtn bg-red-600 text-white px-3 py-2 rounded-lg text-sm w-full mt-1">✖ Validate Cancel</button>`
@@ -3040,13 +3052,19 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
       </td>
 
     <td class="text-left">
-      ${req.description
+      ${req.status === 'PendingValidation'
         ? `
-          <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
-            View description
+          <span class="openDescription text-purple-700 font-semibold hover:underline cursor-pointer text-sm">
+            🔍 Review liquidation
           </span>
         `
-        : `<span class="text-gray-300">—</span>`
+        : req.description
+          ? `
+            <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
+              View description
+            </span>
+          `
+          : `<span class="text-gray-300">—</span>`
       }
     </td>
 
@@ -3114,17 +3132,6 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
           <button class="rejectBtn bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600 transition text-xs">
             ❌
           </button>
-
-          ${
-            activeTab === 'liquidation' &&
-            req.status === 'PendingValidation'
-              ? `
-              <button class="validateBtn bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 transition text-xs">
-                ✔
-              </button>
-              `
-              : ''
-          }
 
           ${
             activeTab === 'liquidation' &&
@@ -3896,6 +3903,192 @@ document.getElementById('closeDescription').onclick = () => {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
 };
+
+
+// ─────────────────────────────────────────
+// LIQUIDATION REVIEW — Approve & Close / Reject & send back
+// ─────────────────────────────────────────
+// NOTE : /requests/:id/liquidate est l'endpoint que le CENTRE utilise
+// normalement pour soumettre sa liquidation pendant que le statut est
+// "ToLiquidate". Ici on le réutilise côté admin pendant que le statut
+// est "PendingValidation" (pour corriger avant de clôturer, ou pour
+// ré-écrire la note au moment d'un rejet). Si le backend refuse cette
+// écriture parce que le statut n'est pas "ToLiquidate" au moment de
+// l'appel, on repasse d'abord par le statut "ToLiquidate" avant
+// d'appeler /liquidate, pour rester cohérent avec ce que l'endpoint
+// attend probablement. À vérifier en conditions réelles.
+
+document.getElementById('reviewApproveBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('reviewApproveBtn');
+  const rejectBtn = document.getElementById('reviewRejectBtn');
+
+  const req = allRequests.find(r => r.request_id === currentRequestId);
+  if (!req) {
+    notify("Request not found", "error");
+    return;
+  }
+
+  const spent = parseFloat(document.getElementById('reviewSpent').value);
+  const returned = parseFloat(document.getElementById('reviewReturned').value);
+  const note = document.getElementById('reviewNote').value.trim();
+
+  if (isNaN(spent) || spent <= 0) {
+    notify("Enter a valid amount spent", "error");
+    return;
+  }
+  if (isNaN(returned) || returned < 0) {
+    notify("Enter a valid returned amount", "error");
+    return;
+  }
+
+  const approved = Number(req.approved_amount || 0);
+  const epsilon = 0.01;
+  if (Math.abs((spent + returned) - approved) > epsilon) {
+    notify(`Amounts mismatch — approved: ${formatAmount(approved)}, total: ${formatAmount(spent + returned)}`, "error");
+    return;
+  }
+
+  const changed =
+    spent !== Number(req.amount_spent) ||
+    returned !== Number(req.returned_amount) ||
+    note !== (req.liquidation_note || '');
+
+  btn.disabled = true;
+  rejectBtn.disabled = true;
+  btn.textContent = '⏳...';
+
+  try {
+    if (changed) {
+      // Repasse temporairement par ToLiquidate pour que /liquidate accepte l'écriture
+      const statusRes = await fetchWithAuth(`${API_URL}/requests/${req.request_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'ToLiquidate', approved_by: req.approved_by })
+      });
+      if (!statusRes.ok) throw new Error('Failed to prepare liquidation update');
+
+      const patchRes = await fetchWithAuth(`${API_URL}/requests/${req.request_id}/liquidate`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount_spent: spent,
+          returned_amount: returned,
+          liquidation_note: note
+        })
+      });
+      if (!patchRes.ok) {
+        const result = await patchRes.json().catch(() => ({}));
+        throw new Error(result.error || 'Failed to update liquidation values');
+      }
+    }
+
+    const res = await fetchWithAuth(`${API_URL}/requests/${req.request_id}/validate-liquidation`, {
+      method: 'PATCH'
+    });
+
+    const result = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      notify(result.error || "Error validating", "error");
+      return;
+    }
+
+    req.status = 'Closed';
+    req.amount_spent = spent;
+    req.returned_amount = returned;
+    req.liquidation_note = note;
+
+    document.getElementById('liquidationReviewSection').classList.add('hidden');
+    document.getElementById('closeDescription').click();
+
+    applyAdvancedFilters();
+    updateToLiquidateSummary();
+    notify("Liquidation validated", "success");
+
+  } catch (err) {
+    console.error(err);
+    notify("Server error — " + err.message, "error");
+  } finally {
+    btn.disabled = false;
+    rejectBtn.disabled = false;
+    btn.textContent = '✅ Approve & Close';
+  }
+});
+
+document.getElementById('reviewRejectBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('reviewRejectBtn');
+  const approveBtn = document.getElementById('reviewApproveBtn');
+
+  const req = allRequests.find(r => r.request_id === currentRequestId);
+  if (!req) {
+    notify("Request not found", "error");
+    return;
+  }
+
+  const reason = document.getElementById('rejectReason').value.trim();
+  if (!reason) {
+    notify("Enter a reason for rejection", "error");
+    return;
+  }
+
+  const spentVal = document.getElementById('reviewSpent').value;
+  const returnedVal = document.getElementById('reviewReturned').value;
+  const note = document.getElementById('reviewNote').value.trim();
+  const newNote = `⚠️ Rejected by ${currentAdmin}: ${reason}\n---\n${note}`;
+
+  btn.disabled = true;
+  approveBtn.disabled = true;
+  btn.textContent = '⏳...';
+
+  try {
+    // 1) Renvoyer la requête au centre pour correction
+    const statusRes = await fetchWithAuth(`${API_URL}/requests/${req.request_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'ToLiquidate', approved_by: req.approved_by })
+    });
+
+    const statusResult = await statusRes.json().catch(() => ({}));
+
+    if (!statusRes.ok) {
+      notify(statusResult.error || "Error rejecting", "error");
+      return;
+    }
+
+    // 2) Garder trace des valeurs soumises + la raison du rejet dans la note
+    const patchRes = await fetchWithAuth(`${API_URL}/requests/${req.request_id}/liquidate`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount_spent: spentVal ? parseFloat(spentVal) : null,
+        returned_amount: returnedVal ? parseFloat(returnedVal) : null,
+        liquidation_note: newNote
+      })
+    });
+
+    if (!patchRes.ok) {
+      console.warn('Could not save rejection note, status was still reverted to ToLiquidate');
+    }
+
+    req.status = 'ToLiquidate';
+    req.liquidation_note = newNote;
+
+    document.getElementById('liquidationReviewSection').classList.add('hidden');
+    document.getElementById('closeDescription').click();
+
+    applyAdvancedFilters();
+    updateToLiquidateSummary();
+    notify("Sent back to the center for correction", "info");
+
+  } catch (err) {
+    console.error(err);
+    notify("Server error — " + err.message, "error");
+  } finally {
+    btn.disabled = false;
+    approveBtn.disabled = false;
+    btn.textContent = '↩ Reject & send back';
+  }
+});
 
 
 // ─────────────────────────────────────────
