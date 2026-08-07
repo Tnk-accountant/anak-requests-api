@@ -853,7 +853,7 @@ button:active {
           </div>
           <input id="liqReceipts" type="file" accept="image/*" multiple hidden>
           <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
-          <div id="receiptsInfo" class="text-sm text-gray-600 mt-2">No receipts</div>
+          <div id="receiptsInfo" class="text-sm text-gray-600 mt-2 cursor-pointer hover:text-indigo-600 hover:underline transition select-none">No receipts</div>
         </div>
 
         <div class="mb-4">
@@ -1435,6 +1435,7 @@ function friendlyError(err) {
   let isSwitchingPanel = false;
   let activeActionCard = null;
   let capturedPhotos = [];
+  let liquidationSubmitting = false;
 
   /* =====================================================================
    LIQUIDATION DRAFT PERSISTENCE (IndexedDB)
@@ -2901,6 +2902,21 @@ function isCancelEligible(status) {
       return [...galleryFiles, ...capturedPhotos];
     }
 
+    document.getElementById('receiptsInfo')?.addEventListener('click', () => {
+  const total = getAllPhotos().length;
+
+  if (total === 0) {
+    notify("No receipts added yet", "info");
+    return;
+  }
+
+  document.getElementById('scanModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+
+  renderScanPreview();
+  updateScanUI();
+});
+
     function updateReceiptsUI(req = null) {
       const info = document.getElementById('receiptsInfo');
 
@@ -2917,7 +2933,7 @@ function isCancelEligible(status) {
       } else if (total === 1) {
         info.textContent = "📎 1 receipt";
       } else {
-        info.textContent = `📎 ${total} receipts (max 20)`;
+        info.textContent = `📎 ${total} receipts (max 20) ›`;
         if (total > 15) {
           info.textContent += " • large upload";
         }
@@ -3903,6 +3919,13 @@ function closeModal() {
    Handler pour le bouton "💰 Liquider"
 ============================== */
 document.getElementById('liqSubmitBtn').addEventListener('click', async () => {
+  // 🔒 Verrou immédiat — bloque tout double-clic avant même la
+  // première validation, sans attendre lockButton() qui arrive plus tard.
+  if (liquidationSubmitting) return;
+  liquidationSubmitting = true;
+
+  try {
+
   const reqId = currentRequestId;
   if (!currentRequestId) {
   notify("Request not found", "error");
@@ -4106,6 +4129,10 @@ if (scanStatus) scanStatus.classList.add('hidden');
   document.getElementById('liqReceipts').value = '';
   updateReceiptsUI();
 }
+
+  } finally {
+    liquidationSubmitting = false;   // 👈 ajout : libère le verrou, quoi qu'il arrive
+  }
 });
 
 
