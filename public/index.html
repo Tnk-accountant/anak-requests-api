@@ -1096,29 +1096,61 @@ button:active {
 
   const API_URL = window.location.origin;
 
-  //fetchWithAuth
+/* =====================================================================
+   PATCH — fetchWithAuth avec retry réseau + réveil sur retour d'app
+   =====================================================================
 
-    async function fetchWithAuth(url, options = {}) {
+   DIAGNOSTIC :
+   Le "Load failed" que tu vois n'est PAS lié à Render (uptime 100%,
+   réponses < 1s confirmées par UptimeRobot). C'est une erreur réseau
+   côté client : soit l'app était en arrière-plan (écran verrouillé /
+   changement d'appli sur mobile) et Safari/iOS a suspendu la requête,
+   soit une micro-coupure réseau (WiFi <-> 4G) au moment du clic.
+
+   fetchWithAuth() actuel n'a aucun try/catch : si fetch() échoue au
+   niveau réseau, l'exception ("Load failed") remonte telle quelle et
+   s'affiche probablement brute dans une notification.
+
+   CE PATCH FAIT 3 CHOSES :
+   1. Retry automatique (1 tentative) si le fetch échoue au niveau réseau
+      — donc "Load failed" au 1er coup ne bloque plus l'utilisateur.
+   2. Timeout explicite pour éviter un fetch qui reste bloqué trop
+      longtemps sans jamais échouer ni réussir.
+   3. Un listener visibilitychange qui "réveille" la session (petit
+      appel /profile) dès que l'app revient au premier plan, pour que
+      la connexion soit déjà rétablie avant que l'utilisateur clique.
+
+   OÙ L'INSTALLER :
+   Dans index.html ET admin.html, remplace la fonction fetchWithAuth
+   existante par celle-ci (même signature, donc rien d'autre à changer
+   dans le reste du code — tous les appels existants continuent de
+   fonctionner tels quels).
+   ===================================================================== */
+
+async function fetchWithAuth(url, options = {}, retries = 1, timeoutMs = 15000) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
       let res = await fetch(url, {
         ...options,
-        credentials: 'include'
+        credentials: 'include',
+        signal: controller.signal
       });
+      clearTimeout(timer);
 
+      // --- gestion 401 : refresh du token, inchangé ---
       if (res.status === 401) {
-
         console.warn("🔁 Access token expiré → refresh");
 
-        // ⚠️ IMPORTANT : fetch NORMAL (PAS fetchWithAuth)
         const refreshRes = await fetch(`${API_URL}/refresh`, {
           method: 'POST',
           credentials: 'include'
         });
 
         if (refreshRes.ok) {
-          res = await fetch(url, {
-            ...options,
-            credentials: 'include'
-          });
+          res = await fetch(url, { ...options, credentials: 'include' });
         } else {
           window.location.replace('login.html');
           return res;
@@ -1126,7 +1158,46 @@ button:active {
       }
 
       return res;
+
+    } catch (err) {
+      clearTimeout(timer);
+
+      const isLastAttempt = attempt === retries;
+
+      if (isLastAttempt) {
+        // On relance une erreur avec un message clair plutôt que le
+        // "Load failed" brut du navigateur.
+        console.error('fetchWithAuth network error:', err);
+        throw new Error('Connexion réseau instable, réessaie dans quelques secondes.');
+      }
+
+      // Pas la dernière tentative → petite pause puis retry silencieux
+      console.warn(`fetchWithAuth: tentative ${attempt + 1} échouée, retry...`, err);
+      await new Promise(r => setTimeout(r, 1500));
     }
+  }
+}
+
+/* =====================================================================
+   BONUS — réveil de la connexion quand l'app revient au premier plan
+   =====================================================================
+   À ajouter une seule fois, n'importe où dans le <script> de index.html
+   et admin.html (pas besoin de le dupliquer par fonction).
+
+   Ça ne "corrige" pas le réseau, mais ça fait en sorte qu'un petit
+   appel silencieux parte dès que l'utilisateur revient sur l'app,
+   AVANT qu'il ne clique sur quelque chose — donc la connexion a de
+   bonnes chances d'être déjà rétablie au moment de son clic réel.
+   ===================================================================== */
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    fetchWithAuth(`${API_URL}/profile`).catch(() => {
+      // silencieux : c'est juste un "réveil", pas une action utilisateur
+    });
+  }
+});
+
 
   async function checkSession() {
   try {

@@ -1533,6 +1533,15 @@ pending.forEach(u => {
 
 const API_URL = 'https://anak-requests-api.onrender.com';
 
+// 🔄 Réveil de la connexion quand l'admin revient sur l'app
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    fetch(`${API_URL}/profile`, { credentials: 'include' }).catch(() => {
+      // silencieux
+    });
+  }
+});
+
     function goBack() {
       window.location.href = '/select.html';
     }
