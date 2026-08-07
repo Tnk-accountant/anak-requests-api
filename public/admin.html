@@ -2712,11 +2712,8 @@ function bindRowActions(req, tr) {
       // 🔍 LIQUIDATION REVIEW (si applicable)
       // ==============================
       const reviewSection = document.getElementById('liquidationReviewSection');
-      const descContentEl = document.getElementById('descriptionContent');
+      const descriptionBlock = document.getElementById('descriptionBlock');
       const chatWrapper = document.getElementById('chatThreadWrapper');
-      const chatAvatarWrapper = document.getElementById('chatAvatarWrapper');
-      const chatTitleText = document.getElementById('chatTitleText');
-      const chatSubtitleText = document.getElementById('chatSubtitleText');
 
       if (req.status === 'PendingValidation') {
         reviewSection.classList.remove('hidden');
@@ -2726,37 +2723,17 @@ function bindRowActions(req, tr) {
         document.getElementById('reviewNote').value = req.liquidation_note ?? '';
         document.getElementById('rejectReason').value = '';
 
-        // 🔽 Description + conversation passent en petit format : le
-        // panneau de review prend la priorité visuelle.
-        descContentEl.style.maxHeight = '40px';
-        descContentEl.style.padding = '8px 12px';
-        descContentEl.style.fontSize = '12px';
-
-        chatWrapper.classList.remove('flex-1');
-        chatWrapper.classList.add('shrink-0');
-        chatWrapper.style.height = '110px';
-
-        chatAvatarWrapper.style.display = 'none';
-        chatTitleText.classList.add('text-xs');
-        chatTitleText.classList.remove('text-sm');
-        chatSubtitleText.classList.add('hidden');
+        // 🔽 Description + conversation entièrement masquées : le
+        // panneau de review est seul à l'écran.
+        descriptionBlock.classList.add('hidden');
+        chatWrapper.classList.add('hidden');
 
       } else {
         reviewSection.classList.add('hidden');
 
-        // 🔼 Retour au format normal pour les autres statuts
-        descContentEl.style.maxHeight = '';
-        descContentEl.style.padding = '';
-        descContentEl.style.fontSize = '';
-
-        chatWrapper.classList.add('flex-1');
-        chatWrapper.classList.remove('shrink-0');
-        chatWrapper.style.height = '';
-
-        chatAvatarWrapper.style.display = '';
-        chatTitleText.classList.remove('text-xs');
-        chatTitleText.classList.add('text-sm');
-        chatSubtitleText.classList.remove('hidden');
+        // 🔼 Retour à l'affichage normal pour les autres statuts
+        descriptionBlock.classList.remove('hidden');
+        chatWrapper.classList.remove('hidden');
       }
 
       // ==============================
