@@ -2899,7 +2899,7 @@ function renderMobileCards(data) {
           </p>
         </div>
         <div class="status-cell shrink-0">
-          <span class="px-2 py-1 rounded-full text-white text-xs ${statusClasses[req.status] || ''}">
+          <span class="px-2 py-0.5 rounded-full text-white text-[10px] ${statusClasses[req.status] || ''}">
             ${req.status || ''}
           </span>
         </div>
@@ -3083,7 +3083,7 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
 
       <td class="status-cell">
         <div class="flex items-center gap-2">
-          <span class="px-2 py-1 rounded-full text-white text-sm ${statusClasses[req.status] || ''}">
+          <span class="px-2 py-0.5 rounded-full text-white text-[11px] ${statusClasses[req.status] || ''}">
             ${req.status || ''}
           </span>
 
@@ -3274,7 +3274,7 @@ bindRowActions(req, tr);
       // 1️⃣ Mise à jour de l'affichage
       const statusCell = row.querySelector('.status-cell span');
       statusCell.textContent = status;
-      statusCell.className = `px-2 py-1 rounded-full text-white text-sm ${statusClasses[status] || ''}`;
+      statusCell.className = `px-2 py-0.5 rounded-full text-white text-[11px] ${statusClasses[status] || ''}`;
 
       row.querySelector('.approved-by-cell').textContent = approved_by || '';
 
