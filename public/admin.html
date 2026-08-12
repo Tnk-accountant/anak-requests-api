@@ -1771,6 +1771,12 @@ function icon(name, cls) {
   const p = ICON_PATHS[name] || '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls || 'w-4 h-4'}">${p}</svg>`;
 }
+function truncateText(text, maxLength = 40) {
+  if (!text) return '';
+  const clean = String(text).trim();
+  if (clean.length <= maxLength) return clean;
+  return clean.slice(0, maxLength).trim() + '…';
+}
 
 // =========================================================
 // fetchWithAuth — AUTH UNIFIÉE PAR COOKIE (comme index.html)
@@ -2778,158 +2784,173 @@ document.getElementById('editUserDeleteBtn')?.addEventListener('click', async ()
 // =========================================================
 // BIND ROW ACTIONS — réutilisé par le tableau ET les cartes mobiles
 // =========================================================
+// =========================================================
+// Ouvre le modal de détail d'une demande (description,
+// centres, conversation, review liquidation...)
+// Appelée par un clic sur la ligne/carte entière.
+// =========================================================
+function openRequestModal(req) {
+  // ==============================
+  // SET CONTEXT
+  // ==============================
+  currentRequestId = req.request_id;
+
+  // ==============================
+  // DESCRIPTION
+  // ==============================
+  const descriptionEl = document.getElementById('descriptionContent');
+  descriptionEl.textContent = req.description || 'No description';
+
+  const centersBox = document.getElementById("centersConcerned");
+
+  if (req.other_centers?.length > 0) {
+
+    centersBox.classList.remove("hidden");
+
+    let html = `
+      <div class="flex items-center gap-2">
+
+        <span class="text-[10px] uppercase tracking-wider text-gray-400">
+          Centers
+        </span>
+
+        <div class="flex flex-wrap gap-1">
+          <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
+            ${escapeHtml(req.center_name)}
+          </span>
+    `;
+
+    req.other_centers.forEach(center => {
+
+    html += `
+      <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
+        ${escapeHtml(center)}
+      </span>
+    `;
+
+    });
+
+    html += `
+        </div>
+
+      </div>
+    `;
+
+    centersBox.innerHTML = html;
+
+  } else {
+
+    centersBox.classList.add("hidden");
+
+  }
+
+  // ==============================
+  // CONVERSATION / CLARIFICATION
+  // ==============================
+  const convoBox = document.getElementById('adminConversation');
+
+  convoBox.innerHTML = '';
+
+  if (req.conversation?.length) {
+
+    convoBox.innerHTML = '';
+
+    req.conversation.forEach((msg) => {
+      const isAdmin = msg.sender === 'admin';
+      const senderName = isAdmin ? 'Father' : (msg.sender_name || msg.sender);
+
+      const row = document.createElement('div');
+      row.className = `w-full flex ${isAdmin ? 'justify-end' : 'justify-start'}`;
+
+      const bubble = document.createElement('div');
+      bubble.className = `
+        chat-bubble text-sm leading-relaxed break-words animate-fade-in shadow-sm
+        ${isAdmin
+          ? 'bg-indigo-500 text-white rounded-[18px] rounded-br-[4px]'
+          : 'bg-white text-gray-800 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
+        }
+        px-4 py-2
+      `;
+
+      bubble.innerHTML = `
+        <div class="text-[10px] opacity-60 mb-1">${escapeHtml(senderName)}</div>
+        <div class="break-words whitespace-pre-wrap">${escapeHtml(msg.message)}</div>
+      `;
+
+      row.appendChild(bubble);
+      convoBox.appendChild(row);
+    });
+
+    convoBox.scrollTop = convoBox.scrollHeight;
+    convoBox.scrollTop = convoBox.scrollHeight;
+
+  } else {
+    convoBox.innerHTML = `
+      <div class="text-xs text-gray-400 text-center py-8">
+        No conversation yet
+      </div>
+    `;
+  }
+
+  // ==============================
+  // RESET INPUT
+  // ==============================
+  const feedbackInput = document.getElementById('feedbackInput');
+  feedbackInput.value = '';
+  feedbackInput.style.height = 'auto';
+
+  // ==============================
+  // 🔍 LIQUIDATION REVIEW (si applicable)
+  // ==============================
+  const reviewSection = document.getElementById('liquidationReviewSection');
+  const descriptionBlock = document.getElementById('descriptionBlock');
+  const chatWrapper = document.getElementById('chatThreadWrapper');
+
+  if (req.status === 'PendingValidation') {
+    reviewSection.classList.remove('hidden');
+
+    document.getElementById('reviewSpent').value = req.amount_spent ?? '';
+    document.getElementById('reviewReturned').value = req.returned_amount ?? '';
+    document.getElementById('reviewNote').value = req.liquidation_note ?? '';
+    document.getElementById('rejectReason').value = '';
+
+    // 🔽 Description + conversation entièrement masquées : le
+    // panneau de review est seul à l'écran.
+    descriptionBlock.classList.add('hidden');
+    chatWrapper.classList.add('hidden');
+
+  } else {
+    reviewSection.classList.add('hidden');
+
+    // 🔼 Retour à l'affichage normal pour les autres statuts
+    descriptionBlock.classList.remove('hidden');
+    chatWrapper.classList.remove('hidden');
+  }
+
+  // ==============================
+  // OPEN MODAL
+  // ==============================
+  const modal = document.getElementById('descriptionModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
 function bindRowActions(req, tr) {
 
-  // CLICK → ouvre modal
+  // CLIC SUR TOUTE LA LIGNE/CARTE → ouvre le modal
+  // (sauf si le clic vient d'un bouton/input/lien interne)
+  tr.style.cursor = 'pointer';
+  tr.addEventListener('click', (e) => {
+    if (e.target.closest('button, input, a')) return;
+    openRequestModal(req);
+  });
+
   const openDescBtn = tr.querySelector('.openDescription');
 
   if (openDescBtn) {
     openDescBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-
-      // ==============================
-      // SET CONTEXT
-      // ==============================
-      currentRequestId = req.request_id;
-
-      // ==============================
-      // DESCRIPTION
-      // ==============================
-      const descriptionEl = document.getElementById('descriptionContent');
-      descriptionEl.textContent = req.description || 'No description';
-
-      const centersBox = document.getElementById("centersConcerned");
-
-      if (req.other_centers?.length > 0) {
-
-        centersBox.classList.remove("hidden");
-
-        let html = `
-          <div class="flex items-center gap-2">
-
-            <span class="text-[10px] uppercase tracking-wider text-gray-400">
-              Centers
-            </span>
-
-            <div class="flex flex-wrap gap-1">
-              <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
-                ${escapeHtml(req.center_name)}
-              </span>
-        `;
-
-        req.other_centers.forEach(center => {
-
-        html += `
-          <span class="px-1.5 py-0 rounded-full bg-gray-100 text-gray-600 text-[10px] font-medium">
-            ${escapeHtml(center)}
-          </span>
-        `;
-
-        });
-
-        html += `
-            </div>
-
-          </div>
-        `;
-
-        centersBox.innerHTML = html;
-
-      } else {
-
-        centersBox.classList.add("hidden");
-
-      }
-
-      // ==============================
-      // CONVERSATION / CLARIFICATION
-      // ==============================
-      const convoBox = document.getElementById('adminConversation');
-
-      convoBox.innerHTML = '';
-
-      if (req.conversation?.length) {
-
-        convoBox.innerHTML = '';
-
-        req.conversation.forEach((msg) => {
-          const isAdmin = msg.sender === 'admin';
-          const senderName = isAdmin ? 'Father' : (msg.sender_name || msg.sender);
-
-          const row = document.createElement('div');
-          row.className = `w-full flex ${isAdmin ? 'justify-end' : 'justify-start'}`;
-
-          const bubble = document.createElement('div');
-          bubble.className = `
-            chat-bubble text-sm leading-relaxed break-words animate-fade-in shadow-sm
-            ${isAdmin
-              ? 'bg-indigo-500 text-white rounded-[18px] rounded-br-[4px]'
-              : 'bg-white text-gray-800 border border-gray-100 rounded-[18px] rounded-bl-[4px]'
-            }
-            px-4 py-2
-          `;
-
-          bubble.innerHTML = `
-            <div class="text-[10px] opacity-60 mb-1">${escapeHtml(senderName)}</div>
-            <div class="break-words whitespace-pre-wrap">${escapeHtml(msg.message)}</div>
-          `;
-
-          row.appendChild(bubble);
-          convoBox.appendChild(row);
-        });
-
-        convoBox.scrollTop = convoBox.scrollHeight;
-        convoBox.scrollTop = convoBox.scrollHeight;
-
-      } else {
-        convoBox.innerHTML = `
-          <div class="text-xs text-gray-400 text-center py-8">
-            No conversation yet
-          </div>
-        `;
-      }
-
-      // ==============================
-      // RESET INPUT
-      // ==============================
-      const feedbackInput = document.getElementById('feedbackInput');
-      feedbackInput.value = '';
-      feedbackInput.style.height = 'auto';
-
-      // ==============================
-      // 🔍 LIQUIDATION REVIEW (si applicable)
-      // ==============================
-      const reviewSection = document.getElementById('liquidationReviewSection');
-      const descriptionBlock = document.getElementById('descriptionBlock');
-      const chatWrapper = document.getElementById('chatThreadWrapper');
-
-      if (req.status === 'PendingValidation') {
-        reviewSection.classList.remove('hidden');
-
-        document.getElementById('reviewSpent').value = req.amount_spent ?? '';
-        document.getElementById('reviewReturned').value = req.returned_amount ?? '';
-        document.getElementById('reviewNote').value = req.liquidation_note ?? '';
-        document.getElementById('rejectReason').value = '';
-
-        // 🔽 Description + conversation entièrement masquées : le
-        // panneau de review est seul à l'écran.
-        descriptionBlock.classList.add('hidden');
-        chatWrapper.classList.add('hidden');
-
-      } else {
-        reviewSection.classList.add('hidden');
-
-        // 🔼 Retour à l'affichage normal pour les autres statuts
-        descriptionBlock.classList.remove('hidden');
-        chatWrapper.classList.remove('hidden');
-      }
-
-      // ==============================
-      // OPEN MODAL
-      // ==============================
-      const modal = document.getElementById('descriptionModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+      openRequestModal(req);
     });
   }
 
@@ -3099,8 +3120,8 @@ function renderMobileCards(data) {
       </div>
 
       <div class="flex justify-between items-center text-xs text-gray-500 mb-3">
-        <span class="openDescription text-indigo-600 hover:underline cursor-pointer font-medium">
-          ${req.status === 'PendingValidation' ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline -mt-0.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg> Review liquidation` : (req.description ? 'View description' : 'No description')}
+        <span class="font-medium ${req.status === 'PendingValidation' ? 'text-purple-700 font-semibold' : 'text-gray-500'}">
+          ${req.status === 'PendingValidation' ? `${icon('search','w-3.5 h-3.5 inline -mt-0.5')} Review liquidation` : (req.description ? escapeHtml(truncateText(req.description, 36)) : 'No description')}
         </span>
         <span>
           Approved: <span class="approved-amount-cell font-medium text-gray-700">${req.approved_amount != null ? formatAmount(req.approved_amount) : '—'}</span>
@@ -3263,14 +3284,14 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
     <td class="text-left">
       ${req.status === 'PendingValidation'
         ? `
-          <span class="openDescription text-purple-700 font-semibold hover:underline cursor-pointer text-sm">
+          <span class="text-purple-700 font-semibold text-sm">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline -mt-0.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg> Review liquidation
           </span>
         `
         : req.description
           ? `
-            <span class="openDescription text-indigo-600 hover:underline cursor-pointer text-sm">
-              View description
+            <span class="text-gray-500 text-sm" title="${escapeHtml(req.description)}">
+              ${escapeHtml(truncateText(req.description, 40))}
             </span>
           `
           : `<span class="text-gray-300">—</span>`
