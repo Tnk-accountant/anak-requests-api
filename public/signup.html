@@ -414,7 +414,7 @@ body {
 
       <label class="field-label">Password</label>
       <div class="password-wrapper">
-        <input type="password" id="signupPassword" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password">
+        <input type="password" id="signupPassword" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password">
         <span class="toggle-password" data-target="signupPassword">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"></circle>
@@ -425,7 +425,7 @@ body {
 
       <label class="field-label">Confirm password</label>
       <div class="password-wrapper">
-        <input type="password" id="signupConfirmPassword" placeholder="Type it again" required minlength="6" autocomplete="new-password">
+        <input type="password" id="signupConfirmPassword" placeholder="Type it again" required minlength="8" autocomplete="new-password">
         <span class="toggle-password" data-target="signupConfirmPassword">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"></circle>
@@ -531,8 +531,8 @@ signupForm.addEventListener('submit', async (e) => {
     return;
   }
 
-  if (password.length < 6) {
-    signupAlert.textContent = '❌ Password must be at least 6 characters';
+  if (password.length < 8) {
+    signupAlert.textContent = '❌ Password must be at least 8 characters';
     signupAlert.style.display = 'block';
     return;
   }

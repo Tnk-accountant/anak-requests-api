@@ -361,7 +361,8 @@ button:active {
     <div class="flex items-center gap-4">
     <button id="adminSwitchBtn"
       class="hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white text-sm shadow hover:shadow-lg hover:scale-[1.02] transition">
-      ⚙️ <span>Admin</span>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      <span>Admin</span>
     </button>
       <div class="w-9 h-9 flex items-center justify-center bg-indigo-600 text-white font-bold rounded-xl shadow">
         AR
@@ -405,178 +406,24 @@ button:active {
      class="md:hidden text-center text-xs text-gray-500 mt-1 hidden">
 </div>
 
- <!-- Formulaire de demande -->
-    <div class="
-      bg-white
-      w-full
-      rounded-t-2xl
-      p-4
-      md:rounded-2xl
-      md:p-8
-      md:max-w-6xl
-      md:mx-auto
-      md:mt-8
-      card-desktop
-    ">
-
-    <h1 class="text-xl font-bold text-indigo-700 mb-4">Submit a request</h1>
-
-    <form id="requestForm" class="space-y-4">
-      <div>
-        <label class="block text-gray-700 font-semibold mb-1">Requested by</label>
-          <input type="text" id="requestor_name" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-      <div id="sharedNameButtons" class="hidden name-toggle mt-1"></div>
-    </div>
-
-      <div>
-        <label class="block text-gray-700 font-semibold mb-1">Center</label>
-        <select id="center_name" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="">Select a center</option>
-        </select>
-
-        <label id="additionalCentersLabel" class="flex items-center gap-2 mt-3 cursor-pointer">
-
-          <input
-            type="checkbox"
-            id="multipleCentersCheck"
-            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-
-          <span class="text-sm text-gray-600 font-medium">
-            Additional centers
-          </span>
-
-        </label>
-
-        <div
-          id="multipleCentersBox"
-          class="hidden mt-2 space-y-2">
-
-          <div class="flex gap-2">
-
-            <select
-              id="extraCenterSelect"
-              class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
-            </select>
-
-            <button
-              type="button"
-              id="addCenterBtn"
-              class="w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition">
-
-              +
-
-            </button>
-
-          </div>
-
-          <div
-            id="selectedCenters"
-            class="flex flex-wrap gap-2">
-          </div>
-
-        </div>
-
-      </div>
-
-      <div>
-        <label class="block text-gray-700 font-semibold mb-1">Requested amount</label>
-        <input type="number"
-            id="amount_requested"
-            inputmode="decimal"
-            step="0.01"
-            min="0.01"
-            required
-            class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-      </div>
-
-      <!-- REQUEST TYPE -->
-      <div>
-        <label class="block text-gray-700 font-semibold mb-2">Request type</label>
-
-        <div id="requestTypeButtons" class="flex flex-col sm:flex-row gap-3">
-
-          <button type="button" data-value="CashAdvance" class="payment-btn">
-            Cash Advance (liquidation required)
-          </button>
-
-          <button type="button" data-value="FundTransfer" class="payment-btn">
-            Fund Transfer (no liquidation)
-          </button>
-
-        </div>
-        <input type="hidden" id="request_type">
-      </div>
-
-        <!-- METHODE DE PAIEMENT -->
-      <div>
-        <label class="block text-gray-700 font-semibold mb-2">Requested payment method</label>
-
-        <div id="paymentMethodButtons" class="flex flex-col sm:flex-row gap-3">
-
-          <button type="button" data-value="cash" class="payment-btn">
-            💵 Cash
-          </button>
-
-          <button type="button" data-value="cheque" class="payment-btn">
-            🧾 Check
-          </button>
-
-          <button type="button" data-value="card" class="payment-btn">
-            💳 Card
-          </button>
-
-        </div>
-
-        <!-- 🔴 LIGNE MANQUANTE AVANT -->
-        <input type="hidden" id="payment_method">
-
-      </div>
-
-
-<div>
-        <div class="flex items-center justify-between mb-1">
-          <label class="block text-gray-700 font-semibold">Description</label>
-
-          <div class="relative">
-            <button type="button" id="templatesDropdownBtn"
-              class="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-              📝 Templates
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </button>
-
-            <div id="templatesDropdown"
-              class="hidden absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 z-30 overflow-hidden">
-
-              <div id="templatesDropdownList" class="max-h-60 overflow-y-auto divide-y divide-gray-50"></div>
-
-              <button type="button" id="openManageTemplatesBtn"
-                class="w-full text-left px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 border-t border-gray-100">
-                ⚙️ Manage templates
-              </button>
-
-            </div>
-          </div>
-        </div>
-
-        <textarea id="description" rows="3" required
-         class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-      </div>
-
-        <button
-          id="submitRequestBtn"
-          type="submit"
-          class="w-full bg-indigo-600 text-white font-semibold py-3 md:py-2 text-base md:text-sm rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.97] transition-all">
-          Submit request
-        </button>
-     </form>
-    <p id="generatedId" class="mt-2 text-center text-sm text-gray-600"></p>
-  </div>
-
 <!-- Tableau des demandes amélioré -->
 <div class="bg-white rounded-2xl p-6 md:p-8 w-full max-w-6xl mx-auto mt-12 card-desktop">
-  <h2 class="text-xl font-bold text-indigo-700 mb-4">My Requests</h2>
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-bold text-indigo-700">My Requests</h2>
+
+    <div class="relative">
+      <button id="statusLegendBtn" type="button"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Status guide
+      </button>
+
+      <div id="statusLegendPopover"
+        class="hidden absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 z-50 p-3">
+        <div id="statusLegendList" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
 
 <!-- 📱 MOBILE : badge liquidation -->
 <div id="toLiquidateBadgeMobile"
@@ -752,6 +599,178 @@ button:active {
 
 </div>
 
+ <!-- Formulaire de demande -->
+    <div class="
+      bg-white
+      w-full
+      rounded-2xl
+      p-4
+      mt-8
+      md:p-8
+      md:max-w-6xl
+      md:mx-auto
+      card-desktop
+    ">
+
+    <h1 class="text-xl font-bold text-indigo-700 mb-4">Submit a request</h1>
+
+    <form id="requestForm" class="space-y-4">
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Requested by</label>
+          <input type="text" id="requestor_name" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <div id="sharedNameButtons" class="hidden name-toggle mt-1"></div>
+    </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Center</label>
+        <select id="center_name" required class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="">Select a center</option>
+        </select>
+
+        <label id="additionalCentersLabel" class="flex items-center gap-2 mt-3 cursor-pointer">
+
+          <input
+            type="checkbox"
+            id="multipleCentersCheck"
+            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+
+          <span class="text-sm text-gray-600 font-medium">
+            Additional centers
+          </span>
+
+        </label>
+
+        <div
+          id="multipleCentersBox"
+          class="hidden mt-2 space-y-2">
+
+          <div class="flex gap-2">
+
+            <select
+              id="extraCenterSelect"
+              class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
+            </select>
+
+            <button
+              type="button"
+              id="addCenterBtn"
+              class="w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition">
+
+              +
+
+            </button>
+
+          </div>
+
+          <div
+            id="selectedCenters"
+            class="flex flex-wrap gap-2">
+          </div>
+
+        </div>
+
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Requested amount</label>
+        <input type="number"
+            id="amount_requested"
+            inputmode="decimal"
+            step="0.01"
+            min="0.01"
+            required
+            class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <!-- REQUEST TYPE -->
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">Request type</label>
+
+        <div id="requestTypeButtons" class="flex flex-col sm:flex-row gap-3">
+
+          <button type="button" data-value="CashAdvance" class="payment-btn">
+            Cash Advance (liquidation required)
+          </button>
+
+          <button type="button" data-value="FundTransfer" class="payment-btn">
+            Fund Transfer (no liquidation)
+          </button>
+
+        </div>
+        <input type="hidden" id="request_type">
+      </div>
+
+        <!-- METHODE DE PAIEMENT -->
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">Requested payment method</label>
+
+        <div id="paymentMethodButtons" class="flex flex-col sm:flex-row gap-3">
+
+          <button type="button" data-value="cash" class="payment-btn flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 6v12M18 6v12"/></svg>
+            Cash
+          </button>
+
+          <button type="button" data-value="cheque" class="payment-btn flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M6 2h12v18l-3-2-3 2-3-2-3 2V2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
+            Check
+          </button>
+
+          <button type="button" data-value="card" class="payment-btn flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+            Card
+          </button>
+
+        </div>
+
+        <!-- 🔴 LIGNE MANQUANTE AVANT -->
+        <input type="hidden" id="payment_method">
+
+      </div>
+
+
+<div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-gray-700 font-semibold">Description</label>
+
+          <div class="relative">
+            <button type="button" id="templatesDropdownBtn"
+              class="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+              📝 Templates
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+
+            <div id="templatesDropdown"
+              class="hidden absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 z-30 overflow-hidden">
+
+              <div id="templatesDropdownList" class="max-h-60 overflow-y-auto divide-y divide-gray-50"></div>
+
+              <button type="button" id="openManageTemplatesBtn"
+                class="w-full text-left px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 border-t border-gray-100 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+                Manage templates
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+        <textarea id="description" rows="3" required
+         class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+      </div>
+
+        <button
+          id="submitRequestBtn"
+          type="submit"
+          class="w-full bg-indigo-600 text-white font-semibold py-3 md:py-2 text-base md:text-sm rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.97] transition-all">
+          Submit request
+        </button>
+     </form>
+    <p id="generatedId" class="mt-2 text-center text-sm text-gray-600"></p>
+  </div>
+
 
 
 <!-- Modal actions -->
@@ -797,7 +816,7 @@ button:active {
 
       <!-- Panel Received -->
       <div id="panel-received" class="action-panel hidden">
-        <h4 class="font-semibold mb-3" id="receivedPanelTitle">💵 Cash received</h4>
+        <h4 class="font-semibold mb-3" id="receivedPanelTitle">Cash received</h4>
         <div class="grid grid-cols-2 gap-3 mb-3">
           <div>
             <label class="block text-sm text-gray-700">Amount received</label>
@@ -1094,7 +1113,42 @@ button:active {
 
 <script>
 
-  const API_URL = window.location.origin;
+  const API_URL =
+    window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : 'https://anak-requests-api.onrender.com';
+
+  // =========================================================
+  // SÉCURITÉ — échappement HTML anti-XSS
+  // À utiliser systématiquement pour toute donnée venant du
+  // serveur ou saisie par un utilisateur (nom, description,
+  // messages...) avant de l'insérer via innerHTML.
+  // =========================================================
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // =========================================================
+  // ICÔNES SVG — remplace les émojis dans l'UI persistante
+  // (headers, boutons, badges)
+  // =========================================================
+  const ICON_PATHS = {
+    cash: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 6v12M18 6v12"/>',
+    receipt: '<path d="M6 2h12v18l-3-2-3 2-3-2-3 2V2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+    card: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+    fileText: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/>',
+  };
+  function icon(name, cls) {
+    const p = ICON_PATHS[name] || '';
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls || 'w-4 h-4'}">${p}</svg>`;
+  }
 
 /* =====================================================================
    PATCH — fetchWithAuth avec retry réseau + réveil sur retour d'app
@@ -1251,8 +1305,8 @@ function renderTemplatesDropdown() {
     item.type = 'button';
     item.className = 'w-full text-left px-4 py-2.5 hover:bg-gray-50 transition';
     item.innerHTML = `
-      <div class="text-sm font-medium text-gray-800 truncate">${title}</div>
-      <div class="text-xs text-gray-400 truncate">${text}</div>
+      <div class="text-sm font-medium text-gray-800 truncate">${escapeHtml(title)}</div>
+      <div class="text-xs text-gray-400 truncate">${escapeHtml(text)}</div>
     `;
     item.addEventListener('click', () => {
       document.getElementById('description').value = text;
@@ -1278,8 +1332,8 @@ function renderTemplatesList() {
     row.className = 'flex items-start justify-between gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2';
     row.innerHTML = `
       <div class="min-w-0">
-        <div class="text-sm font-medium text-gray-800 truncate">${title}</div>
-        <div class="text-xs text-gray-500 mt-0.5 truncate">${text}</div>
+        <div class="text-sm font-medium text-gray-800 truncate">${escapeHtml(title)}</div>
+        <div class="text-xs text-gray-500 mt-0.5 truncate">${escapeHtml(text)}</div>
       </div>
       <button class="deleteTemplateBtn text-gray-400 hover:text-red-600 text-xs shrink-0 mt-0.5">✕</button>
     `;
@@ -1973,7 +2027,6 @@ function setupRequestorName(profile) {
       });
 
 
-console.log("DOM ready, script chargé");
     const profile = await displayUserProfile();
     if (!profile) {
       window.location.replace('login.html');
@@ -2075,11 +2128,11 @@ badge.className =
   "inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-xs font-medium";
 
     badge.innerHTML = `
-      <span>${center}</span>
+      <span>${escapeHtml(center)}</span>
 
       <button
         type="button"
-        data-center="${center}"
+        data-center="${escapeHtml(center)}"
         class="text-gray-400 hover:text-red-600 transition font-bold leading-none">
 
         ×
@@ -2123,10 +2176,6 @@ badge.className =
   }
 
 }
-
-
-  console.log("Centers populated, select options =", document.getElementById("center_name")?.options?.length);
-  console.log("Selected center =", document.getElementById("center_name")?.value);
 
 
   // Stocker localement
@@ -2222,8 +2271,6 @@ form.addEventListener('submit', async (e) => {
     request_type
   };
 
- console.log('POST /requests payload =>', payload);
-
 try {
   const res = await fetchWithAuth(`${API_URL}/requests`, {
     method: 'POST',
@@ -2249,8 +2296,6 @@ try {
     console.warn('Réponse non-JSON du serveur:', text);
     result = { error: 'Réponse non JSON', raw: text };
   }
-
-  console.log('POST /requests response status:', res.status, 'body:', result);
 
   // ------------------------------
   // Succès
@@ -2344,8 +2389,6 @@ function setupSSE() {
     sse = null;
   }
 
-  console.log("🔌 SSE connecting...");
-
   // ✅ COOKIE (plus de token)
   sse = new EventSource(`${API_URL}/requests/stream`, {
     withCredentials: true
@@ -2384,13 +2427,10 @@ function setupSSE() {
   // OPEN (connexion OK)
   // ------------------------------
   sse.onopen = () => {
-    console.log("✅ SSE connected");
-
     // 🔥 stop fallback si actif
     if (fallbackInterval) {
       clearInterval(fallbackInterval);
       fallbackInterval = null;
-      console.log("🟢 fallback stopped");
     }
   };
 
@@ -2405,8 +2445,6 @@ function setupSSE() {
 
     // 🟡 fallback ONLY si pas déjà actif
     if (!fallbackInterval) {
-      console.log("🟡 fallback polling started");
-
       fallbackInterval = setInterval(() => {
         fetchMyRequests();
       }, 30000);
@@ -2746,7 +2784,7 @@ function getStatusBadgeColor(status) {
     Approved: 'bg-blue-500',
     Rejected: 'bg-red-600',
     ToLiquidate: 'bg-purple-500',
-    PendingValidation: 'bg-orange-500',
+    PendingValidation: 'bg-teal-500',
     NeedsInfo: 'bg-orange-500',
     Resubmitted: 'bg-indigo-500',
     Closed: 'bg-green-600',
@@ -2755,6 +2793,51 @@ function getStatusBadgeColor(status) {
   };
   return map[status] || 'bg-gray-400';
 }
+
+// Libellés + explications pour la légende de statuts
+const STATUS_INFO = {
+  Pending: { label: 'Pending', desc: 'Awaiting admin review' },
+  Approved: { label: 'Approved', desc: 'Approved, funds to be sent' },
+  NeedsInfo: { label: 'Needs Info', desc: 'Admin needs more information from you' },
+  Resubmitted: { label: 'Resubmitted', desc: 'Your reply was sent, back with admin' },
+  Rejected: { label: 'Rejected', desc: 'Request denied' },
+  ToLiquidate: { label: 'To Liquidate', desc: 'Funds received, submit your receipts' },
+  PendingValidation: { label: 'Pending Validation', desc: 'Receipts submitted, awaiting admin check' },
+  PendingCancel: { label: 'Pending Cancel', desc: 'Cancellation requested, awaiting admin' },
+  Closed: { label: 'Closed', desc: 'Fully completed' },
+  Cancelled: { label: 'Cancelled', desc: 'Request was cancelled' },
+};
+
+function renderStatusLegend() {
+  const list = document.getElementById('statusLegendList');
+  if (!list) return;
+  list.innerHTML = Object.entries(STATUS_INFO).map(([key, info]) => `
+    <div class="flex items-start gap-2">
+      <span class="w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${getStatusBadgeColor(key)}"></span>
+      <div>
+        <div class="text-xs font-semibold text-gray-700">${escapeHtml(info.label)}</div>
+        <div class="text-[11px] text-gray-400">${escapeHtml(info.desc)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderStatusLegend();
+  const btn = document.getElementById('statusLegendBtn');
+  const popover = document.getElementById('statusLegendPopover');
+  if (!btn || !popover) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popover.classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (!popover.contains(e.target) && e.target !== btn) {
+      popover.classList.add('hidden');
+    }
+  });
+});
 
 function getPrimaryPanelForStatus(req) {
   const status = req.status;
@@ -3043,17 +3126,7 @@ function renderMobileCards() {
   const paginated = requests.slice(start, start + mobilePerPage);
 
   paginated.forEach(req => {
-const statusColor =
-  req.status === 'Pending' ? 'bg-yellow-400' :
-  req.status === 'Approved' ? 'bg-blue-500' :
-  req.status === 'ToLiquidate' ? 'bg-purple-500' :
-  req.status === 'PendingValidation' ? 'bg-orange-500' :
-  req.status === 'NeedsInfo' ? 'bg-orange-500' :
-  req.status === 'Resubmitted' ? 'bg-indigo-500' :
-  req.status === 'Closed' ? 'bg-green-600' :
-  req.status === 'PendingCancel' ? 'bg-red-400' :
-  req.status === 'Rejected' || req.status === 'Cancelled' ? 'bg-gray-400' :
-  'bg-gray-400';
+const statusColor = getStatusBadgeColor(req.status);
 
     const card = document.createElement('div');
     card.className = `
@@ -3066,13 +3139,13 @@ card.innerHTML = `
       <div class="flex justify-between items-center">
         <div class="min-w-0">
           <p class="text-sm font-medium text-gray-800 truncate">
-            ${req.requestor_name}
+            ${escapeHtml(req.requestor_name)}
           </p>
           <p class="text-xs text-gray-500">
             ${req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : ''}
           </p>
           <p class="text-xs text-gray-400 truncate mt-0.5">
-            ${truncateText(req.description, 80)}
+            ${escapeHtml(truncateText(req.description, 80))}
           </p>
         </div>
 
@@ -3224,7 +3297,7 @@ else if (req.status === "Resubmitted") {
             req.status === 'Approved' ? 'bg-blue-500' :
             req.status === 'Rejected' ? 'bg-red-600' :
             req.status === 'ToLiquidate' ? 'bg-purple-500' :
-            req.status === 'PendingValidation' ? 'bg-orange-500' :
+            req.status === 'PendingValidation' ? 'bg-teal-500' :
             req.status === 'Closed' ? 'bg-green-600' :
             req.status === 'PendingCancel' ? 'bg-red-400' :
             'bg-gray-400'
@@ -3239,9 +3312,9 @@ else if (req.status === "Resubmitted") {
 
   // Paiement → texte
   const paymentText =
-    req.payment_method === 'cash' ? '💵 Cash' :
-    req.payment_method === 'cheque' ? '🧾 Check' :
-    req.payment_method === 'card' ? '💳 Card' :
+    req.payment_method === 'cash' ? 'Cash' :
+    req.payment_method === 'cheque' ? 'Check' :
+    req.payment_method === 'card' ? 'Card' :
     '—';
 
   // Si la ligne n'existe pas : création
@@ -3284,7 +3357,7 @@ row.innerHTML = `
       </td>
 
     <td class="px-4 py-3 align-middle border-b border-gray-100 description_cell">
-        <span class="description-cell-content" title="${(req.description || '').replace(/"/g, '&quot;')}">${truncateText(req.description, 55)}</span>
+        <span class="description-cell-content" title="${escapeHtml(req.description)}">${escapeHtml(truncateText(req.description, 55))}</span>
       </td>
 
       <td class="px-4 py-3 align-middle border-b border-gray-100 amount_requested">
@@ -3502,8 +3575,6 @@ function showPanel(action) {
  */
 
  function openModalFor(request_id) {
-  console.log("Opening modal for request_id:", request_id);
-
   currentRequestId = request_id;
   const req = requestsMap.get(request_id);
 
@@ -3530,9 +3601,9 @@ function showPanel(action) {
     : '';
 
   const paymentLabel =
-    req.payment_method === 'cash'   ? '💵 Cash' :
-    req.payment_method === 'cheque' ? '🧾 Check' :
-    req.payment_method === 'card'   ? '💳 Card' :
+    req.payment_method === 'cash'   ? 'Cash' :
+    req.payment_method === 'cheque' ? 'Check' :
+    req.payment_method === 'card'   ? 'Card' :
     '—';
   document.getElementById('modalPaymentMethod').textContent = paymentLabel;
 
@@ -3560,7 +3631,7 @@ function showPanel(action) {
       `;
       bubble.innerHTML = `
         <div class="text-[10px] opacity-60 mb-1">${isAdmin ? 'Father' : 'You'}</div>
-        <div class="whitespace-pre-wrap break-words">${msg.message}</div>
+        <div class="whitespace-pre-wrap break-words">${escapeHtml(msg.message)}</div>
       `;
       row.appendChild(bubble);
       convoBox.appendChild(row);
@@ -3617,7 +3688,7 @@ function showPanel(action) {
 
   const receivedTitle = document.getElementById('receivedPanelTitle');
   if (receivedTitle) {
-    receivedTitle.textContent = req.payment_method === 'cheque' ? '🧾 Check received' : '💵 Cash received';
+    receivedTitle.textContent = req.payment_method === 'cheque' ? 'Check received' : 'Cash received';
   }
 
   if (req.received_confirmed || req.status !== 'Approved') {

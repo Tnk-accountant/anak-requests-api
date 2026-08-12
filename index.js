@@ -251,8 +251,8 @@ app.post('/signup', async (req, res) => {
     return res.status(400).json({ error: 'Name, email and password are required' });
   }
 
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
   try {
@@ -488,7 +488,7 @@ const { error: profileError } = await supabaseService
     // UPDATE USER
     app.patch('/admin/users/:id', authenticate, async (req, res) => {
       try {
-        if (req.profile.role !== 'Admin') return res.status(403);
+        if (req.profile.role !== 'Admin') return res.status(403).json({ error: 'Forbidden' });
 
 const { role, center_name, permissions, is_active, name, display_names, profile_label } = req.body;
 
@@ -1123,6 +1123,33 @@ app.get('/requests/:request_id', authenticate, async (req, res) => {
       return res.status(404).json({
         error: 'Request not found.'
       });
+    }
+
+    // 🔒 Autorisation : Admin | CC (centre autorisé, hors PRIVATE d'un autre) | Requester (créateur uniquement)
+    const viewRole = (req.profile.role || '').toLowerCase();
+
+    if (viewRole === 'admin') {
+      // ✅ autorisé
+    } else if (viewRole === 'cc') {
+      const allowedCenters = req.profile.permissions?.allowed_centers;
+      const centers = (Array.isArray(allowedCenters) && allowedCenters.length > 0)
+        ? allowedCenters.map(c => c.toUpperCase())
+        : [req.profile.center];
+
+      // Même règle que GET /requests : le centre doit être autorisé,
+      // ET si la demande est PRIVATE, seul son créateur peut la voir.
+      const inAllowedCenter = centers.includes((data.center_name || '').toUpperCase());
+      const visibilityOk = data.visibility_scope !== 'PRIVATE' || data.created_by === req.user.id;
+
+      if (!inAllowedCenter || !visibilityOk) {
+        return res.status(403).json({ error: 'Not allowed' });
+      }
+    } else if (viewRole === 'requester') {
+      if (data.created_by !== req.user.id) {
+        return res.status(403).json({ error: 'Not allowed' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Not allowed' });
     }
 
     res.json({ data });
@@ -1789,6 +1816,39 @@ app.post(
         return res.status(400).json({ error: 'No file received.' });
       }
 
+      // 🔒 Autorisation : Admin | CC (centre autorisé) | Requester (créateur uniquement)
+      const { data: existingReq, error: existingErr } = await supabaseService
+        .from('Requests')
+        .select('created_by, center_name')
+        .eq('request_id', request_id)
+        .maybeSingle();
+
+      if (existingErr) throw existingErr;
+      if (!existingReq) {
+        return res.status(404).json({ error: 'Request not found.' });
+      }
+
+      const receiptsRole = (req.profile.role || '').toLowerCase();
+
+      if (receiptsRole === 'admin') {
+        // ✅ autorisé
+      } else if (receiptsRole === 'cc') {
+        const allowedCenters = req.profile.permissions?.allowed_centers;
+        const centers = (Array.isArray(allowedCenters) && allowedCenters.length > 0)
+          ? allowedCenters.map(c => c.toUpperCase())
+          : [req.profile.center];
+
+        if (!centers.includes((existingReq.center_name || '').toUpperCase())) {
+          return res.status(403).json({ error: 'Not allowed for this center' });
+        }
+      } else if (receiptsRole === 'requester') {
+        if (existingReq.created_by !== req.user.id) {
+          return res.status(403).json({ error: 'Not allowed' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Not allowed' });
+      }
+
       const pendingFiles = files.map((file) => {
         return {
           name: file.originalname,
@@ -2262,8 +2322,8 @@ app.post('/reset-password', async (req, res) => {
     return res.status(400).json({ error: 'Missing token or new password' });
   }
 
-  if (new_password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  if (new_password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
   try {
@@ -2314,4 +2374,3 @@ app.post('/logout', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur lancé sur http://0.0.0.0:${PORT}`);
 });
-
