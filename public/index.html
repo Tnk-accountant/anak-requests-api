@@ -361,8 +361,7 @@ button:active {
     <div class="flex items-center gap-4">
     <button id="adminSwitchBtn"
       class="hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white text-sm shadow hover:shadow-lg hover:scale-[1.02] transition">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
-      <span>Admin</span>
+      ⚙️ <span>Admin</span>
     </button>
       <div class="w-9 h-9 flex items-center justify-center bg-indigo-600 text-white font-bold rounded-xl shadow">
         AR
@@ -514,19 +513,16 @@ button:active {
 
         <div id="paymentMethodButtons" class="flex flex-col sm:flex-row gap-3">
 
-          <button type="button" data-value="cash" class="payment-btn flex items-center justify-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 6v12M18 6v12"/></svg>
-            Cash
+          <button type="button" data-value="cash" class="payment-btn">
+            💵 Cash
           </button>
 
-          <button type="button" data-value="cheque" class="payment-btn flex items-center justify-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M6 2h12v18l-3-2-3 2-3-2-3 2V2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
-            Check
+          <button type="button" data-value="cheque" class="payment-btn">
+            🧾 Check
           </button>
 
-          <button type="button" data-value="card" class="payment-btn flex items-center justify-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
-            Card
+          <button type="button" data-value="card" class="payment-btn">
+            💳 Card
           </button>
 
         </div>
@@ -556,9 +552,8 @@ button:active {
               <div id="templatesDropdownList" class="max-h-60 overflow-y-auto divide-y divide-gray-50"></div>
 
               <button type="button" id="openManageTemplatesBtn"
-                class="w-full text-left px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 border-t border-gray-100 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
-                Manage templates
+                class="w-full text-left px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 border-t border-gray-100">
+                ⚙️ Manage templates
               </button>
 
             </div>
@@ -589,7 +584,7 @@ button:active {
     <div class="relative">
       <button id="statusLegendBtn" type="button"
         class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition shadow-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+        ℹ️
         Status guide
       </button>
 
@@ -817,7 +812,7 @@ button:active {
 
       <!-- Panel Received -->
       <div id="panel-received" class="action-panel hidden">
-        <h4 class="font-semibold mb-3" id="receivedPanelTitle">Cash received</h4>
+        <h4 class="font-semibold mb-3" id="receivedPanelTitle">💵 Cash received</h4>
         <div class="grid grid-cols-2 gap-3 mb-3">
           <div>
             <label class="block text-sm text-gray-700">Amount received</label>
@@ -3313,9 +3308,9 @@ else if (req.status === "Resubmitted") {
 
   // Paiement → texte
   const paymentText =
-    req.payment_method === 'cash' ? 'Cash' :
-    req.payment_method === 'cheque' ? 'Check' :
-    req.payment_method === 'card' ? 'Card' :
+    req.payment_method === 'cash' ? '💵 Cash' :
+    req.payment_method === 'cheque' ? '🧾 Check' :
+    req.payment_method === 'card' ? '💳 Card' :
     '—';
 
   // Si la ligne n'existe pas : création
@@ -3602,9 +3597,9 @@ function showPanel(action) {
     : '';
 
   const paymentLabel =
-    req.payment_method === 'cash'   ? 'Cash' :
-    req.payment_method === 'cheque' ? 'Check' :
-    req.payment_method === 'card'   ? 'Card' :
+    req.payment_method === 'cash'   ? '💵 Cash' :
+    req.payment_method === 'cheque' ? '🧾 Check' :
+    req.payment_method === 'card'   ? '💳 Card' :
     '—';
   document.getElementById('modalPaymentMethod').textContent = paymentLabel;
 
@@ -3689,7 +3684,7 @@ function showPanel(action) {
 
   const receivedTitle = document.getElementById('receivedPanelTitle');
   if (receivedTitle) {
-    receivedTitle.textContent = req.payment_method === 'cheque' ? 'Check received' : 'Cash received';
+    receivedTitle.textContent = req.payment_method === 'cheque' ? '🧾 Check received' : '💵 Cash received';
   }
 
   if (req.received_confirmed || req.status !== 'Approved') {
