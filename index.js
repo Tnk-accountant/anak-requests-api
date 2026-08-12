@@ -5,6 +5,62 @@ const multer = require('multer');
 const fs = require('fs');
 const cookieParser = require('cookie-parser'); //
 const { supabaseAuth, supabaseAdmin, supabaseService } = require('./supabase');
+const webpush = require('web-push');
+
+// =========================================================
+// 🔔 WEB PUSH — configuration VAPID
+// =========================================================
+// VAPID_PUBLIC_KEY doit correspondre exactement à la clé
+// utilisée côté frontend (index.html, const VAPID_PUBLIC_KEY).
+// À définir dans les variables d'environnement du serveur
+// (Render → Environment). Ne jamais committer la clé privée.
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || 'mailto:contact@example.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+} else {
+  console.warn('⚠️  VAPID keys missing — push notifications disabled. Set VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY.');
+}
+
+// Envoie une notification push à toutes les souscriptions d'un utilisateur.
+// Supprime automatiquement les souscriptions expirées/invalides (410/404).
+async function sendPushToUser(userId, { title, body, url, tag }) {
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return;
+  if (!userId) return;
+
+  try {
+    const { data: subs, error } = await supabaseService
+      .from('push_subscriptions')
+      .select('id, endpoint, keys_p256dh, keys_auth')
+      .eq('user_id', userId);
+
+    if (error || !subs || subs.length === 0) return;
+
+    const payload = JSON.stringify({ title, body, url, tag });
+
+    await Promise.all(subs.map(async (sub) => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.keys_p256dh, auth: sub.keys_auth }
+      };
+
+      try {
+        await webpush.sendNotification(pushSubscription, payload);
+      } catch (err) {
+        // 404/410 = souscription expirée ou révoquée par le navigateur → on la supprime
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await supabaseService.from('push_subscriptions').delete().eq('id', sub.id);
+        } else {
+          console.warn('Push send error:', err.message);
+        }
+      }
+    }));
+  } catch (err) {
+    console.error('sendPushToUser error:', err);
+  }
+}
 
 
 // ✅ api drive
@@ -360,6 +416,61 @@ app.get('/profile', authenticate, async (req, res) => {
   } catch (err) {
     console.error('GET /profile error:', err);
     res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// =========================================================
+// 🔔 PUSH SUBSCRIPTIONS
+// =========================================================
+
+// Enregistre (ou met à jour) la souscription push de l'utilisateur connecté
+app.post('/push-subscription', authenticate, async (req, res) => {
+  try {
+    const { subscription } = req.body;
+
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+      return res.status(400).json({ error: 'Invalid subscription payload' });
+    }
+
+    const { error } = await supabaseService
+      .from('push_subscriptions')
+      .upsert({
+        user_id: req.user.id,
+        endpoint: subscription.endpoint,
+        keys_p256dh: subscription.keys.p256dh,
+        keys_auth: subscription.keys.auth,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'endpoint' });
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('POST /push-subscription error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Supprime la souscription push (désactivation depuis cet appareil)
+app.delete('/push-subscription', authenticate, async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    if (!endpoint) {
+      return res.status(400).json({ error: 'endpoint is required' });
+    }
+
+    const { error } = await supabaseService
+      .from('push_subscriptions')
+      .delete()
+      .eq('user_id', req.user.id)
+      .eq('endpoint', endpoint);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DELETE /push-subscription error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -996,6 +1107,13 @@ app.post('/requests/:id/feedback', authenticate, async (req, res) => {
 
     notifyAdmins(data);
 
+    sendPushToUser(data.created_by, {
+      title: 'Info needed on your request',
+      body: message.length > 120 ? message.slice(0, 117) + '…' : message,
+      url: '/index.html',
+      tag: `request-${id}`
+    });
+
     res.json({ success: true, data });
 
   } catch (err) {
@@ -1562,6 +1680,17 @@ app.patch('/requests/:request_id', authenticate, async (req, res) => {
     if (!data) return res.status(404).json({ error: 'Request not found.' });
 
     notifyAdmins(data);
+
+    if (status === 'Approved' || status === 'Rejected') {
+      sendPushToUser(data.created_by, {
+        title: status === 'Approved' ? 'Request approved ✅' : 'Request rejected',
+        body: status === 'Approved'
+          ? `Your request for ${data.amount_requested ?? ''} has been approved.`
+          : 'Your request has been rejected.',
+        url: '/index.html',
+        tag: `request-${request_id}`
+      });
+    }
 
     console.log("BODY:", req.body);
     console.log("UPDATED:", data);

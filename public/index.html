@@ -375,6 +375,13 @@ button:active {
     <!-- Right: MOBILE -->
     <div class="flex items-center gap-2 md:hidden">
       <button
+        id="notifyBtnMobile"
+        class="hidden w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 active:scale-95 transition"
+        aria-label="Enable notifications"
+        title="Enable notifications">
+        🔔
+      </button>
+      <button
         id="logoutBtnMobile"
         class="w-9 h-9 flex items-center justify-center rounded-xl bg-red-100 text-red-600 active:scale-95 transition"
         aria-label="Log out">
@@ -384,6 +391,13 @@ button:active {
 
     <!-- Right: DESKTOP -->
     <div class="hidden md:flex items-center gap-3">
+      <button
+        id="notifyBtnDesktop"
+        class="hidden flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition text-sm font-medium"
+        title="Enable notifications">
+        🔔 <span id="notifyBtnDesktopLabel">Enable notifications</span>
+      </button>
+
       <div class="px-4 py-2 rounded-lg bg-gray-100 border shadow-sm leading-tight text-right">
         <div id="userCenter" class="text-sm text-gray-800 font-semibold"></div>
         <div id="userEmail" class="text-xs text-gray-500"></div>
@@ -1651,6 +1665,134 @@ window.addEventListener('beforeunload', (e) => {
 }
 
 // =============================
+// 🔔 NOTIFICATIONS PUSH
+// =============================
+// Clé publique VAPID — correspond à la clé privée configurée
+// côté backend (variable d'environnement VAPID_PRIVATE_KEY).
+const VAPID_PUBLIC_KEY = 'BPo4yi5aABtxF1C7STblPzNnq_YRkYd2BusNPZGxthTcXn1dwA-G9m5g8eYAXDj7TF3LWxl59gOG3GQK6wLbajw';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function initPushNotifications() {
+  const notifyBtnMobile = document.getElementById('notifyBtnMobile');
+  const notifyBtnDesktop = document.getElementById('notifyBtnDesktop');
+  const notifyBtnDesktopLabel = document.getElementById('notifyBtnDesktopLabel');
+
+  // Navigateur incompatible (pas de service worker / push) → rien à faire
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return;
+  }
+
+  // Permission déjà refusée définitivement → inutile de proposer le bouton
+  if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+    return;
+  }
+
+  let registration;
+  try {
+    registration = await navigator.serviceWorker.register('/sw.js');
+  } catch (e) {
+    console.warn('Service worker registration failed:', e);
+    return;
+  }
+
+  async function updateButtonState() {
+    let existingSub = null;
+    try {
+      existingSub = await registration.pushManager.getSubscription();
+    } catch (e) { /* ignore */ }
+
+    const enabled = !!existingSub && Notification.permission === 'granted';
+
+    [notifyBtnMobile, notifyBtnDesktop].forEach(btn => {
+      if (!btn) return;
+      btn.classList.remove('hidden');
+      btn.classList.toggle('bg-green-50', enabled);
+      btn.classList.toggle('text-green-600', enabled);
+      btn.classList.toggle('bg-indigo-50', !enabled);
+      btn.classList.toggle('text-indigo-600', !enabled);
+    });
+
+    if (notifyBtnDesktopLabel) {
+      notifyBtnDesktopLabel.textContent = enabled ? 'Notifications on' : 'Enable notifications';
+    }
+
+    return enabled;
+  }
+
+  async function subscribe() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        notify('Notifications blocked in browser settings', 'error');
+        return;
+      }
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+
+      await fetchWithAuth(`${API_URL}/push-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription })
+      });
+
+      notify('Notifications enabled', 'success');
+    } catch (e) {
+      console.error('Push subscribe error:', e);
+      notify('Could not enable notifications', 'error');
+    }
+
+    await updateButtonState();
+  }
+
+  async function toggleNotifications() {
+    let existingSub = null;
+    try {
+      existingSub = await registration.pushManager.getSubscription();
+    } catch (e) { /* ignore */ }
+
+    if (existingSub && Notification.permission === 'granted') {
+      const ok = confirm('Turn off notifications on this device?');
+      if (!ok) return;
+
+      try {
+        await fetchWithAuth(`${API_URL}/push-subscription`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: existingSub.endpoint })
+        });
+        await existingSub.unsubscribe();
+        notify('Notifications turned off', 'info');
+      } catch (e) {
+        console.error('Unsubscribe error:', e);
+      }
+
+      await updateButtonState();
+      return;
+    }
+
+    await subscribe();
+  }
+
+  notifyBtnMobile?.addEventListener('click', toggleNotifications);
+  notifyBtnDesktop?.addEventListener('click', toggleNotifications);
+
+  await updateButtonState();
+}
+
+// =============================
 // USER PROFILE DISPLAY (CLEAN)
 // =============================
 async function displayUserProfile() {
@@ -2029,6 +2171,11 @@ function setupRequestorName(profile) {
       return;
     }
 
+    // =========================================================
+    // 🔔 NOTIFICATIONS PUSH
+    // =========================================================
+    initPushNotifications();
+
     savedDescriptions = profile.saved_descriptions || [];
     renderTemplatesDropdown();
 
@@ -2179,6 +2326,125 @@ badge.className =
 
     setupRequestorName(profile);
 
+  // =========================================================
+  // 💾 BROUILLON — sauvegarde auto du formulaire (mobile-safe)
+  // Évite de perdre la saisie en cours si l'app est interrompue
+  // (appel, mise en arrière-plan, batterie faible...).
+  // =========================================================
+  const DRAFT_KEY = `anak_request_draft_${profile.email || 'default'}`;
+
+  function saveDraft() {
+    try {
+      const draft = {
+        center_name: document.getElementById('center_name')?.value || '',
+        other_centers: [...selectedCenters],
+        multiple_centers_checked: !!check.checked,
+        amount_requested: document.getElementById('amount_requested')?.value || '',
+        request_type: requestTypeInput?.value || '',
+        payment_method: paymentInput?.value || '',
+        description: document.getElementById('description')?.value || '',
+        savedAt: Date.now()
+      };
+
+      const hasContent = draft.center_name || draft.amount_requested ||
+        draft.request_type || draft.payment_method || draft.description ||
+        draft.other_centers.length > 0;
+
+      if (hasContent) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    } catch (e) {
+      // localStorage indisponible (mode privé, quota plein...) → on ignore
+    }
+  }
+
+  let draftSaveTimer = null;
+  function scheduleDraftSave() {
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(saveDraft, 400);
+  }
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+  }
+
+  function restoreDraft() {
+    let draft = null;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      draft = JSON.parse(raw);
+    } catch (e) {
+      return;
+    }
+    if (!draft) return;
+
+    // Brouillon trop ancien (> 48h) → probablement obsolète
+    if (draft.savedAt && (Date.now() - draft.savedAt) > 48 * 60 * 60 * 1000) {
+      clearDraft();
+      return;
+    }
+
+    let restoredSomething = false;
+
+    if (draft.center_name) {
+      const centerSelect = document.getElementById('center_name');
+      if (centerSelect && [...centerSelect.options].some(o => o.value === draft.center_name)) {
+        centerSelect.value = draft.center_name;
+        restoredSomething = true;
+      }
+    }
+
+    if (Array.isArray(draft.other_centers) && draft.other_centers.length > 0) {
+      selectedCenters.length = 0;
+      draft.other_centers.forEach(c => selectedCenters.push(c));
+      renderSelectedCenters();
+      if (draft.multiple_centers_checked) {
+        check.checked = true;
+        box.classList.remove('hidden');
+      }
+      restoredSomething = true;
+    }
+
+    if (draft.amount_requested) {
+      const amountInput = document.getElementById('amount_requested');
+      if (amountInput) { amountInput.value = draft.amount_requested; restoredSomething = true; }
+    }
+
+    if (draft.description) {
+      const descInput = document.getElementById('description');
+      if (descInput) { descInput.value = draft.description; restoredSomething = true; }
+    }
+
+    if (draft.request_type) {
+      const btn = document.querySelector(`#requestTypeButtons button[data-value="${draft.request_type}"]`);
+      if (btn) { btn.click(); restoredSomething = true; }
+    }
+
+    if (draft.payment_method) {
+      const btn = document.querySelector(`#paymentMethodButtons button[data-value="${draft.payment_method}"]`);
+      if (btn) { btn.click(); restoredSomething = true; }
+    }
+
+    if (restoredSomething) {
+      notify('Draft restored', 'info');
+    }
+  }
+
+  // Sauvegarde auto sur toute saisie/interaction dans le formulaire
+  form.addEventListener('input', scheduleDraftSave);
+  form.addEventListener('change', scheduleDraftSave);
+  form.addEventListener('click', (e) => {
+    if (e.target.closest('button[data-value], #addCenterBtn, [data-center]')) {
+      scheduleDraftSave();
+    }
+  });
+
+  // Restaure un éventuel brouillon existant
+  restoreDraft();
+
   // Charger uniquement les demandes du centre connecté
   await fetchMyRequests();
 
@@ -2298,6 +2564,7 @@ try {
   // ------------------------------
   if (res.ok) {
     notify("Request submitted", "success");
+    clearDraft();
 
     if (result?.data?.request_id) {
       generatedIdEl.textContent = `ID created: ${result.data.request_id}`;
