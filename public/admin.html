@@ -564,7 +564,7 @@
     </div>
 
     <!-- TABLE -->
-<div class="hidden md:flex md:flex-col flex-1 min-h-0">
+<div id="desktopTableWrapper" class="hidden md:flex md:flex-col flex-1 min-h-0">
 <div id="tableCard"
   class="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
   <table class="min-w-full text-left border-collapse">
@@ -1438,7 +1438,7 @@ let currentRequestId = null;
     const tabLiquidation = document.getElementById('tabLiquidation');
     const tabUsers = document.getElementById('tabUsers');
     const usersSection = document.getElementById('usersSection');
-    const tableSection = document.querySelector('.overflow-x-auto');
+    const tableSection = document.getElementById('tableCard');
     const mobileRequestsSection = document.getElementById('mobileRequestsSection');
 
     function setActiveTab(active) {
@@ -1468,7 +1468,7 @@ let currentRequestId = null;
     }
 
 
-    const filtersBar = document.querySelector('.bg-white\\/80'); // 👈 IMPORTANT
+    const filtersBar = document.getElementById('filtersCard');
 
     tabAll.onclick = () => {
       activeTab = 'all';
@@ -1502,6 +1502,7 @@ tabUsers.onclick = () => {
 
       usersSection.classList.remove('hidden');
       tableSection.classList.add('hidden');
+      document.getElementById('emptyStateDesktopAdmin')?.classList.add('hidden');
 
       filtersBar.classList.add('hidden'); // 🔥 C'EST ÇA QUE TU VOULAIS
       mobileRequestsSection?.classList.add('hidden');
