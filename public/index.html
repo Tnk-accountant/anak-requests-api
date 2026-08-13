@@ -1742,16 +1742,29 @@ async function initPushNotifications() {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
 
-      await fetchWithAuth(`${API_URL}/push-subscription`, {
+      const res = await fetchWithAuth(`${API_URL}/push-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription })
       });
 
+      if (!res.ok) {
+        let errMsg = `Server error (${res.status})`;
+        try {
+          const body = await res.json();
+          if (body?.error) errMsg = body.error;
+        } catch (e) { /* réponse non-JSON, on garde le message générique */ }
+
+        // On désabonne côté navigateur pour ne pas laisser un état
+        // "activé" trompeur alors que le serveur n'a rien enregistré.
+        await subscription.unsubscribe().catch(() => {});
+        throw new Error(errMsg);
+      }
+
       notify('Notifications enabled', 'success');
     } catch (e) {
       console.error('Push subscribe error:', e);
-      notify('Could not enable notifications', 'error');
+      notify('Could not enable notifications: ' + (e.message || 'unknown error'), 'error');
     }
 
     await updateButtonState();
