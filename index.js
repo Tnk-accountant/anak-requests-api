@@ -1454,7 +1454,7 @@ app.post('/admin/dispatch-export', authenticate, async (req, res) => {
     if (markError) throw markError;
 
     const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
-    const fileName = `Compta_Export_${stamp}.xlsx`;
+    const fileName = `Accounting_Export_${stamp}.xlsx`;
 
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

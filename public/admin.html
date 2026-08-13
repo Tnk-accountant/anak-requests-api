@@ -284,7 +284,6 @@
           <option value="Rejected">Rejected</option>
           <option value="ToLiquidate">To liquidate</option>
           <option value="PendingValidation">Pending Validation</option>
-          <option value="Closed">Closed</option>
         </select>
 
         <button id="refreshBtn"
@@ -412,7 +411,6 @@
             <option value="Rejected">Rejected</option>
             <option value="ToLiquidate">To liquidate</option>
             <option value="PendingValidation">Pending Validation</option>
-            <option value="Closed">Closed</option>
           </select>
         </div>
 
@@ -2006,6 +2004,10 @@ async function initAdminPage() {
 
     function applyAdvancedFilters() {
       let filtered = [...allRequests];
+
+      // 🧾 Closed vit désormais exclusivement dans l'onglet Accounting —
+      // ne plus jamais l'afficher dans All Requests / Liquidations.
+      filtered = filtered.filter(r => r.status !== 'Closed');
 
       // 🔥 NOUVEAU : filtre par onglet
     if (activeTab === 'liquidation') {
