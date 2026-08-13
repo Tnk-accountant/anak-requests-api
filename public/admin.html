@@ -1260,7 +1260,7 @@ let currentRequestId = null;
     const tabCompta = document.getElementById('tabCompta');
     const usersSection = document.getElementById('usersSection');
     const comptaSection = document.getElementById('comptaSection');
-    const tableSection = document.getElementById('tableCard');
+    const tableSection = document.getElementById('desktopTableWrapper');
     const mobileRequestsSection = document.getElementById('mobileRequestsSection');
 
     function setActiveTab(active) {
@@ -1981,6 +1981,13 @@ async function initAdminPage() {
     function updateKpiBanner() {
       const banner = document.getElementById('kpiBanner');
       if (!banner) return;
+
+      // Ne concerne que All Requests / Liquidations — ne pas le
+      // réafficher si une mise à jour temps réel arrive pendant
+      // que l'admin est sur Users ou Accounting.
+      if (activeTab !== 'all' && activeTab !== 'liquidation') {
+        return;
+      }
 
       banner.classList.remove('hidden');
 
