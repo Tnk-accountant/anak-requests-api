@@ -553,20 +553,20 @@
 <!-- ============================================= -->
 <div id="comptaSection" class="hidden flex-1 min-h-0 flex flex-col">
 
-  <div class="flex justify-between items-start mb-4 shrink-0">
-    <div>
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4 shrink-0">
+    <div class="min-w-0">
       <h2 class="text-xl font-semibold text-gray-800">Accounting — Dispatch</h2>
       <p id="comptaStats" class="text-xs text-gray-400 mt-1"></p>
     </div>
 
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="flex items-center gap-2 shrink-0 flex-wrap">
       <button id="comptaSettingsBtn"
-        class="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition">
+        class="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition whitespace-nowrap">
         ⚙️ Manage tables
       </button>
 
       <button id="comptaExportBtn"
-        class="bg-indigo-600 text-white px-4 py-2 rounded-xl shadow hover:bg-indigo-700 transition text-sm font-medium">
+        class="bg-indigo-600 text-white px-4 py-2 rounded-xl shadow hover:bg-indigo-700 transition text-sm font-medium whitespace-nowrap">
         Export
       </button>
     </div>
