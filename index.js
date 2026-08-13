@@ -1051,9 +1051,23 @@ function buildAllocResolver(centersMap) {
 }
 
 function computeDefaultAlloc(request, allocFor) {
+  // 🏦 Règle métier : un Fund Transfer est toujours alloué en A0
+  if (request.request_type === 'FundTransfer') return 'A0';
+
   const hasOtherCenters = Array.isArray(request.other_centers) && request.other_centers.length > 0;
   if (hasOtherCenters) return '-';
   return allocFor(request.center_name);
+}
+
+// Format de date fixe mm/dd/yyyy (avec zéros), utilisé dans l'export dispatch
+function formatDateMDY(dateInput) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
 }
 
 // ---------------------------------------------------------
@@ -1497,9 +1511,10 @@ app.post('/admin/dispatch-export', authenticate, async (req, res) => {
     const wsData = requests.map(r => {
       const hasMultipleCenters = Array.isArray(r.other_centers) && r.other_centers.length > 0;
 
+      // 🏦 Fund Transfer → toujours A0, sauf override manuel explicite
       const alloc = (r.dispatch_alloc && r.dispatch_alloc.trim())
         ? r.dispatch_alloc.trim()
-        : (hasMultipleCenters ? '-' : allocFor(r.center_name));
+        : (r.request_type === 'FundTransfer' ? 'A0' : (hasMultipleCenters ? '-' : allocFor(r.center_name)));
 
       let centersBonus = '';
       if (hasMultipleCenters) {
@@ -1508,7 +1523,7 @@ app.post('/admin/dispatch-export', authenticate, async (req, res) => {
       }
 
       return {
-        Date: r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US') : '',
+        Date: formatDateMDY(r.timestamp),
         Category: categoriesMap.get(r.cat_code) || '',
         Details: shorten(r.description),
         '0': 0,
@@ -1516,13 +1531,14 @@ app.post('/admin/dispatch-export', authenticate, async (req, res) => {
         ALLOC: alloc,
         NAT: 'Dep',
         OUT: r.amount_spent ?? r.approved_amount ?? r.amount_requested ?? 0,
+        IN: 0,
         Centers: centersBonus
       };
     });
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(wsData, {
-      header: ['Date', 'Category', 'Details', '0', 'CAT', 'ALLOC', 'NAT', 'OUT', 'Centers']
+      header: ['Date', 'Category', 'Details', '0', 'CAT', 'ALLOC', 'NAT', 'OUT', 'IN', 'Centers']
     });
     XLSX.utils.book_append_sheet(wb, ws, 'Dispatch');
 
@@ -3072,4 +3088,3 @@ app.post('/logout', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur lancé sur http://0.0.0.0:${PORT}`);
 });
-

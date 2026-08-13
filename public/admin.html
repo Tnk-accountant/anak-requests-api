@@ -2336,16 +2336,10 @@ function renderComptaList() {
 
       catSection = `
         <div class="space-y-2">
-          ${suggestionsHtml ? `<div class="flex flex-wrap gap-2">${suggestionsHtml}</div>` : '<p class="text-xs text-gray-400">No keyword match found — type a code or search below.</p>'}
-
-          <div class="flex items-center gap-1 text-[11px]">
-            <button type="button" class="comptaModeToggle comptaModeCode px-2 py-1 rounded-lg bg-gray-800 text-white font-medium" data-mode="code">Code</button>
-            <button type="button" class="comptaModeToggle comptaModeSearch px-2 py-1 rounded-lg bg-gray-100 text-gray-600 font-medium" data-mode="search">Search</button>
-          </div>
+          ${suggestionsHtml ? `<div class="flex flex-wrap gap-2">${suggestionsHtml}</div>` : '<p class="text-xs text-gray-400">No keyword match found — search below.</p>'}
 
           <div class="flex items-center gap-2">
-            <input type="text" placeholder="Type an exact CAT code" class="comptaManualCat flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
-            <button class="comptaAssignManual bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-gray-900 shrink-0">Assign</button>
+            <input type="text" placeholder="Search category or code" class="comptaSearchInput flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
           </div>
           <div class="comptaSearchResults hidden flex flex-wrap gap-2"></div>
         </div>
@@ -2362,8 +2356,8 @@ function renderComptaList() {
     card.innerHTML = `
       <div class="flex justify-between items-start gap-3 mb-2">
         <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-800">${escapeHtml(req.requestor_name)} — ${escapeHtml(req.center_name)}</p>
-          <p class="text-xs text-gray-400 mt-0.5">${dateStr} · ${formatAmount(amount)} PHP</p>
+          <p class="text-sm font-medium text-gray-800">${escapeHtml(req.requestor_name)} — ${escapeHtml(req.center_name)} <span class="text-black font-semibold">${formatAmount(amount)} PHP</span></p>
+          <p class="text-xs text-gray-400 mt-0.5">${dateStr}</p>
           ${centersLine}
           <p class="text-sm text-gray-600 mt-2">${escapeHtml(req.description || '')}</p>
         </div>
@@ -2385,53 +2379,27 @@ function renderComptaList() {
       btn.addEventListener('click', () => assignComptaCat(req.request_id, btn.dataset.code));
     });
 
-    const manualInput = card.querySelector('.comptaManualCat');
-    const manualBtn = card.querySelector('.comptaAssignManual');
+    const searchInput = card.querySelector('.comptaSearchInput');
     const searchResultsBox = card.querySelector('.comptaSearchResults');
-    const modeCodeBtn = card.querySelector('.comptaModeCode');
-    const modeSearchBtn = card.querySelector('.comptaModeSearch');
 
-    let currentMode = 'code';
-
-    function setMode(mode) {
-      currentMode = mode;
-      modeCodeBtn?.classList.toggle('bg-gray-800', mode === 'code');
-      modeCodeBtn?.classList.toggle('text-white', mode === 'code');
-      modeCodeBtn?.classList.toggle('bg-gray-100', mode !== 'code');
-      modeCodeBtn?.classList.toggle('text-gray-600', mode !== 'code');
-
-      modeSearchBtn?.classList.toggle('bg-gray-800', mode === 'search');
-      modeSearchBtn?.classList.toggle('text-white', mode === 'search');
-      modeSearchBtn?.classList.toggle('bg-gray-100', mode !== 'search');
-      modeSearchBtn?.classList.toggle('text-gray-600', mode !== 'search');
-
-      if (manualInput) {
-        manualInput.placeholder = mode === 'code' ? 'Type an exact CAT code' : 'Type a description or keyword';
-        manualInput.value = '';
-      }
-      searchResultsBox?.classList.add('hidden');
-      if (searchResultsBox) searchResultsBox.innerHTML = '';
-      manualBtn?.classList.toggle('hidden', mode === 'search');
-    }
-
-    modeCodeBtn?.addEventListener('click', () => setMode('code'));
-    modeSearchBtn?.addEventListener('click', () => setMode('search'));
-
-    manualBtn?.addEventListener('click', () => {
-      const code = manualInput.value.trim();
-      if (!code) return;
-      assignComptaCat(req.request_id, code);
-    });
-
-    manualInput?.addEventListener('input', () => {
-      if (currentMode !== 'search') return;
-      const q = manualInput.value.trim();
+    searchInput?.addEventListener('input', () => {
+      const q = searchInput.value.trim();
       if (!q) {
         searchResultsBox.classList.add('hidden');
         searchResultsBox.innerHTML = '';
         return;
       }
       renderComptaLocalSearchResults(q, searchResultsBox, req.request_id);
+    });
+
+    // ⏎ Enter = valide direct s'il ne reste qu'une seule proposition
+    searchInput?.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const matches = searchResultsBox.querySelectorAll('.comptaSearchResultBtn');
+      if (matches.length === 1) {
+        matches[0].click();
+      }
     });
 
     card.querySelector('.comptaChangeCat')?.addEventListener('click', () => {
@@ -2478,6 +2446,17 @@ function renderComptaLocalSearchResults(query, resultsBox, requestId) {
 }
 
 async function assignComptaCat(requestId, catCode) {
+  const req = comptaItems.find(r => r.request_id === requestId);
+  if (!req) return;
+
+  // ⚡ Mise à jour optimiste — l'UI réagit immédiatement, sans attendre le réseau
+  const prevCatCode = req.cat_code;
+  const prevCategoryName = req.category_name;
+
+  req.cat_code = catCode;
+  req.category_name = (comptaAllCategoriesCache || []).find(c => c.code === catCode)?.category || '';
+  renderComptaList();
+
   try {
     const res = await fetchWithAuth(`${API_URL}/requests/${requestId}/cat`, {
       method: 'PATCH',
@@ -2487,15 +2466,22 @@ async function assignComptaCat(requestId, catCode) {
 
     const result = await res.json().catch(() => ({}));
     if (!res.ok) {
+      // ↩️ rollback si le serveur refuse
+      req.cat_code = prevCatCode;
+      req.category_name = prevCategoryName;
+      renderComptaList();
       notify(result.error || 'Could not assign category', 'error');
       return;
     }
 
     notify('Category assigned', 'success');
-    await loadCompta();
+    updateComptaStats();
 
   } catch (err) {
     console.error(err);
+    req.cat_code = prevCatCode;
+    req.category_name = prevCategoryName;
+    renderComptaList();
     notify('Error assigning category', 'error');
   }
 }
@@ -2551,7 +2537,14 @@ document.getElementById('comptaExportBtn')?.addEventListener('click', async () =
       window.URL.revokeObjectURL(url);
 
       notify('Export downloaded', 'success');
-      await loadCompta();
+
+      // ⚡ Retire localement les lignes qui viennent d'être exportées
+      // (celles qui avaient un CAT code — c'est exactement ce que le
+      // serveur vient d'exporter et de marquer exported_to_dispatch)
+      // au lieu de refaire un aller-retour réseau complet.
+      comptaItems = comptaItems.filter(r => !r.cat_code);
+      updateComptaStats();
+      renderComptaList();
     }
 
   } catch (err) {
