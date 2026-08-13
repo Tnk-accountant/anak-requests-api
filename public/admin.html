@@ -98,79 +98,6 @@
   flex: 0 0 auto;
 }
 
-/* =========================
-   ARCHIVES THEME
-========================= */
-
-.archives-theme {
-
-  background:
-
-    radial-gradient(
-      circle at top left,
-      rgba(96,165,250,.18) 0%,
-      transparent 35%
-    ),
-
-    radial-gradient(
-      circle at bottom right,
-      rgba(129,140,248,.10) 0%,
-      transparent 40%
-    ),
-
-    linear-gradient(
-      180deg,
-      #eaf1ff 0%,
-      #dbe7ff 45%,
-      #c8dafc 100%
-    );
-
-  background-attachment: fixed;
-}
-
-/* Welcome banner animation */
-
-@keyframes archiveWelcome {
-
-  0% {
-    opacity: 0;
-    transform: translateY(-20px) scale(.96);
-  }
-
-  60% {
-    opacity: 1;
-    transform: translateY(4px) scale(1.01);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-}
-
-@keyframes archiveExit {
-
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: translateY(-12px) scale(.98);
-  }
-
-}
-
-.archive-banner-hide {
-  animation: archiveExit .5s ease forwards;
-}
-
-.archive-banner-show {
-  animation: archiveWelcome .8s cubic-bezier(.22,.61,.36,1);
-}
-
 </style>
 
 </head>
@@ -233,6 +160,11 @@
       <button id="tabUsers"
         class="tab-btn px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap">
       Users
+      </button>
+
+      <button id="tabCompta"
+        class="tab-btn px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap">
+      Compta
       </button>
 
     </div>
@@ -403,84 +335,15 @@
 
         </div>
 
-        <div class="relative">
-
-          <button id="actionsBtn"
-            class="h-10 px-4 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition">
-            Archives ▾
-          </button>
-
-<div id="actionsMenu"
-  class="hidden absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white opacity-100 shadow-2xl overflow-hidden z-[9999]">
-
-            <button id="archivesBtn"
-              class="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm">
-              📦 View Archives
-            </button>
-
-            <div class="border-t border-gray-100"></div>
-
-            <button id="exportArchiveBtn"
-              class="w-full text-left px-4 py-3 hover:bg-amber-50 text-sm text-amber-700">
-               Archive & Export Closed
-            </button>
-
-          </div>
-
-        </div>
+        <button id="weeklyCleanupBtn"
+          class="h-10 px-4 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition">
+          Clean up closed/cancelled
+        </button>
 
       </div>
 
     </div>
    </div>
-
-
-  <!-- ARCHIVE BANNER -->
-    <div id="archiveBanner"
-      class="hidden mb-6 overflow-hidden rounded-3xl border border-slate-600 bg-slate-800 shadow-xl shrink-0">
-
-      <div class="px-6 py-5">
-
-        <div class="flex items-start justify-between">
-
-          <div>
-
-            <div class="flex items-center gap-3">
-
-              <div class="text-3xl">
-                📦
-              </div>
-
-              <div>
-
-                <h2 class="text-xl font-semibold text-white">
-                  Welcome to the Archives
-                </h2>
-
-                <p class="text-slate-300 text-sm mt-1">
-                  Historical requests are preserved here.
-                  Review them, restore them, and keep track of your history.
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          <div class="hidden md:flex items-center gap-2">
-
-            <span class="px-3 py-1 rounded-full bg-slate-700 text-slate-200 text-xs">
-              Read Only
-            </span>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
 
     <!-- ============================================= -->
     <!-- 📱 MOBILE : requests (badge + filters + cartes) -->
@@ -686,6 +549,119 @@
       </div>
 
   </div>
+
+<!-- ============================================= -->
+<!-- COMPTA / DISPATCH -->
+<!-- ============================================= -->
+<div id="comptaSection" class="hidden flex-1 min-h-0 flex flex-col">
+
+  <div class="flex justify-between items-start mb-4 shrink-0">
+    <div>
+      <h2 class="text-xl font-semibold text-gray-800">Compta — Dispatch</h2>
+      <p id="comptaStats" class="text-xs text-gray-400 mt-1"></p>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <button id="comptaSettingsBtn"
+        class="px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition">
+        ⚙️ Manage tables
+      </button>
+
+      <button id="comptaExportBtn"
+        class="bg-indigo-600 text-white px-4 py-2 rounded-xl shadow hover:bg-indigo-700 transition text-sm font-medium">
+        Export
+      </button>
+    </div>
+  </div>
+
+  <div id="comptaList" class="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1"></div>
+
+  <div id="comptaEmptyState" class="hidden flex-1 min-h-0 flex flex-col items-center justify-center text-center py-16 text-gray-400 text-sm">
+    <div class="text-4xl mb-3">🧾</div>
+    Nothing waiting — all closed requests have been categorized and exported.
+  </div>
+
+</div>
+
+<!-- COMPTA SETTINGS MODAL -->
+<div id="comptaSettingsModal" class="fixed inset-0 hidden items-center justify-center z-[9999]">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+
+  <div class="relative bg-white rounded-3xl shadow-2xl w-[95vw] max-w-3xl h-[85vh] flex flex-col">
+
+    <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
+      <h3 class="text-lg font-semibold text-gray-800">Manage dispatch tables</h3>
+      <button id="closeComptaSettingsModal" class="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-xl">✕</button>
+    </div>
+
+    <div class="flex items-center gap-1 px-6 pt-3 shrink-0 border-b border-gray-100">
+      <button id="comptaTabCategories" class="comptaSettingsTab px-4 py-2 text-sm font-medium rounded-t-lg">Categories</button>
+      <button id="comptaTabCenters" class="comptaSettingsTab px-4 py-2 text-sm font-medium rounded-t-lg">Centers → Alloc</button>
+      <button id="comptaTabFillers" class="comptaSettingsTab px-4 py-2 text-sm font-medium rounded-t-lg">Filler phrases</button>
+    </div>
+
+    <div class="flex-1 min-h-0 overflow-y-auto p-6">
+
+      <!-- CATEGORIES PANEL -->
+      <div id="comptaPanelCategories" class="hidden">
+        <div class="grid grid-cols-12 gap-2 mb-3">
+          <input id="newCatCode" placeholder="Code" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+          <input id="newCatCategory" placeholder="Category" class="col-span-4 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+          <input id="newCatMain" placeholder="Main category" class="col-span-3 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+          <input id="newCatKeywords" placeholder="Keywords, comma-separated" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+          <button id="addCatBtn" class="col-span-1 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">+</button>
+        </div>
+        <div id="categoriesTableWrap" class="border border-gray-200 rounded-xl overflow-hidden">
+          <table class="min-w-full text-left text-sm">
+            <thead class="bg-gray-50 sticky top-0">
+              <tr>
+                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Code</th>
+                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Category</th>
+                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Main</th>
+                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Keywords</th>
+                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase"></th>
+              </tr>
+            </thead>
+            <tbody id="categoriesTableBody" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CENTERS PANEL -->
+      <div id="comptaPanelCenters" class="hidden">
+        <div class="grid grid-cols-12 gap-2 mb-3">
+          <input id="newCenterName" placeholder="Name" class="col-span-5 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+          <input id="newCenterCode" placeholder="Code (ex: RB5)" class="col-span-3 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+          <input id="newCenterAlloc" placeholder="Allocation (ex: A3500)" class="col-span-3 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+          <button id="addCenterBtn2" class="col-span-1 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">+</button>
+        </div>
+        <div class="border border-gray-200 rounded-xl overflow-hidden">
+          <table class="min-w-full text-left text-sm">
+            <thead class="bg-gray-50 sticky top-0">
+              <tr>
+                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Code</th>
+                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Allocation</th>
+                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase"></th>
+              </tr>
+            </thead>
+            <tbody id="centersTableBody" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FILLER PHRASES PANEL -->
+      <div id="comptaPanelFillers" class="hidden">
+        <div class="flex gap-2 mb-3">
+          <input id="newFillerPhrase" placeholder="Phrase to remove (ex: god bless you)" class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm">
+          <button id="addFillerBtn" class="bg-indigo-600 text-white px-4 rounded-lg text-sm hover:bg-indigo-700">+ Add</button>
+        </div>
+        <div id="fillersList" class="flex flex-wrap gap-2"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 
 
@@ -1170,177 +1146,6 @@ CHAT LAYOUT
   </div>
 </div>
 
-<!-- CHANGEMENT : BIENVENUE DANS LES ARCHIVES -->
-
-<div id="archiveTransition"
-     class="fixed inset-0 hidden items-center justify-center z-[9999]">
-
-  <!-- Fond flou -->
-  <div class="absolute inset-0 bg-white/60 backdrop-blur-md"></div>
-
-  <!-- Carte -->
-  <div
-    class="relative bg-white border border-slate-200
-           rounded-3xl px-10 py-8 shadow-2xl
-           min-w-[320px]">
-
-    <div class="text-center">
-
-      <div
-        id="archiveTransitionIcon"
-        class="text-5xl mb-4 animate-bounce">
-        📦
-      </div>
-
-      <div
-        id="archiveTransitionTitle"
-        class="text-xl font-semibold text-slate-800">
-        Entering Archives
-      </div>
-
-      <div
-        id="archiveTransitionSubtitle"
-        class="text-sm text-slate-500 mt-2">
-        Loading historical requests...
-      </div>
-
-      <!-- Spinner -->
-      <div class="flex justify-center mt-6">
-
-        <div
-          class="w-8 h-8
-                 border-4
-                 border-slate-300
-                 border-t-slate-700
-                 rounded-full
-                 animate-spin">
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-
-<!-- ARCHIVE MODAL -->
-
-<div id="archiveModal"
-     class="fixed inset-0 hidden items-center justify-center z-[9999]">
-
-  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-
-  <div class="relative bg-white rounded-3xl shadow-2xl p-6 w-[420px]">
-
-    <div class="text-center">
-
-      <div class="text-5xl mb-3">📦</div>
-
-      <h3 class="text-xl font-semibold text-slate-800">
-        Archive Requests
-      </h3>
-
-      <p class="text-sm text-slate-500 mt-2">
-        Completed requests will be moved to Archives.
-      </p>
-
-      <div class="bg-slate-50 rounded-2xl p-4 mt-5">
-
-        <div class="flex justify-between">
-          <span>Closed</span>
-          <span id="modalClosed">0</span>
-        </div>
-
-        <div class="flex justify-between mt-2">
-          <span>Cancelled</span>
-          <span id="modalCancelled">0</span>
-        </div>
-
-        <div class="border-t mt-2 pt-3 flex justify-between font-semibold">
-          <span>Total</span>
-          <span id="modalTotal">0</span>
-        </div>
-
-      </div>
-
-
-      <!-- NOTIFICATION -->
-      <div class="flex justify-end gap-3 mt-6">
-
-        <button id="cancelArchive"
-          class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">
-          Cancel
-        </button>
-
-        <button id="confirmArchive"
-          class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">
-          Archive
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-<!-- RESTORE MODAL -->
-
-<div id="restoreModal"
-     class="fixed inset-0 hidden items-center justify-center z-[9999]">
-
-  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-
-  <div class="relative bg-white rounded-3xl shadow-xl p-6 w-[420px]">
-
-    <div class="text-center">
-
-      <div class="text-5xl mb-3">
-        ↩️
-      </div>
-
-      <h3 class="text-xl font-semibold text-slate-800">
-        Restore Request
-      </h3>
-
-      <p class="text-sm text-slate-500 mt-2">
-        This request will be moved back to active requests.
-      </p>
-
-      <div class="mt-5 bg-slate-50 rounded-2xl p-4">
-
-        <div class="text-sm text-slate-500">
-          Request ID
-        </div>
-
-        <div id="restoreRequestId"
-             class="font-semibold text-slate-800 mt-1">
-        </div>
-
-      </div>
-
-      <div class="flex justify-end gap-3 mt-6">
-
-        <button id="cancelRestore"
-          class="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">
-          Cancel
-        </button>
-
-        <button id="confirmRestore"
-          class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">
-          Restore
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
 
 <!-- CONFIRM MODAL (remplace window.confirm) -->
 <div id="confirmModal"
@@ -1454,7 +1259,9 @@ let currentRequestId = null;
     const tabAll = document.getElementById('tabAll');
     const tabLiquidation = document.getElementById('tabLiquidation');
     const tabUsers = document.getElementById('tabUsers');
+    const tabCompta = document.getElementById('tabCompta');
     const usersSection = document.getElementById('usersSection');
+    const comptaSection = document.getElementById('comptaSection');
     const tableSection = document.getElementById('tableCard');
     const mobileRequestsSection = document.getElementById('mobileRequestsSection');
 
@@ -1463,7 +1270,8 @@ let currentRequestId = null;
       const tabs = [
         { el: tabAll, key: 'all' },
         { el: tabLiquidation, key: 'liquidation' },
-        { el: tabUsers, key: 'users' }
+        { el: tabUsers, key: 'users' },
+        { el: tabCompta, key: 'compta' }
       ];
 
       tabs.forEach(tab => {
@@ -1492,6 +1300,7 @@ let currentRequestId = null;
       setActiveTab('all');
 
       usersSection.classList.add('hidden');
+      comptaSection.classList.add('hidden');
       tableSection.classList.remove('hidden');
       filtersBar.classList.remove('hidden');
       mobileRequestsSection?.classList.remove('hidden');
@@ -1508,6 +1317,7 @@ let currentRequestId = null;
       setActiveTab('liquidation');
 
       usersSection.classList.add('hidden');
+      comptaSection.classList.add('hidden');
       tableSection.classList.remove('hidden');
       filtersBar.classList.remove('hidden');
       mobileRequestsSection?.classList.remove('hidden');
@@ -1522,6 +1332,7 @@ tabUsers.onclick = () => {
       setActiveTab('users');
 
       usersSection.classList.remove('hidden');
+      comptaSection.classList.add('hidden');
       tableSection.classList.add('hidden');
       document.getElementById('emptyStateDesktopAdmin')?.classList.add('hidden');
 
@@ -1533,6 +1344,24 @@ tabUsers.onclick = () => {
 
       loadUsers();
       loadPendingUsers();
+    };
+
+tabCompta.onclick = () => {
+      activeTab = 'compta';
+      setActiveTab('compta');
+
+      usersSection.classList.add('hidden');
+      comptaSection.classList.remove('hidden');
+      tableSection.classList.add('hidden');
+      document.getElementById('emptyStateDesktopAdmin')?.classList.add('hidden');
+
+      filtersBar.classList.add('hidden');
+      mobileRequestsSection?.classList.add('hidden');
+      document.getElementById('kpiBanner')?.classList.add('hidden');
+      document.getElementById('statusLegendBtn')?.classList.add('hidden');
+      document.getElementById('pagination').classList.add('hidden');
+
+      loadCompta();
     };
 
 
@@ -1928,190 +1757,50 @@ async function initAdminPage() {
     const filterStatus = document.getElementById('filterStatus');
     const refreshBtn = document.getElementById('refreshBtn');
 
-   
-   //Fonction OPEN RESTAURE MODAL =============
-    function openRestoreModal(requestId) {
+    // =========================================================
+    // 🧹 NETTOYAGE HEBDOMADAIRE — Closed/Cancelled
+    // Export Excel → Google Drive, puis suppression définitive.
+    // Automatique côté serveur chaque lundi ; ce bouton permet
+    // de le déclencher manuellement (ex: avant les vacances).
+    // =========================================================
+    document.getElementById('weeklyCleanupBtn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('weeklyCleanupBtn');
 
-      document.getElementById(
-        'restoreRequestId'
-      ).textContent = requestId;
+      const ok = await showConfirmModal({
+        title: 'Clean up closed & cancelled requests?',
+        message: 'All closed and cancelled requests will be exported to Google Drive, then permanently deleted from the app. This cannot be undone — make sure the export succeeds before confirming.',
+        icon: '🧹',
+        confirmText: 'Export & delete',
+        danger: true
+      });
+      if (!ok) return;
 
-      const modal =
-        document.getElementById('restoreModal');
-
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeRestoreModal() {
-
-      const modal =
-        document.getElementById('restoreModal');
-
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-   
-//Fonction openarchive modal ============
-
-    function openArchiveModal(stats) {
-
-      document.getElementById('modalClosed').textContent =
-        stats.closed;
-
-      document.getElementById('modalCancelled').textContent =
-        stats.cancelled;
-
-      document.getElementById('modalTotal').textContent =
-        stats.total;
-
-      const modal =
-        document.getElementById('archiveModal');
-
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeArchiveModal() {
-
-      const modal =
-        document.getElementById('archiveModal');
-
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-
-    const exportArchiveBtn = document.getElementById('exportArchiveBtn');
-
-
-    document
-  .getElementById('cancelRestore')
-  ?.addEventListener('click', () => {
-
-    closeRestoreModal();
-
-});
-
-document
-  .getElementById('confirmRestore')
-  ?.addEventListener('click', async () => {
-
-    closeRestoreModal();
-
-    try {
-
-      const res = await fetchWithAuth(
-        `${API_URL}/requests/${window.restoreRequestId}/restore`,
-        { method: 'PATCH' }
-      );
-
-      if (!res.ok) {
-        throw new Error();
-      }
-
-      notify(
-        'Request restored',
-        'success'
-      );
-
-      await loadArchives();
-
-    } catch (err) {
-
-      notify(
-        'Restore failed',
-        'error'
-      );
-
-    }
-
-});
-
-// ARCHIVED BUTTONS =============
-    document
-      .getElementById('cancelArchive')
-      ?.addEventListener('click', () => {
-
-        closeArchiveModal();
-
-    });
-
-    document
-      .getElementById('confirmArchive')
-      ?.addEventListener('click', async () => {
-
-        closeArchiveModal();
-
-        try {
-
-          exportBtn.click();
-
-          const archiveRes = await fetchWithAuth(
-            `${API_URL}/requests/archive-completed`,
-            { method: 'POST' }
-          );
-
-          if (!archiveRes.ok) {
-            throw new Error();
-          }
-
-          notify(
-            'Completed requests archived',
-            'success'
-          );
-
-          await fetchRequests();
-
-        } catch (err) {
-
-          notify(
-            'Archive failed',
-            'error'
-          );
-
-        }
-
-    });
-
-
-    exportArchiveBtn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = 'Cleaning up...';
 
       try {
+        const res = await fetchWithAuth(`${API_URL}/admin/weekly-cleanup`, { method: 'POST' });
+        const result = await res.json().catch(() => ({}));
 
-        const statsRes = await fetchWithAuth(
-          `${API_URL}/requests/archive-stats`
-        );
+        if (!res.ok) throw new Error(result.error || 'Cleanup failed');
 
-        const stats = await statsRes.json();
-
-        openArchiveModal(stats);
-
-        if (!archiveRes.ok) {
-          throw new Error();
+        if (result.skipped) {
+          notify('Nothing to clean up right now', 'info');
+        } else {
+          notify(`${result.deleted} requests exported and removed`, 'success');
         }
-
-        notify(
-          'Completed requests archived',
-          'success'
-        );
 
         await fetchRequests();
 
       } catch (err) {
-
         console.error(err);
-
-        notify(
-          'Archive failed',
-          'error'
-        );
-
+        notify('Cleanup failed: ' + (err.message || 'unknown error'), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
-
     });
-
-
-    const archivesBtn = document.getElementById('archivesBtn');
 
     const searchName = document.getElementById('searchName');
     const searchCenter = document.getElementById('searchCenter');
@@ -2295,11 +1984,6 @@ document
       const banner = document.getElementById('kpiBanner');
       if (!banner) return;
 
-      // Masqué en mode Archives (les KPIs concernent le travail en cours)
-      if (typeof archivesMode !== 'undefined' && archivesMode) {
-        banner.classList.add('hidden');
-        return;
-      }
       banner.classList.remove('hidden');
 
       const pendingCount = allRequests.filter(r => r.status === 'Pending').length;
@@ -2378,24 +2062,6 @@ document
 //=============== FETCH REQUESTS FONCTION============
     async function fetchRequests() {
 
-    archivesMode = false;
-    archivesBtn.innerHTML = '📦 Archives';
-
-    document.body.classList.remove('archives-theme');
-
-    const banner =
-      document.getElementById('archiveBanner');
-
-    banner.classList.remove('archive-banner-show');
-    banner.classList.add('archive-banner-hide');
-
-    setTimeout(() => {
-      banner.classList.add('hidden');
-    }, 500);
-
-    document.body.style.transition = 'background 800ms ease';
-
-    
     try {
     // Construire l'URL de la requête
    let url = `${API_URL}/requests`;
@@ -2486,6 +2152,477 @@ function applyUserFilters() {
 
   renderUsersTable(filtered);
 }
+
+// =========================================================
+// 🧾 COMPTA / DISPATCH
+// =========================================================
+
+let comptaItems = [];
+
+async function loadCompta() {
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/compta`);
+    const json = await res.json();
+    comptaItems = json.data || [];
+    updateComptaStats();
+    renderComptaList();
+  } catch (err) {
+    console.error(err);
+    notify('Error loading Compta', 'error');
+  }
+}
+
+function updateComptaStats() {
+  const el = document.getElementById('comptaStats');
+  if (!el) return;
+  const total = comptaItems.length;
+  const withCat = comptaItems.filter(r => r.cat_code).length;
+  el.textContent = total === 0
+    ? ''
+    : `${total} closed request${total !== 1 ? 's' : ''} waiting · ${withCat} ready to export`;
+}
+
+function renderComptaList() {
+  const list = document.getElementById('comptaList');
+  const emptyState = document.getElementById('comptaEmptyState');
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  if (comptaItems.length === 0) {
+    emptyState?.classList.remove('hidden');
+    return;
+  }
+  emptyState?.classList.add('hidden');
+
+  comptaItems.forEach(req => {
+    const card = document.createElement('div');
+    card.className = 'bg-white border border-gray-200 rounded-2xl p-4 shadow-sm';
+    card.dataset.requestId = req.request_id;
+
+    const amount = req.amount_spent ?? req.approved_amount ?? req.amount_requested ?? 0;
+    const dateStr = req.timestamp ? new Date(req.timestamp).toLocaleDateString('en-US') : '';
+    const allocValue = req.dispatch_alloc || req.default_alloc || '';
+
+    let catSection = '';
+    if (req.cat_code) {
+      catSection = `
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-semibold">${escapeHtml(req.cat_code)} — ${escapeHtml(req.category_name || '')}</span>
+          <button class="comptaChangeCat text-xs text-indigo-600 hover:underline">Change</button>
+        </div>
+      `;
+    } else {
+      const suggestionsHtml = (req.suggestions || []).map(s => `
+        <button class="comptaSuggestBtn px-2.5 py-1 rounded-full bg-gray-100 hover:bg-indigo-100 text-gray-700 text-xs font-medium transition" data-code="${escapeHtml(s.code)}">
+          ${escapeHtml(s.code)} — ${escapeHtml(s.category)}
+        </button>
+      `).join('');
+
+      catSection = `
+        <div class="space-y-2">
+          ${suggestionsHtml ? `<div class="flex flex-wrap gap-2">${suggestionsHtml}</div>` : '<p class="text-xs text-gray-400">No keyword match found — type a code manually.</p>'}
+          <div class="flex items-center gap-2">
+            <input type="text" placeholder="Or type a CAT code manually" class="comptaManualCat flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
+            <button class="comptaAssignManual bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-gray-900 shrink-0">Assign</button>
+          </div>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="flex justify-between items-start gap-3 mb-2">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-gray-800">${escapeHtml(req.requestor_name)} — ${escapeHtml(req.center_name)}</p>
+          <p class="text-xs text-gray-400 mt-0.5">${dateStr} · ${formatAmount(amount)} PHP</p>
+          <p class="text-sm text-gray-600 mt-2">${escapeHtml(req.description || '')}</p>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 pt-3 mt-2">
+        ${catSection}
+      </div>
+
+      <div class="flex items-center gap-2 mt-3">
+        <label class="text-xs text-gray-400 font-medium shrink-0">ALLOC</label>
+        <input type="text" class="comptaAllocInput border border-gray-200 rounded-lg px-2 py-1 text-sm w-32" value="${escapeHtml(allocValue)}">
+      </div>
+    `;
+
+    list.appendChild(card);
+
+    card.querySelectorAll('.comptaSuggestBtn').forEach(btn => {
+      btn.addEventListener('click', () => assignComptaCat(req.request_id, btn.dataset.code));
+    });
+
+    const manualInput = card.querySelector('.comptaManualCat');
+    const manualBtn = card.querySelector('.comptaAssignManual');
+    manualBtn?.addEventListener('click', () => {
+      const code = manualInput.value.trim();
+      if (!code) return;
+      assignComptaCat(req.request_id, code);
+    });
+
+    card.querySelector('.comptaChangeCat')?.addEventListener('click', () => {
+      req.cat_code = null;
+      renderComptaList();
+    });
+
+    const allocInput = card.querySelector('.comptaAllocInput');
+    allocInput?.addEventListener('change', () => {
+      saveComptaAlloc(req.request_id, allocInput.value);
+    });
+  });
+}
+
+async function assignComptaCat(requestId, catCode) {
+  try {
+    const res = await fetchWithAuth(`${API_URL}/requests/${requestId}/cat`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cat_code: catCode })
+    });
+
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      notify(result.error || 'Could not assign category', 'error');
+      return;
+    }
+
+    notify('Category assigned', 'success');
+    await loadCompta();
+
+  } catch (err) {
+    console.error(err);
+    notify('Error assigning category', 'error');
+  }
+}
+
+async function saveComptaAlloc(requestId, allocValue) {
+  try {
+    const res = await fetchWithAuth(`${API_URL}/requests/${requestId}/cat`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dispatch_alloc: allocValue })
+    });
+
+    if (!res.ok) {
+      notify('Could not save ALLOC', 'error');
+      return;
+    }
+
+    notify('ALLOC saved', 'success');
+
+  } catch (err) {
+    console.error(err);
+    notify('Error saving ALLOC', 'error');
+  }
+}
+
+document.getElementById('comptaExportBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('comptaExportBtn');
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = 'Exporting...';
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-export`, { method: 'POST' });
+    const contentType = res.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Export failed');
+      notify(result.message || 'Nothing ready to export', 'info');
+    } else {
+      const blob = await res.blob();
+      const disposition = res.headers.get('content-disposition') || '';
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const fileName = match ? match[1] : 'Compta_Export.xlsx';
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      notify('Export downloaded', 'success');
+      await loadCompta();
+    }
+
+  } catch (err) {
+    console.error(err);
+    notify('Export failed: ' + (err.message || 'unknown error'), 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+
+// ---------------------------------------------------------
+// COMPTA SETTINGS — Categories / Centers / Filler phrases
+// ---------------------------------------------------------
+
+let comptaCategoriesCache = [];
+let comptaCentersCache = [];
+let comptaFillersCache = [];
+
+document.getElementById('comptaSettingsBtn')?.addEventListener('click', () => {
+  const modal = document.getElementById('comptaSettingsModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  switchComptaSettingsTab('categories');
+});
+
+document.getElementById('closeComptaSettingsModal')?.addEventListener('click', () => {
+  const modal = document.getElementById('comptaSettingsModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+});
+
+function switchComptaSettingsTab(tab) {
+  const tabs = ['categories', 'centers', 'fillers'];
+  tabs.forEach(t => {
+    document.getElementById(`comptaTab${t.charAt(0).toUpperCase() + t.slice(1)}`)?.classList.toggle('bg-gray-100', t === tab);
+    document.getElementById(`comptaPanel${t.charAt(0).toUpperCase() + t.slice(1)}`)?.classList.toggle('hidden', t !== tab);
+  });
+
+  if (tab === 'categories') loadComptaCategories();
+  if (tab === 'centers') loadComptaCenters();
+  if (tab === 'fillers') loadComptaFillers();
+}
+
+document.getElementById('comptaTabCategories')?.addEventListener('click', () => switchComptaSettingsTab('categories'));
+document.getElementById('comptaTabCenters')?.addEventListener('click', () => switchComptaSettingsTab('centers'));
+document.getElementById('comptaTabFillers')?.addEventListener('click', () => switchComptaSettingsTab('fillers'));
+
+async function loadComptaCategories() {
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-categories`);
+    const json = await res.json();
+    comptaCategoriesCache = json.data || [];
+    renderComptaCategoriesTable();
+  } catch (err) {
+    console.error(err);
+    notify('Error loading categories', 'error');
+  }
+}
+
+function renderComptaCategoriesTable() {
+  const tbody = document.getElementById('categoriesTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  comptaCategoriesCache.forEach(cat => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="py-2 px-3 font-mono text-xs">${escapeHtml(cat.code)}</td>
+      <td class="py-2 px-3 text-sm">${escapeHtml(cat.category)}</td>
+      <td class="py-2 px-3 text-xs text-gray-500">${escapeHtml(cat.main_category || '')}</td>
+      <td class="py-2 px-3 text-xs text-gray-500 truncate max-w-[200px]" title="${escapeHtml(cat.keywords || '')}">${escapeHtml(cat.keywords || '')}</td>
+      <td class="py-2 px-3 text-right">
+        <button class="deleteCatBtn text-red-500 hover:text-red-700 text-xs" data-code="${escapeHtml(cat.code)}">✕</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.deleteCatBtn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ok = await showConfirmModal({
+        title: 'Delete this category?',
+        message: `Code ${btn.dataset.code} will be permanently removed.`,
+        confirmText: 'Delete'
+      });
+      if (!ok) return;
+
+      try {
+        const res = await fetchWithAuth(`${API_URL}/admin/dispatch-categories/${encodeURIComponent(btn.dataset.code)}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error();
+        notify('Category deleted', 'success');
+        loadComptaCategories();
+      } catch (err) {
+        notify('Delete failed', 'error');
+      }
+    });
+  });
+}
+
+document.getElementById('addCatBtn')?.addEventListener('click', async () => {
+  const code = document.getElementById('newCatCode').value.trim();
+  const category = document.getElementById('newCatCategory').value.trim();
+  const main_category = document.getElementById('newCatMain').value.trim();
+  const keywords = document.getElementById('newCatKeywords').value.trim();
+
+  if (!code || !category) {
+    notify('Code and Category are required', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-categories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, category, main_category, keywords })
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.error || 'Failed');
+
+    notify('Category added', 'success');
+    document.getElementById('newCatCode').value = '';
+    document.getElementById('newCatCategory').value = '';
+    document.getElementById('newCatMain').value = '';
+    document.getElementById('newCatKeywords').value = '';
+    loadComptaCategories();
+
+  } catch (err) {
+    notify(err.message || 'Failed to add category', 'error');
+  }
+});
+
+async function loadComptaCenters() {
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-centers`);
+    const json = await res.json();
+    comptaCentersCache = json.data || [];
+    renderComptaCentersTable();
+  } catch (err) {
+    console.error(err);
+    notify('Error loading centers', 'error');
+  }
+}
+
+function renderComptaCentersTable() {
+  const tbody = document.getElementById('centersTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  comptaCentersCache.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="py-2 px-3 text-sm">${escapeHtml(c.name)}</td>
+      <td class="py-2 px-3 font-mono text-xs">${escapeHtml(c.code)}</td>
+      <td class="py-2 px-3 font-mono text-xs">${escapeHtml(c.allocation)}</td>
+      <td class="py-2 px-3 text-right">
+        <button class="deleteCenterBtn text-red-500 hover:text-red-700 text-xs" data-code="${escapeHtml(c.code)}">✕</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.deleteCenterBtn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ok = await showConfirmModal({
+        title: 'Delete this center mapping?',
+        message: `Code ${btn.dataset.code} will be permanently removed.`,
+        confirmText: 'Delete'
+      });
+      if (!ok) return;
+
+      try {
+        const res = await fetchWithAuth(`${API_URL}/admin/dispatch-centers/${encodeURIComponent(btn.dataset.code)}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error();
+        notify('Center mapping deleted', 'success');
+        loadComptaCenters();
+      } catch (err) {
+        notify('Delete failed', 'error');
+      }
+    });
+  });
+}
+
+document.getElementById('addCenterBtn2')?.addEventListener('click', async () => {
+  const name = document.getElementById('newCenterName').value.trim();
+  const code = document.getElementById('newCenterCode').value.trim();
+  const allocation = document.getElementById('newCenterAlloc').value.trim();
+
+  if (!name || !code || !allocation) {
+    notify('Name, code and allocation are required', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-centers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, code, allocation })
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.error || 'Failed');
+
+    notify('Center added', 'success');
+    document.getElementById('newCenterName').value = '';
+    document.getElementById('newCenterCode').value = '';
+    document.getElementById('newCenterAlloc').value = '';
+    loadComptaCenters();
+
+  } catch (err) {
+    notify(err.message || 'Failed to add center', 'error');
+  }
+});
+
+async function loadComptaFillers() {
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-filler-phrases`);
+    const json = await res.json();
+    comptaFillersCache = json.data || [];
+    renderComptaFillersList();
+  } catch (err) {
+    console.error(err);
+    notify('Error loading filler phrases', 'error');
+  }
+}
+
+function renderComptaFillersList() {
+  const container = document.getElementById('fillersList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  comptaFillersCache.forEach(p => {
+    const chip = document.createElement('span');
+    chip.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-xs';
+    chip.innerHTML = `
+      ${escapeHtml(p.phrase)}
+      <button class="deleteFillerBtn text-gray-400 hover:text-red-600 font-bold" data-id="${escapeHtml(p.id)}">✕</button>
+    `;
+    container.appendChild(chip);
+  });
+
+  container.querySelectorAll('.deleteFillerBtn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        const res = await fetchWithAuth(`${API_URL}/admin/dispatch-filler-phrases/${encodeURIComponent(btn.dataset.id)}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error();
+        loadComptaFillers();
+      } catch (err) {
+        notify('Delete failed', 'error');
+      }
+    });
+  });
+}
+
+document.getElementById('addFillerBtn')?.addEventListener('click', async () => {
+  const input = document.getElementById('newFillerPhrase');
+  const phrase = input.value.trim();
+  if (!phrase) return;
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-filler-phrases`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phrase })
+    });
+    if (!res.ok) throw new Error();
+
+    input.value = '';
+    loadComptaFillers();
+
+  } catch (err) {
+    notify('Failed to add phrase', 'error');
+  }
+});
 
 function renderUsersTable(users) {
   const tbody = document.getElementById('usersTableBody');
@@ -2727,120 +2864,9 @@ document.getElementById('editUserDeleteBtn')?.addEventListener('click', async ()
 });
 
 
-//===== FONDCTION LOAD ARCHIVES ==========
-
-  async function loadArchives() {
-
-    try {
-
-      const res = await fetchWithAuth(`${API_URL}/requests/archives`);
-
-      const json = await res.json();
-
-      archivesMode = true;
-
-      document.body.classList.add('archives-theme');
-
-    const banner =
-      document.getElementById('archiveBanner');
-
-    banner.classList.remove('archive-banner-hide');
-    banner.classList.remove('hidden');
-    banner.classList.add('archive-banner-show');
-
-      allRequests = json.data || [];
-
-      applyAdvancedFilters();
-
-      updateToLiquidateSummary();
-
-      document.getElementById('pageInfo').textContent =
-        'Archives';
-
-    } catch (err) {
-
-      console.error(err);
-      notify("Error loading archives", "error");
-
-    }
-
-  }
-
-
     // Écoute des changements pour filtrage et rafraîchissement
     filterStatus.addEventListener('change', fetchRequests);
-    refreshBtn.addEventListener('click', async () => {
-
-      if (archivesMode) {
-        await loadArchives();
-      } else {
-        await fetchRequests();
-      }
-
-    });
-
-   archivesBtn.addEventListener('click', async () => {
-
-  if (!archivesMode) {
-
-    showArchiveTransition(
-      'Entering Archives',
-      'Loading historical requests...',
-      '📦',
-      2500
-    );
-
-    // Charge immédiatement en arrière-plan
-    const archivesPromise = loadArchives();
-
-    // Attendre au minimum l'animation
-    await Promise.all([
-      archivesPromise,
-      new Promise(resolve => setTimeout(resolve, 2500))
-    ]);
-
-    archivesMode = true;
-    archivesBtn.innerHTML = '← Active Requests';
-
-    archivesBtn.classList.remove('hover:bg-gray-50');
-
-      archivesBtn.classList.add(
-        'bg-indigo-600',
-        'text-white',
-        'hover:bg-indigo-700'
-      );
-
-  } else {
-
-    showArchiveTransition(
-      'Returning to Active Requests',
-      'Loading active requests...',
-      '📂',
-      2500
-    );
-
-    const requestsPromise = fetchRequests();
-
-    await Promise.all([
-      requestsPromise,
-      new Promise(resolve => setTimeout(resolve, 2500))
-    ]);
-
-    archivesMode = false;
-    archivesBtn.innerHTML = '📦 Archives';
-
-    archivesBtn.classList.remove(
-  'bg-indigo-600',
-  'text-white',
-  'hover:bg-indigo-700'
-    );
-
-    archivesBtn.classList.add(
-      'hover:bg-gray-50'
-    );
-  }
-
-});
+    refreshBtn.addEventListener('click', fetchRequests);
 
 // =========================================================
 // BIND ROW ACTIONS — réutilisé par le tableau ET les cartes mobiles
@@ -3382,26 +3408,6 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
 
 <td class="actions-cell sticky right-0 z-10 group-hover:bg-gray-100 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.15)] ${isPurchaser ? 'bg-orange-50' : 'bg-white'}">
 
-  ${
-    archivesMode
-      ? `
-        <div class="flex justify-center">
-          <button
-            class="restoreBtn
-            bg-indigo-600
-            hover:bg-indigo-700
-            text-white
-            px-3 py-1.5
-            rounded-lg
-            transition
-            text-xs
-            font-medium
-            shadow-sm">
-            ↩ Restore
-          </button>
-        </div>
-      `
-      : `
         <div class="flex justify-center items-center gap-2 flex-wrap">
 
       <input
@@ -3432,61 +3438,11 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
           }
 
         </div>
-      `
-  }
 
 </td>
     `;
 
     requestsTableBody.appendChild(tr);
-
-    if (archivesMode) {
-
-      const restoreBtn =
-          tr.querySelector('.restoreBtn');
-
-        restoreBtn?.addEventListener('click', async () => {
-
-          window.restoreRequestId =
-            req.request_id;
-
-          openRestoreModal(
-            req.request_id
-          );
-
-    try {
-
-      const res = await fetchWithAuth(
-        `${API_URL}/requests/${req.request_id}/restore`,
-        { method: 'PATCH' }
-      );
-
-      if (!res.ok) {
-        throw new Error();
-      }
-
-      notify(
-        "Request restored",
-        "success"
-      );
-
-      await loadArchives();
-
-    } catch (err) {
-
-      console.error(err);
-
-      notify(
-        "Restore failed",
-        "error"
-      );
-
-    }
-
-  });
-
-}
-
 
 bindRowActions(req, tr);
       });
@@ -4367,143 +4323,11 @@ document.getElementById('reviewRejectBtn')?.addEventListener('click', async () =
 
 
 // ─────────────────────────────────────────
-// ACTIONS DROPDOWN
-// ─────────────────────────────────────────
-
-const actionsBtn =
-  document.getElementById('actionsBtn');
-
-const actionsMenu =
-  document.getElementById('actionsMenu');
-
-function openActionsMenu() {
-  actionsMenu?.classList.remove('hidden');
-}
-
-function closeActionsMenu() {
-  actionsMenu?.classList.add('hidden');
-}
-
-function toggleActionsMenu() {
-  actionsMenu?.classList.toggle('hidden');
-}
-
-// Ouvrir / fermer via le bouton
-actionsBtn?.addEventListener('click', (e) => {
-
-  e.stopPropagation();
-
-  exportMenu.classList.add('hidden');
-  toggleActionsMenu();
-
-});
-
-// Fermer en cliquant ailleurs
-document.addEventListener('click', (e) => {
-
-  const clickedButton =
-    actionsBtn?.contains(e.target);
-
-  const clickedMenu =
-    actionsMenu?.contains(e.target);
-
-  if (!clickedButton && !clickedMenu) {
-    closeActionsMenu();
-  }
-
-});
-
-// Fermer automatiquement après sélection
-archivesBtn?.addEventListener('click', () => {
-  closeActionsMenu();
-});
-
-exportArchiveBtn?.addEventListener('click', () => {
-  closeActionsMenu();
-});
-
-// ─────────────────────────────────────────
 // Search bar - Users
 // ─────────────────────────────────────────
 document.getElementById('userSearch').addEventListener('input', applyUserFilters);
 document.getElementById('userRoleFilter')?.addEventListener('change', applyUserFilters);
 document.getElementById('userCenterFilter')?.addEventListener('change', applyUserFilters);
-
-// ─────────────────────────────────────────
-// ARCHIVES TRANSITION
-// ─────────────────────────────────────────
-
-function showArchiveTransition(
-  title,
-  subtitle,
-  icon = '📦',
-  duration = 1800
-) {
-
-  const overlay =
-    document.getElementById('archiveTransition');
-
-  document.getElementById(
-    'archiveTransitionIcon'
-  ).textContent = icon;
-
-  document.getElementById(
-    'archiveTransitionTitle'
-  ).textContent = title;
-
-  document.getElementById(
-    'archiveTransitionSubtitle'
-  ).textContent = subtitle;
-
-  overlay.classList.remove('hidden');
-  overlay.classList.add('flex');
-
-  overlay.style.opacity = '0';
-
-  requestAnimationFrame(() => {
-
-    overlay.style.transition =
-      'opacity .35s ease';
-
-    overlay.style.opacity = '1';
-
-  });
-
-  setTimeout(() => {
-
-    overlay.style.opacity = '0';
-
-    setTimeout(() => {
-
-      overlay.classList.add('hidden');
-      overlay.classList.remove('flex');
-
-    }, 350);
-
-  }, duration);
-
-}
-
-function hideArchiveTransition() {
-
-  const banner =
-    document.getElementById('archiveBanner');
-
-  banner.classList.remove(
-    'archive-banner-show'
-  );
-
-  banner.classList.add(
-    'archive-banner-hide'
-  );
-
-  setTimeout(() => {
-
-    banner.classList.add('hidden');
-
-  }, 500);
-
-}
 
   </script>
 

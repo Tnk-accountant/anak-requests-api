@@ -18,6 +18,8 @@
     "express": "^5.1.0",
     "googleapis": "^169.0.0",
     "multer": "^2.0.2",
-    "web-push": "^3.6.7"
+    "node-cron": "^4.6.0",
+    "web-push": "^3.6.7",
+    "xlsx": "^0.18.5"
   }
 }
