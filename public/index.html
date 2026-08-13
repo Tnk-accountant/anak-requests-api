@@ -1830,7 +1830,16 @@ async function initPushNotifications() {
   notifyBtnMobile?.addEventListener('click', toggleNotifications);
   notifyBtnDesktop?.addEventListener('click', toggleNotifications);
 
-  await updateButtonState();
+  const enabledNow = await updateButtonState();
+
+  // 🔔 Première visite (permission jamais demandée) → on lance la
+  // demande tout de suite, sans attendre que le CC pense à cliquer
+  // sur le bouton. C'est ça qui faisait que les notifs n'arrivaient
+  // que quand l'app était déjà ouverte : personne n'avait de vraie
+  // souscription push active.
+  if (!enabledNow && Notification.permission === 'default') {
+    await subscribe();
+  }
 }
 
 // =============================
@@ -3021,12 +3030,39 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
   }
 
   const btn = document.getElementById('clarificationSubmitBtn');
+  const reqId = currentRequestId;
+  const req = requestsMap.get(reqId);
+
+  // ⚡ Snapshot pour rollback si le serveur refuse
+  const prevReqSnapshot = req ? { ...req } : null;
+
+  // ⚡ Mise à jour optimiste — le message apparaît tout de suite dans
+  // la conversation, sans attendre le réseau.
+  if (req) {
+    const optimisticConversation = [...(req.conversation || []), {
+      sender: "user",
+      message,
+      created_at: new Date().toISOString()
+    }];
+
+    const optimisticReq = { ...req, conversation: optimisticConversation, status: 'Resubmitted' };
+    requestsMap.set(reqId, optimisticReq);
+    upsertRow(optimisticReq);
+  }
+
+  // reset textarea tout de suite
+  textarea.value = "";
+  textarea.style.height = '0px';
+
+  if (reqId === currentRequestId) {
+    openModalFor(reqId);
+  }
 
   try {
     btn.disabled = true;
     btn.classList.add('opacity-60');
 
-    const res = await fetchWithAuth(`${API_URL}/requests/${currentRequestId}/respond`, {
+    const res = await fetchWithAuth(`${API_URL}/requests/${reqId}/respond`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -3039,21 +3075,35 @@ document.getElementById('clarificationSubmitBtn')?.addEventListener('click', asy
       throw new Error("Failed");
     }
 
+    const result = await res.json().catch(() => ({}));
+
+    // Réconciliation avec la donnée canonique renvoyée par /respond —
+    // pas besoin d'un refetch séparé, ça évite un aller-retour réseau
+    // en plus (et donc encore moins de latence perçue).
+    if (result?.data) {
+      requestsMap.set(reqId, result.data);
+      upsertRow(result.data);
+      if (reqId === currentRequestId) {
+        openModalFor(reqId);
+      }
+    }
+
     notify("Response sent", "success");
-
-    // refresh data depuis serveur
-    await refreshRequest(currentRequestId);
-
-    // reset textarea
-    textarea.value = "";
-    textarea.style.height = '0px';
-
-    // 🔥 recharger le modal COMPLET
-    openModalFor(currentRequestId);
 
   } catch (err) {
     console.error("Submit clarification error:", err);
     notify("Error sending response", "error");
+
+    // ↩️ rollback — le message n'est pas réellement parti
+    if (prevReqSnapshot) {
+      requestsMap.set(reqId, prevReqSnapshot);
+      upsertRow(prevReqSnapshot);
+      if (reqId === currentRequestId) {
+        openModalFor(reqId);
+      }
+    }
+    // on remet le message dans la zone de texte pour ne pas le perdre
+    textarea.value = message;
   } finally {
     btn.disabled = false;
     btn.classList.remove('opacity-60');
@@ -4279,6 +4329,29 @@ function closeModal() {
 
   const received_at = new Date(dateInput + "T12:00:00").toISOString();
 
+  // ⚡ Snapshot pour rollback si le serveur refuse
+  const prevReqSnapshot = { ...req };
+
+  // ⚡ Mise à jour optimiste — l'écran réagit tout de suite, sans
+  // attendre le réseau (le statut final est déterministe côté client).
+  const optimisticStatus = (req.request_type === 'FundTransfer' || req.payment_method === 'cheque')
+    ? 'Closed'
+    : 'ToLiquidate';
+
+  const optimisticReq = {
+    ...req,
+    amount_received: amount,
+    received_at,
+    received_name: receivedName,
+    received_confirmed: true,
+    status: optimisticStatus
+  };
+
+  requestsMap.set(currentRequestId, optimisticReq);
+  upsertRow(optimisticReq);
+  openModalFor(currentRequestId);
+  notify("Money received", "success");
+
   try {
     const res = await fetchWithAuth(`${API_URL}/requests/${currentRequestId}/received`, {
       method: 'PATCH',
@@ -4302,18 +4375,25 @@ function closeModal() {
     const updatedData = await res.json();
     if (!updatedData.data || !updatedData.data.length) throw new Error('Aucune donnée retournée');
 
-    // Mettre à jour localement avec les données du serveur
+    // Réconciliation avec les données canoniques du serveur
     const updatedReq = updatedData.data[0];
     requestsMap.set(updatedReq.request_id, updatedReq);
     upsertRow(updatedReq);
 
-    // Recharge le panel en mode verrouillé
-    openModalFor(updatedReq.request_id);
-
-    notify("Money received", "success");
+    // Ne rouvre le modal que s'il est toujours sur cette même demande
+    if (currentRequestId === updatedReq.request_id) {
+      openModalFor(updatedReq.request_id);
+    }
   } catch (err) {
       console.error(err);
       notify(friendlyError(err), "error");
+
+      // ↩️ rollback — le serveur n'a pas confirmé, on revient en arrière
+      requestsMap.set(currentRequestId, prevReqSnapshot);
+      upsertRow(prevReqSnapshot);
+      if (currentRequestId === prevReqSnapshot.request_id) {
+        openModalFor(prevReqSnapshot.request_id);
+      }
     } finally {
       unlockButton(btn);
     }
@@ -4400,35 +4480,35 @@ if (req.status !== 'ToLiquidate') {
     return;
   }
 
-    // 🔥 Convertir toutes les images en UN SEUL PDF
-    const pdfBlob = await imagesToSinglePDF(rawFiles);
-
-    const pdfFile = new File([pdfBlob], `${req.request_id}.pdf`, {
-      type: 'application/pdf'
-    });
-
-    const receiptsFiles = [{
-      file: pdfFile,
-      filename: pdfFile.name
-    }];
-
+    // ⚡ Snapshot pour rollback si le serveur refuse
+    const prevReqSnapshot = { ...req };
 
     // ==============================
-    // Mise à jour locale immédiate (UX)
+    // ⚡ Mise à jour optimiste — TOUT DE SUITE, avant même la
+    // conversion PDF et l'appel réseau. C'est cette attente-là qui
+    // donnait l'effet de latence au clic.
     // ==============================
-      req.amount_spent = spent;
-      req.returned_amount = returned;
-      req.liquidation_note = note;
-      req.receipts = null;
-      req.receipts_upload_status = 'pending';
-      req.receipts_count = rawFiles.length;
+    const optimisticReq = {
+      ...req,
+      status: 'PendingValidation',
+      amount_spent: spent,
+      returned_amount: returned,
+      liquidation_note: note,
+      receipts: null,
+      receipts_upload_status: 'pending',
+      receipts_count: rawFiles.length,
+      liquidated_at: new Date().toISOString()
+    };
 
-      // ⚠️ on ne met PAS Closed ici
-      upsertRow(req);
+    requestsMap.set(reqId, optimisticReq);
+    upsertRow(optimisticReq);
+    renderTable();
+    if (window.innerWidth < 768) renderMobileCards();
 
-      renderTable();
-      if (window.innerWidth < 768) renderMobileCards();
-
+    closeModal();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    notify("Liquidation submitted – waiting for validation", "info");
+    deleteLiquidationDraft(reqId);
 
     // ==============================
     // Loader / bouton
@@ -4439,8 +4519,20 @@ if (req.status !== 'ToLiquidate') {
     lockButton(liqBtn, "Processing...");
     liqLoader.classList.remove('hidden');
 
-
   try {
+
+    // 🔥 Convertir toutes les images en UN SEUL PDF (en arrière-plan,
+    // l'utilisateur voit déjà l'écran mis à jour)
+    const pdfBlob = await imagesToSinglePDF(rawFiles);
+
+    const pdfFile = new File([pdfBlob], `${req.request_id}.pdf`, {
+      type: 'application/pdf'
+    });
+
+    const receiptsFiles = [{
+      file: pdfFile,
+      filename: pdfFile.name
+    }];
 
 // ==============================
 // 1) PATCH liquidation (JSON) → réponse immédiate
@@ -4458,13 +4550,7 @@ const res = await fetchWithAuth(`${API_URL}/requests/${reqId}/liquidate`, {
   })
 });
 
-if (handleAuthError(res)) {
-  unlockButton(liqBtn);
-  liqLoader.classList.add('hidden');
-  // ✅ RESET PHOTOS CAMERA
-  capturedPhotos = [];
-  return;
-}
+if (handleAuthError(res)) return;
 
 if (!res.ok) {
   let errMsg = 'Erreur serveur';
@@ -4474,20 +4560,6 @@ if (!res.ok) {
   } catch {}
   throw new Error(errMsg);
 }
-
-
-// ✅ UI immédiate + synchro
-closeModal();
-await refreshRequest(reqId);
-window.scrollTo({ top: 0, behavior: 'smooth' });
-
-renderTable();
-if (window.innerWidth < 768) renderMobileCards();
-
-
-notify("Liquidation submitted – waiting for validation", "info");
-deleteLiquidationDraft(reqId);  
-
 
 // ==============================
 // 2) POST receipts (PENDING)
@@ -4509,9 +4581,21 @@ if (receiptsFiles.length > 0) {
   });
 }
 
+// ✅ Synchro finale avec les données canoniques du serveur
+await refreshRequest(reqId);
+renderTable();
+if (window.innerWidth < 768) renderMobileCards();
+
 } catch (err) {
   console.error(err);
-  notify("Server error: " + err.message, "error");
+  notify("Liquidation failed, please try again: " + (err.message || ''), "error");
+
+  // ↩️ rollback — le serveur n'a pas confirmé la liquidation
+  requestsMap.set(reqId, prevReqSnapshot);
+  upsertRow(prevReqSnapshot);
+  renderTable();
+  if (window.innerWidth < 768) renderMobileCards();
+
 } finally {
 
   capturedPhotos = [];

@@ -170,13 +170,6 @@
     </div>
     </div>
 
-    <!-- 🔔 NOTIFICATIONS PUSH -->
-    <button id="notifyBtnAdmin" type="button"
-      class="hidden items-center gap-1.5 px-2.5 py-2 sm:px-3 rounded-xl border border-gray-200 bg-indigo-50 text-indigo-600 text-xs font-medium hover:bg-indigo-100 transition shadow-sm whitespace-nowrap shrink-0">
-      <span>🔔</span>
-      <span id="notifyBtnAdminLabel" class="hidden sm:inline">Enable notifications</span>
-    </button>
-
     <!-- LÉGENDE DE STATUTS -->
     <div class="relative shrink-0">
       <button id="statusLegendBtn" type="button"
@@ -1783,145 +1776,12 @@ document.addEventListener('visibilitychange', () => {
       }
     }
 
-// =============================
-// 🔔 NOTIFICATIONS PUSH (Admin)
-// =============================
-// Même clé VAPID que index.html — correspond à la clé privée
-// configurée côté backend (VAPID_PRIVATE_KEY).
-const VAPID_PUBLIC_KEY = 'BPo4yi5aABtxF1C7STblPzNnq_YRkYd2BusNPZGxthTcXn1dwA-G9m5g8eYAXDj7TF3LWxl59gOG3GQK6wLbajw';
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
-async function initPushNotificationsAdmin() {
-  const notifyBtn = document.getElementById('notifyBtnAdmin');
-  const notifyBtnLabel = document.getElementById('notifyBtnAdminLabel');
-
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  if (typeof Notification !== 'undefined' && Notification.permission === 'denied') return;
-
-  let registration;
-  try {
-    registration = await navigator.serviceWorker.register('/sw.js');
-  } catch (e) {
-    console.warn('Service worker registration failed:', e);
-    return;
-  }
-
-  async function updateButtonState() {
-    let existingSub = null;
-    try {
-      existingSub = await registration.pushManager.getSubscription();
-    } catch (e) { /* ignore */ }
-
-    const enabled = !!existingSub && Notification.permission === 'granted';
-
-    if (notifyBtn) {
-      notifyBtn.classList.remove('hidden');
-      notifyBtn.classList.add('flex');
-      notifyBtn.classList.toggle('bg-green-50', enabled);
-      notifyBtn.classList.toggle('text-green-600', enabled);
-      notifyBtn.classList.toggle('bg-indigo-50', !enabled);
-      notifyBtn.classList.toggle('text-indigo-600', !enabled);
-    }
-    if (notifyBtnLabel) {
-      notifyBtnLabel.textContent = enabled ? 'Notifications on' : 'Enable notifications';
-    }
-
-    return enabled;
-  }
-
-  async function subscribe() {
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        notify('Notifications blocked in browser settings', 'error');
-        return;
-      }
-
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-
-      const res = await fetchWithAuth(`${API_URL}/push-subscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription })
-      });
-
-      if (!res.ok) {
-        let errMsg = `Server error (${res.status})`;
-        try {
-          const body = await res.json();
-          if (body?.error) errMsg = body.error;
-        } catch (e) { /* réponse non-JSON */ }
-        await subscription.unsubscribe().catch(() => {});
-        throw new Error(errMsg);
-      }
-
-      notify('Notifications enabled', 'success');
-    } catch (e) {
-      console.error('Push subscribe error:', e);
-      notify('Could not enable notifications: ' + (e.message || 'unknown error'), 'error');
-    }
-
-    await updateButtonState();
-  }
-
-  async function toggleNotifications() {
-    let existingSub = null;
-    try {
-      existingSub = await registration.pushManager.getSubscription();
-    } catch (e) { /* ignore */ }
-
-    if (existingSub && Notification.permission === 'granted') {
-      const ok = await showConfirmModal({
-        title: 'Turn off notifications?',
-        message: 'You will stop receiving push notifications on this device.',
-        confirmText: 'Turn off'
-      });
-      if (!ok) return;
-
-      try {
-        await fetchWithAuth(`${API_URL}/push-subscription`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: existingSub.endpoint })
-        });
-        await existingSub.unsubscribe();
-        notify('Notifications turned off', 'info');
-      } catch (e) {
-        console.error('Unsubscribe error:', e);
-      }
-
-      await updateButtonState();
-      return;
-    }
-
-    await subscribe();
-  }
-
-  notifyBtn?.addEventListener('click', toggleNotifications);
-
-  await updateButtonState();
-}
-
 async function initAdminPage() {
       await checkAdminAccess(); // 🔒 vérifie admin AVANT tout
 
       setActiveTab('all');      // ✅ sélectionne "All Requests" par défaut
       fetchRequests();          // 📊 charge les données
       setupSSE();               // 🔁 active le temps réel
-      initPushNotificationsAdmin(); // 🔔 active les vraies notifs push (même app fermée)
     }
 
     initAdminPage();
@@ -2355,7 +2215,9 @@ function renderComptaList() {
 
   comptaItems.forEach(req => {
     const card = document.createElement('div');
-    card.className = 'bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm transition-colors duration-700';
+    card.className = req.cat_code
+      ? 'bg-green-50 border border-green-200 rounded-xl px-4 py-3 shadow-sm transition-colors duration-700'
+      : 'bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm transition-colors duration-700';
     card.dataset.requestId = req.request_id;
 
     const amount = req.amount_spent ?? req.approved_amount ?? req.amount_requested ?? 0;
@@ -2488,21 +2350,6 @@ function renderComptaLocalSearchResults(query, resultsBox, requestId) {
   });
 }
 
-// ✨ Flash vert bref sur toute la carte — confirmation visuelle rapide
-// qu'un CAT vient d'être assigné (en plus de la coche ✅ permanente).
-function flashComptaCardGreen(requestId) {
-  const card = Array.from(document.querySelectorAll('#comptaList > div'))
-    .find(el => el.dataset.requestId === requestId);
-  if (!card) return;
-
-  card.classList.remove('border-gray-200');
-  card.classList.add('bg-green-50', 'border-green-200');
-  setTimeout(() => {
-    card.classList.remove('bg-green-50', 'border-green-200');
-    card.classList.add('border-gray-200');
-  }, 700);
-}
-
 async function assignComptaCat(requestId, catCode) {
   const req = comptaItems.find(r => r.request_id === requestId);
   if (!req) return;
@@ -2514,7 +2361,6 @@ async function assignComptaCat(requestId, catCode) {
   req.cat_code = catCode;
   req.category_name = (comptaAllCategoriesCache || []).find(c => c.code === catCode)?.category || '';
   renderComptaList();
-  flashComptaCardGreen(requestId);
 
   try {
     const res = await fetchWithAuth(`${API_URL}/requests/${requestId}/cat`, {
