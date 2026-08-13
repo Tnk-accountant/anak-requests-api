@@ -571,7 +571,7 @@
     </div>
   </div>
 
-  <div id="comptaList" class="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1"></div>
+  <div id="comptaList" class="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1"></div>
 
   <div id="comptaEmptyState" class="hidden flex-1 min-h-0 flex flex-col items-center justify-center text-center py-16 text-gray-400 text-sm">
     <div class="text-4xl mb-3">🧾</div>
@@ -609,7 +609,9 @@
           <div class="grid grid-cols-12 gap-2 mb-3">
             <input id="newCatCode" placeholder="Code" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
             <input id="newCatCategory" placeholder="Category" class="col-span-4 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-            <input id="newCatMain" placeholder="Main category" class="col-span-3 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+            <select id="newCatMain" class="col-span-3 border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-white">
+              <option value="">Main category…</option>
+            </select>
             <input id="newCatKeywords" placeholder="Keywords, comma-separated" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
             <button id="addCatBtn" class="col-span-1 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">+</button>
           </div>
@@ -2312,7 +2314,7 @@ function renderComptaList() {
 
   comptaItems.forEach(req => {
     const card = document.createElement('div');
-    card.className = 'bg-white border border-gray-200 rounded-2xl p-4 shadow-sm';
+    card.className = 'bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm';
     card.dataset.requestId = req.request_id;
 
     const amount = req.amount_spent ?? req.approved_amount ?? req.amount_requested ?? 0;
@@ -2323,53 +2325,53 @@ function renderComptaList() {
     if (req.cat_code) {
       catSection = `
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-semibold">${escapeHtml(req.cat_code)} — ${escapeHtml(req.category_name || '')}</span>
+          <span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 text-xs font-semibold">${escapeHtml(req.cat_code)} — ${escapeHtml(req.category_name || '')}</span>
           <button class="comptaChangeCat text-xs text-indigo-600 hover:underline">Change</button>
+          <span class="text-gray-200">|</span>
+          <label class="text-xs text-gray-400 font-medium">ALLOC</label>
+          <input type="text" class="comptaAllocInput border border-gray-200 rounded-lg px-2 py-1 text-xs w-24" value="${escapeHtml(allocValue)}">
         </div>
       `;
     } else {
       const suggestionsHtml = (req.suggestions || []).map(s => `
-        <button class="comptaSuggestBtn px-2.5 py-1 rounded-full bg-gray-100 hover:bg-indigo-100 text-gray-700 text-xs font-medium transition" data-code="${escapeHtml(s.code)}">
+        <button class="comptaSuggestBtn px-2 py-0.5 rounded-full bg-gray-100 hover:bg-indigo-100 text-gray-700 text-xs font-medium transition" data-code="${escapeHtml(s.code)}">
           ${escapeHtml(s.code)} — ${escapeHtml(s.category)}
         </button>
       `).join('');
 
       catSection = `
-        <div class="space-y-2">
-          ${suggestionsHtml ? `<div class="flex flex-wrap gap-2">${suggestionsHtml}</div>` : '<p class="text-xs text-gray-400">No keyword match found — search below.</p>'}
+        <div class="space-y-1.5">
+          ${suggestionsHtml ? `<div class="flex flex-wrap gap-1.5">${suggestionsHtml}</div>` : '<p class="text-xs text-gray-400">No keyword match found — search below.</p>'}
 
           <div class="flex items-center gap-2">
-            <input type="text" placeholder="Search category or code" class="comptaSearchInput flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
+            <input type="text" placeholder="Search category or code" class="comptaSearchInput flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs">
+            <label class="text-xs text-gray-400 font-medium shrink-0">ALLOC</label>
+            <input type="text" class="comptaAllocInput border border-gray-200 rounded-lg px-2 py-1 text-xs w-20" value="${escapeHtml(allocValue)}">
           </div>
-          <div class="comptaSearchResults hidden flex flex-wrap gap-2"></div>
+          <div class="comptaSearchResults hidden flex flex-wrap gap-1.5"></div>
         </div>
       `;
     }
 
-    let centersLine = '';
+    let metaLine = dateStr;
     if (req.is_all_centers) {
-      centersLine = `<p class="text-xs text-indigo-600 font-medium mt-1">All center</p>`;
+      metaLine += ' · All centers';
     } else if (req.centers_list && req.centers_list.length > 0) {
-      centersLine = `<p class="text-xs text-gray-500 mt-1">Centers: ${req.centers_list.map(c => escapeHtml(c)).join(', ')}</p>`;
+      metaLine += ` · Centers: ${req.centers_list.map(c => escapeHtml(c)).join(', ')}`;
     }
 
     card.innerHTML = `
-      <div class="flex justify-between items-start gap-3 mb-2">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-gray-800">${escapeHtml(req.requestor_name)} — ${escapeHtml(req.center_name)} <span class="text-black font-semibold">${formatAmount(amount)} PHP</span></p>
-          <p class="text-xs text-gray-400 mt-0.5">${dateStr}</p>
-          ${centersLine}
-          <p class="text-sm text-gray-600 mt-2">${escapeHtml(req.description || '')}</p>
-        </div>
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <p class="text-sm font-medium text-gray-800 truncate">
+          ${escapeHtml(req.requestor_name)} — ${escapeHtml(req.center_name)} / <span class="text-black font-semibold">${formatAmount(amount)} PHP</span>
+        </p>
+        <p class="text-xs text-gray-400 whitespace-nowrap">${metaLine}</p>
       </div>
 
-      <div class="border-t border-gray-100 pt-3 mt-2">
+      <p class="text-xs text-gray-500 mt-1 truncate" title="${escapeHtml(req.description || '')}">${escapeHtml(req.description || '')}</p>
+
+      <div class="border-t border-gray-100 pt-2 mt-2">
         ${catSection}
-      </div>
-
-      <div class="flex items-center gap-2 mt-3">
-        <label class="text-xs text-gray-400 font-medium shrink-0">ALLOC</label>
-        <input type="text" class="comptaAllocInput border border-gray-200 rounded-lg px-2 py-1 text-sm w-32" value="${escapeHtml(allocValue)}">
       </div>
     `;
 
@@ -2609,10 +2611,30 @@ async function loadComptaCategories() {
     const json = await res.json();
     comptaCategoriesCache = json.data || [];
     renderComptaCategoriesTable();
+    populateNewCatMainSelect();
   } catch (err) {
     console.error(err);
     notify('Error loading categories', 'error');
   }
+}
+
+// 🔒 Le select "Main category" ne propose que les groupes déjà existants —
+// impossible de créer un nouveau groupe depuis le formulaire d'ajout.
+function populateNewCatMainSelect() {
+  const select = document.getElementById('newCatMain');
+  if (!select) return;
+
+  const currentValue = select.value;
+  const mains = [...new Set(
+    comptaCategoriesCache
+      .map(c => (c.main_category || '').trim())
+      .filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b));
+
+  select.innerHTML = '<option value="">Main category…</option>' +
+    mains.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+
+  if (mains.includes(currentValue)) select.value = currentValue;
 }
 
 function renderComptaCategoriesTable() {
