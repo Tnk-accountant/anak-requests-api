@@ -293,59 +293,6 @@
           <option value="PendingValidation">Pending Validation</option>
         </select>
 
-        <button id="refreshBtn"
-          class="h-10 px-4 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition">
-          Refresh
-        </button>
-
-        <div class="relative inline-block">
-
-          <button
-            id="exportMenuBtn"
-         class="h-10 px-4 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition flex items-center gap-2">
-
-            Export
-
-            <svg xmlns="http://www.w3.org/2000/svg"
-                class="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor">
-
-              <path stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"/>
-
-            </svg>
-
-          </button>
-
-          <div
-            id="exportMenu"
-            class="hidden absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-200 z-50">
-
-            <button
-              id="exportBtn"
-              class="w-full text-left px-4 py-3 hover:bg-gray-50 rounded-t-xl">
-              📄 Export Requests
-            </button>
-
-            <button
-              id="exportDispatchBtn"
-              class="w-full text-left px-4 py-3 hover:bg-gray-50 rounded-b-xl">
-              📊 Export Dispatch
-            </button>
-
-          </div>
-
-        </div>
-
-        <button id="weeklyCleanupBtn"
-          class="h-10 px-4 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition">
-          Clean up closed/cancelled
-        </button>
-
       </div>
 
     </div>
@@ -1981,52 +1928,6 @@ async function initAdminPage() {
 
     const requestsTableBody = document.getElementById('requestsTableBody');
     const filterStatus = document.getElementById('filterStatus');
-    const refreshBtn = document.getElementById('refreshBtn');
-
-    // =========================================================
-    // 🧹 NETTOYAGE HEBDOMADAIRE — Closed/Cancelled
-    // Export Excel → Google Drive, puis suppression définitive.
-    // Automatique côté serveur chaque lundi ; ce bouton permet
-    // de le déclencher manuellement (ex: avant les vacances).
-    // =========================================================
-    document.getElementById('weeklyCleanupBtn')?.addEventListener('click', async () => {
-      const btn = document.getElementById('weeklyCleanupBtn');
-
-      const ok = await showConfirmModal({
-        title: 'Clean up closed & cancelled requests?',
-        message: 'All closed and cancelled requests will be exported to Google Drive, then permanently deleted from the app. This cannot be undone — make sure the export succeeds before confirming.',
-        icon: '🧹',
-        confirmText: 'Export & delete',
-        danger: true
-      });
-      if (!ok) return;
-
-      btn.disabled = true;
-      const originalText = btn.textContent;
-      btn.textContent = 'Cleaning up...';
-
-      try {
-        const res = await fetchWithAuth(`${API_URL}/admin/weekly-cleanup`, { method: 'POST' });
-        const result = await res.json().catch(() => ({}));
-
-        if (!res.ok) throw new Error(result.error || 'Cleanup failed');
-
-        if (result.skipped) {
-          notify('Nothing to clean up right now', 'info');
-        } else {
-          notify(`${result.deleted} requests exported and removed`, 'success');
-        }
-
-        await fetchRequests();
-
-      } catch (err) {
-        console.error(err);
-        notify('Cleanup failed: ' + (err.message || 'unknown error'), 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
-      }
-    });
 
     const searchName = document.getElementById('searchName');
     const searchCenter = document.getElementById('searchCenter');
@@ -2454,7 +2355,7 @@ function renderComptaList() {
 
   comptaItems.forEach(req => {
     const card = document.createElement('div');
-    card.className = 'bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm';
+    card.className = 'bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm transition-colors duration-700';
     card.dataset.requestId = req.request_id;
 
     const amount = req.amount_spent ?? req.approved_amount ?? req.amount_requested ?? 0;
@@ -2465,7 +2366,7 @@ function renderComptaList() {
     if (req.cat_code) {
       catSection = `
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 text-xs font-semibold">${escapeHtml(req.cat_code)} — ${escapeHtml(req.category_name || '')}</span>
+          <span class="px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 text-xs font-semibold">✅ ${escapeHtml(req.cat_code)} — ${escapeHtml(req.category_name || '')}</span>
           <button class="comptaChangeCat text-xs text-indigo-600 hover:underline">Change</button>
           <span class="text-gray-200">|</span>
           <label class="text-xs text-gray-400 font-medium">ALLOC</label>
@@ -2587,6 +2488,21 @@ function renderComptaLocalSearchResults(query, resultsBox, requestId) {
   });
 }
 
+// ✨ Flash vert bref sur toute la carte — confirmation visuelle rapide
+// qu'un CAT vient d'être assigné (en plus de la coche ✅ permanente).
+function flashComptaCardGreen(requestId) {
+  const card = Array.from(document.querySelectorAll('#comptaList > div'))
+    .find(el => el.dataset.requestId === requestId);
+  if (!card) return;
+
+  card.classList.remove('border-gray-200');
+  card.classList.add('bg-green-50', 'border-green-200');
+  setTimeout(() => {
+    card.classList.remove('bg-green-50', 'border-green-200');
+    card.classList.add('border-gray-200');
+  }, 700);
+}
+
 async function assignComptaCat(requestId, catCode) {
   const req = comptaItems.find(r => r.request_id === requestId);
   if (!req) return;
@@ -2598,6 +2514,7 @@ async function assignComptaCat(requestId, catCode) {
   req.cat_code = catCode;
   req.category_name = (comptaAllCategoriesCache || []).find(c => c.code === catCode)?.category || '';
   renderComptaList();
+  flashComptaCardGreen(requestId);
 
   try {
     const res = await fetchWithAuth(`${API_URL}/requests/${requestId}/cat`, {
@@ -3470,7 +3387,6 @@ document.getElementById('editUserDeleteBtn')?.addEventListener('click', async ()
 
     // Écoute des changements pour filtrage et rafraîchissement
     filterStatus.addEventListener('change', fetchRequests);
-    refreshBtn.addEventListener('click', fetchRequests);
 
 // =========================================================
 // BIND ROW ACTIONS — réutilisé par le tableau ET les cartes mobiles
@@ -3666,9 +3582,7 @@ function bindRowActions(req, tr) {
         return;
       }
 
-      disableButtons([approveBtn, rejectBtn]);
       await updateRequest(req, 'Approved', currentAdmin, approved_amount, tr);
-      enableButtons([approveBtn, rejectBtn]);
     });
 
     if (activeTab === 'liquidation') {
@@ -3749,16 +3663,12 @@ function bindRowActions(req, tr) {
           return;
         }
 
-        disableButtons([approveBtn, rejectBtn]);
         await updateRequest(req, 'Approved', currentAdmin, approved_amount, tr);
-        enableButtons([approveBtn, rejectBtn]);
       });
     }
 
     rejectBtn.addEventListener('click', async () => {
-      disableButtons([approveBtn, rejectBtn]);
       await updateRequest(req, 'Rejected', currentAdmin, null, tr);
-      enableButtons([approveBtn, rejectBtn]);
     });
   }
 }
@@ -3780,7 +3690,7 @@ function renderMobileCards(data) {
     const card = document.createElement('div');
     card.className = `
       bg-white rounded-2xl border border-gray-200 shadow-sm p-4
-      ${isPurchaser ? 'bg-orange-50 border-orange-200' : ''}
+      ${isPurchaser ? 'bg-yellow-50 border-yellow-200' : ''}
     `;
 
     const paymentLabel =
@@ -3936,7 +3846,7 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
     const isPurchaser = (req.profile_label || '').toLowerCase().includes('purchas');
 
    tr.className =
-    `group text-sm text-gray-700 border-b border-gray-100 transition-colors duration-75 hover:bg-gray-100 hover:border-l-gray-200 ${isPurchaser ? 'bg-orange-50' : ''}`;
+    `group text-sm text-gray-700 border-b border-gray-100 transition-colors duration-75 hover:bg-gray-100 hover:border-l-gray-200 ${isPurchaser ? 'bg-yellow-50' : ''}`;
 
     tr.innerHTML = `
       <td class="pl-6 pr-4 font-medium text-gray-700">${escapeHtml(req.request_id)}</td>
@@ -4010,7 +3920,7 @@ document.getElementById('clearFiltersMobileAdminBtn')?.addEventListener('click',
   ${req.approved_by || ''}
 </td>
 
-<td class="actions-cell sticky right-0 z-10 group-hover:bg-gray-100 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.15)] ${isPurchaser ? 'bg-orange-50' : 'bg-white'}">
+<td class="actions-cell sticky right-0 z-10 group-hover:bg-gray-100 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.15)] ${isPurchaser ? 'bg-yellow-50' : 'bg-white'}">
 
         <div class="flex justify-center items-center gap-2 flex-wrap">
 
@@ -4078,221 +3988,78 @@ bindRowActions(req, tr);
     nextPageBtn.addEventListener('click', () => { const totalPages=Math.ceil(filteredRequests.length/rowsPerPage); if(currentPage<totalPages){currentPage++; renderPage(); updatePaginationInfo();} });
 
     async function updateRequest(req, status, approved_by, approved_amount, row) {
-    try {
-    const bodyData = { status, approved_by };
-    if (approved_amount !== null) bodyData.approved_amount = approved_amount;
 
-    const res = await fetchWithAuth(`${API_URL}/requests/${req.request_id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(bodyData)
-    });
+    const statusCell = row.querySelector('.status-cell span');
+    const approvedByCell = row.querySelector('.approved-by-cell');
+    const approvedAmountCell = row.querySelector('.approved-amount-cell');
+    const input = row.querySelector('.approvedAmount');
+    const approveBtn = row.querySelector('.approveBtn');
+    const rejectBtn = row.querySelector('.rejectBtn');
 
-    const result = await res.json();
+    // ⚡ Snapshot pour rollback si le serveur refuse
+    const prevReq = { ...req };
+    const prevStatusText = statusCell?.textContent;
+    const prevStatusClass = statusCell?.className;
+    const prevApprovedByText = approvedByCell?.textContent;
+    const prevApprovedAmountText = approvedAmountCell?.textContent;
 
-    if (!result.error) {
-
-    Object.assign(req, result.data);
-
-    const index = allRequests.findIndex(
-      r => r.request_id === req.request_id
-    );
-
-    if (index !== -1) {
-      allRequests[index] = result.data;
-    }
-
-
-      // 1️⃣ Mise à jour de l'affichage
-      const statusCell = row.querySelector('.status-cell span');
+    // 1️⃣ Mise à jour immédiate — l'écran réagit tout de suite, sans
+    // attendre le réseau (clac clac).
+    if (statusCell) {
       statusCell.textContent = status;
       statusCell.className = `px-2 py-0.5 rounded-full text-white text-[11px] ${statusClasses[status] || ''}`;
-
-      row.querySelector('.approved-by-cell').textContent = approved_by || '';
-
-      row.querySelector('.approved-amount-cell').textContent =
-        approved_amount != null ? formatAmount(approved_amount) : '';
-
-
-      // 2️⃣ 🔒 Verrouillage automatique APRÈS mise à jour
-      const input = row.querySelector('.approvedAmount');
-      const approveBtn = row.querySelector('.approveBtn');
-      const rejectBtn = row.querySelector('.rejectBtn');
-
-      if (input) {
-        input.readOnly = true;
-        input.classList.add(
-          'opacity-50',
-          'cursor-not-allowed'
-        );
-      }
-
-      if (approveBtn) {
-        approveBtn.disabled = true;
-        approveBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      }
-
-      if (rejectBtn) {
-        rejectBtn.disabled = true;
-        rejectBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      }
-
-      updateToLiquidateSummary();
-      setRowActionState(req, row);
-
-
-    } else {
-      notify(result.error || "Error", "error");
+    }
+    if (approvedByCell) approvedByCell.textContent = approved_by || '';
+    if (approvedAmountCell) {
+      approvedAmountCell.textContent = approved_amount != null ? formatAmount(approved_amount) : '';
     }
 
+    req.status = status;
+    req.approved_by = approved_by;
+    if (approved_amount != null) req.approved_amount = approved_amount;
 
-    
+    setRowActionState(req, row);
+    updateToLiquidateSummary();
+
+    // 2️⃣ Requête réseau en arrière-plan
+    try {
+      const bodyData = { status, approved_by };
+      if (approved_amount !== null) bodyData.approved_amount = approved_amount;
+
+      const res = await fetchWithAuth(`${API_URL}/requests/${req.request_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || result.error) {
+        throw new Error(result.error || 'Update failed');
+      }
+
+      Object.assign(req, result.data);
+
+      const index = allRequests.findIndex(r => r.request_id === req.request_id);
+      if (index !== -1) allRequests[index] = result.data;
+
     } catch (err) {
-    console.error(err);
-    notify("Unable to reach server", "error");
+      console.error(err);
+      notify(err.message || "Unable to reach server", "error");
+
+      // ↩️ rollback complet — visuel + logique
+      Object.assign(req, prevReq);
+      if (statusCell) {
+        statusCell.textContent = prevStatusText;
+        statusCell.className = prevStatusClass;
+      }
+      if (approvedByCell) approvedByCell.textContent = prevApprovedByText;
+      if (approvedAmountCell) approvedAmountCell.textContent = prevApprovedAmountText;
+
+      setRowActionState(req, row);
+      updateToLiquidateSummary();
     }
     }
-
-    // Fonctions utilitaires pour activer/désactiver les boutons
-    function disableButtons(buttons) {
-      buttons.forEach(btn => (btn.disabled = true));
-    }
-
-    function enableButtons(buttons) {
-      buttons.forEach(btn => (btn.disabled = false));
-    }
-
-     // Export Excel
-      const exportBtn = document.getElementById('exportBtn');
-
-      const exportMenuBtn = document.getElementById("exportMenuBtn");
-      const exportMenu = document.getElementById("exportMenu");
-           
-      
-      exportMenuBtn.addEventListener("click", (e) => {
-
-        e.stopPropagation();
-
-        exportMenu.classList.toggle("hidden");
-
-      });
-
-      document.addEventListener("click", () => {
-
-        exportMenu.classList.add("hidden");
-
-});
-
-      exportBtn.addEventListener('click', () => {
-
-        exportMenu.classList.add("hidden");
-
-        if (!filteredRequests.length) {
-          notify("No data to export", "error");
-          return;
-        }
-
-        const wsData = filteredRequests.map(r => ({
-          ID: r.request_id,
-          Date: new Date(r.timestamp).toLocaleDateString('en-US'),
-          "Requested by": r.requestor_name,
-          Center: r.center_name,
-          Type: r.request_type === "FundTransfer" ? "FT" : "CA",
-
-          "Requested amount": r.amount_requested,
-          "Approved amount": r.approved_amount,
-          "Amount spent": r.amount_spent,
-          "Returned amount": r.returned_amount,
-
-          Description: r.description || '',
-          Status: r.status,
-          "Approved by": r.approved_by || ''
-        }));
-
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(wsData);
-
-        XLSX.utils.book_append_sheet(wb, ws, "Requests");
-        XLSX.writeFile(wb, "Anak_Requests.xlsx");
-      });
-
-      //DISPATCH EXPORT AUTOMATIC ================
-
-        const exportDispatchBtn = document.getElementById("exportDispatchBtn");
-
-        exportDispatchBtn.addEventListener("click", () => {
-
-          exportMenu.classList.add("hidden");
-
-          if (!filteredRequests.length) {
-            notify("No data to export", "error");
-            return;
-          }
-
-          const wsData = [];
-
-          filteredRequests
-            .filter(r => Number(r.amount_spent) > 0)
-            .forEach(r => {
-
-            const centers = [
-              r.center_name,
-              ...(r.other_centers || [])
-            ];
-
-            const total =
-                Number(r.amount_spent ?? 0);
-
-            const base = Math.floor(total / centers.length);
-            const remainder = total % centers.length;
-
-            centers.forEach((center, index) => {
-
-              const amount =
-                base + (index < remainder ? 1 : 0);
-
-              wsData.push({
-
-                ID: r.request_id,
-
-                Date: new Date(r.timestamp)
-                  .toLocaleDateString("en-US"),
-
-                Center: center,
-
-                Type:
-                  r.request_type === "FundTransfer"
-                    ? "FT"
-                    : "CA",
-
-                Amount: amount,
-
-                Description:
-                  r.description || ""
-
-              });
-
-            });
-
-          });
-
-          const wb = XLSX.utils.book_new();
-          const ws = XLSX.utils.json_to_sheet(wsData);
-
-          XLSX.utils.book_append_sheet(
-            wb,
-            ws,
-            "Dispatch"
-          );
-
-          XLSX.writeFile(
-            wb,
-            "Anak_Dispatch.xlsx"
-          );
-
-        });
 
     let evtSource = null;
     let sseReconnectTimer = null;
