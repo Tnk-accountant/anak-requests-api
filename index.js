@@ -1063,11 +1063,44 @@ function computeDefaultAlloc(request, allocFor) {
 app.get('/admin/dispatch-categories', authenticate, async (req, res) => {
   try {
     if (req.profile.role !== 'Admin') return res.status(403).json({ error: 'Forbidden' });
-    const { data, error } = await supabaseService.from('dispatch_categories').select('*').order('category');
+    const { data, error } = await supabaseService
+      .from('dispatch_categories')
+      .select('*')
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('category');
     if (error) throw error;
     res.json({ data });
   } catch (err) {
     console.error('GET /admin/dispatch-categories error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Recherche par mots-clés/description — pour le mode "recherche" de
+// l'assignation manuelle de CAT dans Accounting.
+app.get('/admin/dispatch-categories/search', authenticate, async (req, res) => {
+  try {
+    if (req.profile.role !== 'Admin') return res.status(403).json({ error: 'Forbidden' });
+    const q = (req.query.q || '').trim().toLowerCase();
+    if (!q) return res.json({ data: [] });
+
+    const { data: categories, error } = await supabaseService
+      .from('dispatch_categories')
+      .select('code, category, main_category, keywords, usage_count');
+    if (error) throw error;
+
+    const matches = (categories || [])
+      .filter(c =>
+        c.code.toLowerCase().includes(q) ||
+        (c.category || '').toLowerCase().includes(q) ||
+        (c.keywords || '').toLowerCase().includes(q)
+      )
+      .sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0))
+      .slice(0, 8);
+
+    res.json({ data: matches });
+  } catch (err) {
+    console.error('GET /admin/dispatch-categories/search error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1080,6 +1113,15 @@ app.post('/admin/dispatch-categories', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'code and category are required' });
     }
 
+    const { data: maxRow } = await supabaseService
+      .from('dispatch_categories')
+      .select('sort_order')
+      .order('sort_order', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    const nextOrder = (maxRow?.sort_order || 0) + 1;
+
     const { data, error } = await supabaseService
       .from('dispatch_categories')
       .insert({
@@ -1087,7 +1129,8 @@ app.post('/admin/dispatch-categories', authenticate, async (req, res) => {
         category: category.trim(),
         main_category: (main_category || '').trim() || null,
         keywords: (keywords || '').trim() || null,
-        usage_count: 0
+        usage_count: 0,
+        sort_order: nextOrder
       })
       .select()
       .maybeSingle();
@@ -1104,9 +1147,10 @@ app.patch('/admin/dispatch-categories/:code', authenticate, async (req, res) => 
   try {
     if (req.profile.role !== 'Admin') return res.status(403).json({ error: 'Forbidden' });
     const { code } = req.params;
-    const { category, main_category, keywords } = req.body;
+    const { code: newCode, category, main_category, keywords } = req.body;
 
     const updateData = {};
+    if (newCode !== undefined && newCode.trim()) updateData.code = newCode.trim();
     if (category !== undefined) updateData.category = category;
     if (main_category !== undefined) updateData.main_category = main_category;
     if (keywords !== undefined) updateData.keywords = keywords;
@@ -1148,7 +1192,11 @@ app.delete('/admin/dispatch-categories/:code', authenticate, async (req, res) =>
 app.get('/admin/dispatch-centers', authenticate, async (req, res) => {
   try {
     if (req.profile.role !== 'Admin') return res.status(403).json({ error: 'Forbidden' });
-    const { data, error } = await supabaseService.from('dispatch_centers').select('*').order('name');
+    const { data, error } = await supabaseService
+      .from('dispatch_centers')
+      .select('*')
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('name');
     if (error) throw error;
     res.json({ data });
   } catch (err) {
@@ -1160,14 +1208,29 @@ app.get('/admin/dispatch-centers', authenticate, async (req, res) => {
 app.post('/admin/dispatch-centers', authenticate, async (req, res) => {
   try {
     if (req.profile.role !== 'Admin') return res.status(403).json({ error: 'Forbidden' });
-    const { name, code, allocation } = req.body;
+    const { name, code, allocation, group_name } = req.body;
     if (!name || !code || !allocation) {
       return res.status(400).json({ error: 'name, code and allocation are required' });
     }
 
+    const { data: maxRow } = await supabaseService
+      .from('dispatch_centers')
+      .select('sort_order')
+      .order('sort_order', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    const nextOrder = (maxRow?.sort_order || 0) + 1;
+
     const { data, error } = await supabaseService
       .from('dispatch_centers')
-      .insert({ name: name.trim(), code: code.trim(), allocation: allocation.trim() })
+      .insert({
+        name: name.trim(),
+        code: code.trim(),
+        allocation: allocation.trim(),
+        group_name: (group_name || 'CENTERS').trim(),
+        sort_order: nextOrder
+      })
       .select()
       .maybeSingle();
 
@@ -1179,20 +1242,22 @@ app.post('/admin/dispatch-centers', authenticate, async (req, res) => {
   }
 });
 
-app.patch('/admin/dispatch-centers/:code', authenticate, async (req, res) => {
+app.patch('/admin/dispatch-centers/:id', authenticate, async (req, res) => {
   try {
     if (req.profile.role !== 'Admin') return res.status(403).json({ error: 'Forbidden' });
-    const { code } = req.params;
-    const { name, allocation } = req.body;
+    const { id } = req.params;
+    const { name, code, allocation, group_name } = req.body;
 
     const updateData = {};
     if (name !== undefined) updateData.name = name;
+    if (code !== undefined) updateData.code = code;
     if (allocation !== undefined) updateData.allocation = allocation;
+    if (group_name !== undefined) updateData.group_name = group_name;
 
     const { data, error } = await supabaseService
       .from('dispatch_centers')
       .update(updateData)
-      .eq('code', code)
+      .eq('id', id)
       .select()
       .maybeSingle();
 
@@ -1206,11 +1271,11 @@ app.patch('/admin/dispatch-centers/:code', authenticate, async (req, res) => {
   }
 });
 
-app.delete('/admin/dispatch-centers/:code', authenticate, async (req, res) => {
+app.delete('/admin/dispatch-centers/:id', authenticate, async (req, res) => {
   try {
     if (req.profile.role !== 'Admin') return res.status(403).json({ error: 'Forbidden' });
-    const { code } = req.params;
-    const { error } = await supabaseService.from('dispatch_centers').delete().eq('code', code);
+    const { id } = req.params;
+    const { error } = await supabaseService.from('dispatch_centers').delete().eq('id', id);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {
@@ -1287,20 +1352,35 @@ app.get('/admin/compta', authenticate, async (req, res) => {
 
     if (error) throw error;
 
-    const { data: centers } = await supabaseService.from('dispatch_centers').select('code, allocation');
+    const { data: centers } = await supabaseService
+      .from('dispatch_centers')
+      .select('code, allocation')
+      .eq('group_name', 'CENTERS');
     const centersMap = new Map((centers || []).map(c => [String(c.code).toUpperCase(), c.allocation]));
     const allocFor = buildAllocResolver(centersMap);
+    const allCenterCodes = new Set((centers || []).map(c => String(c.code).toUpperCase()));
 
     const { data: categories } = await supabaseService.from('dispatch_categories').select('code, category');
     const categoriesMap = new Map((categories || []).map(c => [c.code, c.category]));
 
     const enriched = await Promise.all((requests || []).map(async (r) => {
       const suggestions = r.cat_code ? [] : await computeCategorySuggestions(r.description);
+
+      const involvedCenters = [r.center_name, ...(r.other_centers || [])]
+        .filter(Boolean)
+        .map(c => String(c).toUpperCase());
+
+      const isAllCenters = allCenterCodes.size > 0 &&
+        involvedCenters.length >= allCenterCodes.size &&
+        [...allCenterCodes].every(c => involvedCenters.includes(c));
+
       return {
         ...r,
         suggestions,
         category_name: r.cat_code ? (categoriesMap.get(r.cat_code) || '') : '',
-        default_alloc: computeDefaultAlloc(r, allocFor)
+        default_alloc: computeDefaultAlloc(r, allocFor),
+        is_all_centers: isAllCenters,
+        centers_list: isAllCenters ? [] : involvedCenters
       };
     }));
 
@@ -1404,7 +1484,10 @@ app.post('/admin/dispatch-export', authenticate, async (req, res) => {
     const { data: categories } = await supabaseService.from('dispatch_categories').select('code, category');
     const categoriesMap = new Map((categories || []).map(c => [c.code, c.category]));
 
-    const { data: centers } = await supabaseService.from('dispatch_centers').select('code, allocation');
+    const { data: centers } = await supabaseService
+      .from('dispatch_centers')
+      .select('code, allocation')
+      .eq('group_name', 'CENTERS');
     const centersMap = new Map((centers || []).map(c => [String(c.code).toUpperCase(), c.allocation]));
     const allocFor = buildAllocResolver(centersMap);
 
@@ -2989,3 +3072,4 @@ app.post('/logout', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur lancé sur http://0.0.0.0:${PORT}`);
 });
+
