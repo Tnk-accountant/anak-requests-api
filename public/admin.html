@@ -164,7 +164,7 @@
 
       <button id="tabCompta"
         class="tab-btn px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap">
-      Compta
+      Accounting
       </button>
 
     </div>
@@ -557,7 +557,7 @@
 
   <div class="flex justify-between items-start mb-4 shrink-0">
     <div>
-      <h2 class="text-xl font-semibold text-gray-800">Compta — Dispatch</h2>
+      <h2 class="text-xl font-semibold text-gray-800">Accounting — Dispatch</h2>
       <p id="comptaStats" class="text-xs text-gray-400 mt-1"></p>
     </div>
 
@@ -2162,13 +2162,23 @@ let comptaItems = [];
 async function loadCompta() {
   try {
     const res = await fetchWithAuth(`${API_URL}/admin/compta`);
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error('GET /admin/compta failed:', json);
+      notify('Error loading Accounting: ' + (json.error || `status ${res.status}`), 'error');
+      comptaItems = [];
+      updateComptaStats();
+      renderComptaList();
+      return;
+    }
+
     comptaItems = json.data || [];
     updateComptaStats();
     renderComptaList();
   } catch (err) {
     console.error(err);
-    notify('Error loading Compta', 'error');
+    notify('Error loading Accounting', 'error');
   }
 }
 
@@ -2337,7 +2347,7 @@ document.getElementById('comptaExportBtn')?.addEventListener('click', async () =
       const blob = await res.blob();
       const disposition = res.headers.get('content-disposition') || '';
       const match = disposition.match(/filename="?([^"]+)"?/);
-      const fileName = match ? match[1] : 'Compta_Export.xlsx';
+      const fileName = match ? match[1] : 'Accounting_Export.xlsx';
 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -3571,7 +3581,6 @@ bindRowActions(req, tr);
 
         e.stopPropagation();
 
-        closeActionsMenu();
         exportMenu.classList.toggle("hidden");
 
       });
