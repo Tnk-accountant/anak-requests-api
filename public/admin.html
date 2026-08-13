@@ -1299,10 +1299,10 @@ let currentRequestId = null;
 
       usersSection.classList.add('hidden');
       comptaSection.classList.add('hidden');
-      tableSection.classList.remove('hidden');
+      tableSection.style.removeProperty('display');
       filtersBar.classList.remove('hidden');
       mobileRequestsSection?.classList.remove('hidden');
-      document.getElementById('kpiBanner')?.classList.remove('hidden');
+      document.getElementById('kpiBanner')?.style.removeProperty('display');
       document.getElementById('statusLegendBtn')?.classList.remove('hidden');
 
       document.getElementById('pagination').classList.remove('hidden');
@@ -1316,10 +1316,10 @@ let currentRequestId = null;
 
       usersSection.classList.add('hidden');
       comptaSection.classList.add('hidden');
-      tableSection.classList.remove('hidden');
+      tableSection.style.removeProperty('display');
       filtersBar.classList.remove('hidden');
       mobileRequestsSection?.classList.remove('hidden');
-      document.getElementById('kpiBanner')?.classList.remove('hidden');
+      document.getElementById('kpiBanner')?.style.removeProperty('display');
       document.getElementById('statusLegendBtn')?.classList.remove('hidden');
 
       applyAdvancedFilters();
@@ -1331,12 +1331,12 @@ tabUsers.onclick = () => {
 
       usersSection.classList.remove('hidden');
       comptaSection.classList.add('hidden');
-      tableSection.classList.add('hidden');
+      tableSection.style.display = 'none';
       document.getElementById('emptyStateDesktopAdmin')?.classList.add('hidden');
 
       filtersBar.classList.add('hidden'); // 🔥 C'EST ÇA QUE TU VOULAIS
       mobileRequestsSection?.classList.add('hidden');
-      document.getElementById('kpiBanner')?.classList.add('hidden');
+      document.getElementById('kpiBanner')?.style.setProperty('display', 'none');
       document.getElementById('statusLegendBtn')?.classList.add('hidden');
       document.getElementById('pagination').classList.add('hidden');
 
@@ -1350,12 +1350,12 @@ tabCompta.onclick = () => {
 
       usersSection.classList.add('hidden');
       comptaSection.classList.remove('hidden');
-      tableSection.classList.add('hidden');
+      tableSection.style.display = 'none';
       document.getElementById('emptyStateDesktopAdmin')?.classList.add('hidden');
 
       filtersBar.classList.add('hidden');
       mobileRequestsSection?.classList.add('hidden');
-      document.getElementById('kpiBanner')?.classList.add('hidden');
+      document.getElementById('kpiBanner')?.style.setProperty('display', 'none');
       document.getElementById('statusLegendBtn')?.classList.add('hidden');
       document.getElementById('pagination').classList.add('hidden');
 
@@ -1989,7 +1989,7 @@ async function initAdminPage() {
         return;
       }
 
-      banner.classList.remove('hidden');
+      banner.style.removeProperty('display');
 
       const pendingCount = allRequests.filter(r => r.status === 'Pending').length;
 
