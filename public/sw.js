@@ -31,8 +31,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Anak Requests';
   const options = {
     body: data.body || '',
-    icon: data.icon || '/favicon_io/apple-touch-icon.png',
-    badge: data.badge || '/favicon_io/favicon-32x32.png',
+    icon: data.icon || '/notification-icon-192.png',
+    badge: data.badge || '/notification-badge-96.png',
     tag: data.tag || 'anak-request',       // regroupe les notifs sur la même demande
     renotify: true,
     data: {
