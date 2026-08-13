@@ -603,55 +603,135 @@
 
       <!-- CATEGORIES PANEL -->
       <div id="comptaPanelCategories" class="hidden">
-        <div class="grid grid-cols-12 gap-2 mb-3">
-          <input id="newCatCode" placeholder="Code" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-          <input id="newCatCategory" placeholder="Category" class="col-span-4 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-          <input id="newCatMain" placeholder="Main category" class="col-span-3 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-          <input id="newCatKeywords" placeholder="Keywords, comma-separated" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-          <button id="addCatBtn" class="col-span-1 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">+</button>
+
+        <!-- LIST VIEW -->
+        <div id="comptaCategoryListView">
+          <div class="grid grid-cols-12 gap-2 mb-3">
+            <input id="newCatCode" placeholder="Code" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+            <input id="newCatCategory" placeholder="Category" class="col-span-4 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+            <input id="newCatMain" placeholder="Main category" class="col-span-3 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+            <input id="newCatKeywords" placeholder="Keywords, comma-separated" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+            <button id="addCatBtn" class="col-span-1 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">+</button>
+          </div>
+          <div id="categoriesTableWrap" class="border border-gray-200 rounded-xl overflow-hidden">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-gray-50 sticky top-0">
+                <tr>
+                  <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Code</th>
+                  <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Category</th>
+                  <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Main</th>
+                  <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Keywords</th>
+                  <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase"></th>
+                </tr>
+              </thead>
+              <tbody id="categoriesTableBody" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
         </div>
-        <div id="categoriesTableWrap" class="border border-gray-200 rounded-xl overflow-hidden">
-          <table class="min-w-full text-left text-sm">
-            <thead class="bg-gray-50 sticky top-0">
-              <tr>
-                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Code</th>
-                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Main</th>
-                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Keywords</th>
-                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase"></th>
-              </tr>
-            </thead>
-            <tbody id="categoriesTableBody" class="divide-y divide-gray-100"></tbody>
-          </table>
+
+        <!-- DETAIL / EDIT VIEW -->
+        <div id="comptaCategoryDetailView" class="hidden">
+          <button id="catDetailBackBtn" type="button" class="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800 mb-4 font-medium">
+            ← Back to list
+          </button>
+
+          <div class="space-y-4 max-w-lg">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Code</label>
+              <input id="catDetailCode" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Category</label>
+              <input id="catDetailCategory" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Main category</label>
+              <input id="catDetailMain" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Keywords</label>
+              <div id="catDetailKeywordsList" class="flex flex-wrap gap-2 mb-2 min-h-[2rem]"></div>
+              <div class="flex gap-2">
+                <input id="catDetailNewKeyword" placeholder="Add a keyword and press Enter" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                <button id="catDetailAddKeywordBtn" type="button" class="bg-gray-800 text-white px-3 rounded-lg text-sm hover:bg-gray-900">+ Add</button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+              <button id="catDetailDeleteBtn" type="button" class="text-red-500 text-xs hover:underline">⚠️ Delete this category</button>
+              <button id="catDetailSaveBtn" type="button" class="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Save changes</button>
+            </div>
+          </div>
         </div>
+
       </div>
 
       <!-- CENTERS PANEL -->
       <div id="comptaPanelCenters" class="hidden">
-        <div class="grid grid-cols-12 gap-2 mb-3">
-          <select id="newCenterGroup" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
-            <option value="CENTERS">CENTERS</option>
-            <option value="BANK ACCOUNTS">BANK ACCOUNTS</option>
-            <option value="TRANSFERS OF CASH">TRANSFERS OF CASH</option>
-          </select>
-          <input id="newCenterName" placeholder="Name" class="col-span-4 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-          <input id="newCenterCode" placeholder="Code (ex: RB5)" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-          <input id="newCenterAlloc" placeholder="Allocation (ex: A3500)" class="col-span-3 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-          <button id="addCenterBtn2" class="col-span-1 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">+</button>
+
+        <!-- LIST VIEW -->
+        <div id="comptaCenterListView">
+          <div class="grid grid-cols-12 gap-2 mb-3">
+            <select id="newCenterGroup" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
+              <option value="CENTERS">CENTERS</option>
+              <option value="BANK ACCOUNTS">BANK ACCOUNTS</option>
+              <option value="TRANSFERS OF CASH">TRANSFERS OF CASH</option>
+            </select>
+            <input id="newCenterName" placeholder="Name" class="col-span-4 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+            <input id="newCenterCode" placeholder="Code (ex: RB5)" class="col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+            <input id="newCenterAlloc" placeholder="Allocation (ex: A3500)" class="col-span-3 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+            <button id="addCenterBtn2" class="col-span-1 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">+</button>
+          </div>
+          <div class="border border-gray-200 rounded-xl overflow-hidden">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-gray-50 sticky top-0">
+                <tr>
+                  <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Code</th>
+                  <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Allocation</th>
+                  <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase"></th>
+                </tr>
+              </thead>
+              <tbody id="centersTableBody" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
         </div>
-        <div class="border border-gray-200 rounded-xl overflow-hidden">
-          <table class="min-w-full text-left text-sm">
-            <thead class="bg-gray-50 sticky top-0">
-              <tr>
-                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Code</th>
-                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase">Allocation</th>
-                <th class="py-2 px-3 text-xs font-medium text-gray-500 uppercase"></th>
-              </tr>
-            </thead>
-            <tbody id="centersTableBody" class="divide-y divide-gray-100"></tbody>
-          </table>
+
+        <!-- DETAIL / EDIT VIEW -->
+        <div id="comptaCenterDetailView" class="hidden">
+          <button id="centerDetailBackBtn" type="button" class="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800 mb-4 font-medium">
+            ← Back to list
+          </button>
+
+          <div class="space-y-4 max-w-lg">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Group</label>
+              <select id="centerDetailGroup" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                <option value="CENTERS">CENTERS</option>
+                <option value="BANK ACCOUNTS">BANK ACCOUNTS</option>
+                <option value="TRANSFERS OF CASH">TRANSFERS OF CASH</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Name</label>
+              <input id="centerDetailName" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Code</label>
+              <input id="centerDetailCode" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Allocation</label>
+              <input id="centerDetailAlloc" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono">
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+              <button id="centerDetailDeleteBtn" type="button" class="text-red-500 text-xs hover:underline">⚠️ Delete this mapping</button>
+              <button id="centerDetailSaveBtn" type="button" class="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Save changes</button>
+            </div>
+          </div>
         </div>
+
       </div>
 
       <!-- FILLER PHRASES PANEL -->
@@ -2173,19 +2253,29 @@ function applyUserFilters() {
 // =========================================================
 
 let comptaItems = [];
+let comptaAllCategoriesCache = null; // préchargée une fois pour la recherche instantanée
 
 async function loadCompta() {
   try {
-    const res = await fetchWithAuth(`${API_URL}/admin/compta`);
-    const json = await res.json().catch(() => ({}));
+    const [comptaRes, categoriesRes] = await Promise.all([
+      fetchWithAuth(`${API_URL}/admin/compta`),
+      comptaAllCategoriesCache ? Promise.resolve(null) : fetchWithAuth(`${API_URL}/admin/dispatch-categories`)
+    ]);
 
-    if (!res.ok) {
+    const json = await comptaRes.json().catch(() => ({}));
+
+    if (!comptaRes.ok) {
       console.error('GET /admin/compta failed:', json);
-      notify('Error loading Accounting: ' + (json.error || `status ${res.status}`), 'error');
+      notify('Error loading Accounting: ' + (json.error || `status ${comptaRes.status}`), 'error');
       comptaItems = [];
       updateComptaStats();
       renderComptaList();
       return;
+    }
+
+    if (categoriesRes) {
+      const catJson = await categoriesRes.json().catch(() => ({}));
+      comptaAllCategoriesCache = catJson.data || [];
     }
 
     comptaItems = json.data || [];
@@ -2302,7 +2392,6 @@ function renderComptaList() {
     const modeSearchBtn = card.querySelector('.comptaModeSearch');
 
     let currentMode = 'code';
-    let searchDebounce = null;
 
     function setMode(mode) {
       currentMode = mode;
@@ -2336,14 +2425,13 @@ function renderComptaList() {
 
     manualInput?.addEventListener('input', () => {
       if (currentMode !== 'search') return;
-      clearTimeout(searchDebounce);
       const q = manualInput.value.trim();
       if (!q) {
         searchResultsBox.classList.add('hidden');
         searchResultsBox.innerHTML = '';
         return;
       }
-      searchDebounce = setTimeout(() => runComptaCategorySearch(q, searchResultsBox, req.request_id), 300);
+      renderComptaLocalSearchResults(q, searchResultsBox, req.request_id);
     });
 
     card.querySelector('.comptaChangeCat')?.addEventListener('click', () => {
@@ -2358,32 +2446,35 @@ function renderComptaList() {
   });
 }
 
-async function runComptaCategorySearch(query, resultsBox, requestId) {
-  try {
-    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-categories/search?q=${encodeURIComponent(query)}`);
-    const json = await res.json().catch(() => ({}));
-    const results = json.data || [];
+function renderComptaLocalSearchResults(query, resultsBox, requestId) {
+  const q = query.toLowerCase();
+  const source = comptaAllCategoriesCache || [];
 
-    if (results.length === 0) {
-      resultsBox.classList.remove('hidden');
-      resultsBox.innerHTML = '<p class="text-xs text-gray-400">No match found.</p>';
-      return;
-    }
+  const results = source
+    .filter(c =>
+      c.code.toLowerCase().includes(q) ||
+      (c.category || '').toLowerCase().includes(q) ||
+      (c.keywords || '').toLowerCase().includes(q)
+    )
+    .sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0))
+    .slice(0, 10);
 
+  if (results.length === 0) {
     resultsBox.classList.remove('hidden');
-    resultsBox.innerHTML = results.map(r => `
-      <button class="comptaSearchResultBtn px-2.5 py-1 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-medium transition" data-code="${escapeHtml(r.code)}">
-        ${escapeHtml(r.code)} — ${escapeHtml(r.category)}
-      </button>
-    `).join('');
-
-    resultsBox.querySelectorAll('.comptaSearchResultBtn').forEach(btn => {
-      btn.addEventListener('click', () => assignComptaCat(requestId, btn.dataset.code));
-    });
-
-  } catch (err) {
-    console.error(err);
+    resultsBox.innerHTML = '<p class="text-xs text-gray-400">No match found.</p>';
+    return;
   }
+
+  resultsBox.classList.remove('hidden');
+  resultsBox.innerHTML = results.map(r => `
+    <button class="comptaSearchResultBtn px-2.5 py-1 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-medium transition" data-code="${escapeHtml(r.code)}">
+      ${escapeHtml(r.code)} — ${escapeHtml(r.category)}
+    </button>
+  `).join('');
+
+  resultsBox.querySelectorAll('.comptaSearchResultBtn').forEach(btn => {
+    btn.addEventListener('click', () => assignComptaCat(requestId, btn.dataset.code));
+  });
 }
 
 async function assignComptaCat(requestId, catCode) {
@@ -2491,6 +2582,10 @@ document.getElementById('closeComptaSettingsModal')?.addEventListener('click', (
   const modal = document.getElementById('comptaSettingsModal');
   modal.classList.add('hidden');
   modal.classList.remove('flex');
+  document.getElementById('comptaCategoryDetailView')?.classList.add('hidden');
+  document.getElementById('comptaCategoryListView')?.classList.remove('hidden');
+  document.getElementById('comptaCenterDetailView')?.classList.add('hidden');
+  document.getElementById('comptaCenterListView')?.classList.remove('hidden');
 });
 
 function switchComptaSettingsTab(tab) {
@@ -2499,6 +2594,12 @@ function switchComptaSettingsTab(tab) {
     document.getElementById(`comptaTab${t.charAt(0).toUpperCase() + t.slice(1)}`)?.classList.toggle('bg-gray-100', t === tab);
     document.getElementById(`comptaPanel${t.charAt(0).toUpperCase() + t.slice(1)}`)?.classList.toggle('hidden', t !== tab);
   });
+
+  // Toujours revenir à la vue liste en changeant d'onglet
+  document.getElementById('comptaCategoryDetailView')?.classList.add('hidden');
+  document.getElementById('comptaCategoryListView')?.classList.remove('hidden');
+  document.getElementById('comptaCenterDetailView')?.classList.add('hidden');
+  document.getElementById('comptaCenterListView')?.classList.remove('hidden');
 
   if (tab === 'categories') loadComptaCategories();
   if (tab === 'centers') loadComptaCenters();
@@ -2556,7 +2657,7 @@ function renderComptaCategoriesTable() {
 
     tr.addEventListener('click', (e) => {
       if (e.target.closest('.deleteCatBtn')) return;
-      openCategoryEditRow(tr, cat);
+      openCategoryDetailView(cat);
     });
 
     tbody.appendChild(tr);
@@ -2584,56 +2685,125 @@ function renderComptaCategoriesTable() {
   });
 }
 
-function openCategoryEditRow(tr, cat) {
-  tr.innerHTML = `
-    <td class="py-2 px-1">
-      <input class="editCatCode w-full border border-gray-200 rounded px-1.5 py-1 text-xs font-mono" value="${escapeHtml(cat.code)}">
-    </td>
-    <td class="py-2 px-1">
-      <input class="editCatCategory w-full border border-gray-200 rounded px-1.5 py-1 text-sm" value="${escapeHtml(cat.category)}">
-    </td>
-    <td class="py-2 px-1">
-      <input class="editCatMain w-full border border-gray-200 rounded px-1.5 py-1 text-xs" value="${escapeHtml(cat.main_category || '')}">
-    </td>
-    <td class="py-2 px-1">
-      <input class="editCatKeywords w-full border border-gray-200 rounded px-1.5 py-1 text-xs" value="${escapeHtml(cat.keywords || '')}">
-    </td>
-    <td class="py-2 px-1 text-right whitespace-nowrap">
-      <button class="saveCatEditBtn text-green-600 hover:text-green-800 text-xs font-semibold px-1">Save</button>
-      <button class="cancelCatEditBtn text-gray-400 hover:text-gray-600 text-xs px-1">✕</button>
-    </td>
-  `;
+// =========================================================
+// Panneau détail — Catégorie (liste ↔ édition, dans la même fenêtre)
+// =========================================================
+let catDetailKeywords = [];
+let catDetailOriginalCode = null;
 
-  tr.querySelector('.cancelCatEditBtn').addEventListener('click', () => renderComptaCategoriesTable());
+function openCategoryDetailView(cat) {
+  document.getElementById('comptaCategoryListView').classList.add('hidden');
+  document.getElementById('comptaCategoryDetailView').classList.remove('hidden');
 
-  tr.querySelector('.saveCatEditBtn').addEventListener('click', async () => {
-    const newCode = tr.querySelector('.editCatCode').value.trim();
-    const category = tr.querySelector('.editCatCategory').value.trim();
-    const main_category = tr.querySelector('.editCatMain').value.trim();
-    const keywords = tr.querySelector('.editCatKeywords').value.trim();
+  catDetailOriginalCode = cat.code;
+  document.getElementById('catDetailCode').value = cat.code;
+  document.getElementById('catDetailCategory').value = cat.category;
+  document.getElementById('catDetailMain').value = cat.main_category || '';
 
-    if (!newCode || !category) {
-      notify('Code and Category are required', 'error');
-      return;
-    }
+  catDetailKeywords = (cat.keywords || '')
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean);
 
-    try {
-      const res = await fetchWithAuth(`${API_URL}/admin/dispatch-categories/${encodeURIComponent(cat.code)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: newCode, category, main_category, keywords })
-      });
-      const result = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(result.error || 'Failed');
+  renderCatDetailKeywords();
+}
 
-      notify('Category updated', 'success');
-      loadComptaCategories();
+function closeCategoryDetailView() {
+  document.getElementById('comptaCategoryDetailView').classList.add('hidden');
+  document.getElementById('comptaCategoryListView').classList.remove('hidden');
+  loadComptaCategories();
+}
 
-    } catch (err) {
-      notify(err.message || 'Failed to update category', 'error');
-    }
+function renderCatDetailKeywords() {
+  const box = document.getElementById('catDetailKeywordsList');
+  if (!box) return;
+
+  if (catDetailKeywords.length === 0) {
+    box.innerHTML = '<p class="text-xs text-gray-400">No keywords yet.</p>';
+    return;
+  }
+
+  box.innerHTML = catDetailKeywords.map((kw, i) => `
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">
+      ${escapeHtml(kw)}
+      <button class="removeCatKeywordBtn text-gray-400 hover:text-red-600 font-bold" data-index="${i}">✕</button>
+    </span>
+  `).join('');
+
+  box.querySelectorAll('.removeCatKeywordBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      catDetailKeywords.splice(Number(btn.dataset.index), 1);
+      renderCatDetailKeywords();
+    });
   });
 }
+
+function addCatDetailKeyword() {
+  const input = document.getElementById('catDetailNewKeyword');
+  const value = input.value.trim();
+  if (!value) return;
+  if (!catDetailKeywords.includes(value)) catDetailKeywords.push(value);
+  input.value = '';
+  renderCatDetailKeywords();
+}
+
+document.getElementById('catDetailAddKeywordBtn')?.addEventListener('click', addCatDetailKeyword);
+document.getElementById('catDetailNewKeyword')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addCatDetailKeyword();
+  }
+});
+
+document.getElementById('catDetailBackBtn')?.addEventListener('click', closeCategoryDetailView);
+
+document.getElementById('catDetailSaveBtn')?.addEventListener('click', async () => {
+  const newCode = document.getElementById('catDetailCode').value.trim();
+  const category = document.getElementById('catDetailCategory').value.trim();
+  const main_category = document.getElementById('catDetailMain').value.trim();
+  const keywords = catDetailKeywords.join(',');
+
+  if (!newCode || !category) {
+    notify('Code and Category are required', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-categories/${encodeURIComponent(catDetailOriginalCode)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: newCode, category, main_category, keywords })
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.error || 'Failed');
+
+    notify('Category updated', 'success');
+    comptaAllCategoriesCache = null; // force le rechargement pour la recherche instantanée
+    closeCategoryDetailView();
+
+  } catch (err) {
+    notify(err.message || 'Failed to update category', 'error');
+  }
+});
+
+document.getElementById('catDetailDeleteBtn')?.addEventListener('click', async () => {
+  const ok = await showConfirmModal({
+    title: 'Delete this category?',
+    message: `Code ${catDetailOriginalCode} will be permanently removed.`,
+    confirmText: 'Delete'
+  });
+  if (!ok) return;
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-categories/${encodeURIComponent(catDetailOriginalCode)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error();
+    notify('Category deleted', 'success');
+    comptaAllCategoriesCache = null;
+    closeCategoryDetailView();
+  } catch (err) {
+    notify('Delete failed', 'error');
+  }
+});
 
 document.getElementById('addCatBtn')?.addEventListener('click', async () => {
   const code = document.getElementById('newCatCode').value.trim();
@@ -2713,7 +2883,7 @@ function renderComptaCentersTable() {
 
     tr.addEventListener('click', (e) => {
       if (e.target.closest('.deleteCenterBtn')) return;
-      openCenterEditRow(tr, c);
+      openCenterDetailView(c);
     });
 
     tbody.appendChild(tr);
@@ -2741,58 +2911,75 @@ function renderComptaCentersTable() {
   });
 }
 
-function openCenterEditRow(tr, c) {
-  const groupOptions = ['CENTERS', 'BANK ACCOUNTS', 'TRANSFERS OF CASH'];
+// =========================================================
+// Panneau détail — Centre (liste ↔ édition, dans la même fenêtre)
+// =========================================================
+let centerDetailId = null;
 
-  tr.innerHTML = `
-    <td class="py-2 px-1">
-      <input class="editCenterName w-full border border-gray-200 rounded px-1.5 py-1 text-sm" value="${escapeHtml(c.name)}">
-      <select class="editCenterGroup w-full border border-gray-200 rounded px-1.5 py-1 text-[11px] mt-1">
-        ${groupOptions.map(g => `<option value="${g}" ${g === c.group_name ? 'selected' : ''}>${g}</option>`).join('')}
-      </select>
-    </td>
-    <td class="py-2 px-1">
-      <input class="editCenterCode w-full border border-gray-200 rounded px-1.5 py-1 text-xs font-mono" value="${escapeHtml(c.code)}">
-    </td>
-    <td class="py-2 px-1">
-      <input class="editCenterAlloc w-full border border-gray-200 rounded px-1.5 py-1 text-xs font-mono" value="${escapeHtml(c.allocation)}">
-    </td>
-    <td class="py-2 px-1 text-right whitespace-nowrap">
-      <button class="saveCenterEditBtn text-green-600 hover:text-green-800 text-xs font-semibold px-1">Save</button>
-      <button class="cancelCenterEditBtn text-gray-400 hover:text-gray-600 text-xs px-1">✕</button>
-    </td>
-  `;
+function openCenterDetailView(c) {
+  document.getElementById('comptaCenterListView').classList.add('hidden');
+  document.getElementById('comptaCenterDetailView').classList.remove('hidden');
 
-  tr.querySelector('.cancelCenterEditBtn').addEventListener('click', () => renderComptaCentersTable());
-
-  tr.querySelector('.saveCenterEditBtn').addEventListener('click', async () => {
-    const name = tr.querySelector('.editCenterName').value.trim();
-    const code = tr.querySelector('.editCenterCode').value.trim();
-    const allocation = tr.querySelector('.editCenterAlloc').value.trim();
-    const group_name = tr.querySelector('.editCenterGroup').value;
-
-    if (!name || !code || !allocation) {
-      notify('Name, code and allocation are required', 'error');
-      return;
-    }
-
-    try {
-      const res = await fetchWithAuth(`${API_URL}/admin/dispatch-centers/${encodeURIComponent(c.id)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, code, allocation, group_name })
-      });
-      const result = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(result.error || 'Failed');
-
-      notify('Center updated', 'success');
-      loadComptaCenters();
-
-    } catch (err) {
-      notify(err.message || 'Failed to update center', 'error');
-    }
-  });
+  centerDetailId = c.id;
+  document.getElementById('centerDetailGroup').value = c.group_name || 'CENTERS';
+  document.getElementById('centerDetailName').value = c.name;
+  document.getElementById('centerDetailCode').value = c.code;
+  document.getElementById('centerDetailAlloc').value = c.allocation;
 }
+
+function closeCenterDetailView() {
+  document.getElementById('comptaCenterDetailView').classList.add('hidden');
+  document.getElementById('comptaCenterListView').classList.remove('hidden');
+  loadComptaCenters();
+}
+
+document.getElementById('centerDetailBackBtn')?.addEventListener('click', closeCenterDetailView);
+
+document.getElementById('centerDetailSaveBtn')?.addEventListener('click', async () => {
+  const name = document.getElementById('centerDetailName').value.trim();
+  const code = document.getElementById('centerDetailCode').value.trim();
+  const allocation = document.getElementById('centerDetailAlloc').value.trim();
+  const group_name = document.getElementById('centerDetailGroup').value;
+
+  if (!name || !code || !allocation) {
+    notify('Name, code and allocation are required', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-centers/${encodeURIComponent(centerDetailId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, code, allocation, group_name })
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.error || 'Failed');
+
+    notify('Center updated', 'success');
+    closeCenterDetailView();
+
+  } catch (err) {
+    notify(err.message || 'Failed to update center', 'error');
+  }
+});
+
+document.getElementById('centerDetailDeleteBtn')?.addEventListener('click', async () => {
+  const ok = await showConfirmModal({
+    title: 'Delete this center mapping?',
+    message: 'This mapping will be permanently removed.',
+    confirmText: 'Delete'
+  });
+  if (!ok) return;
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/admin/dispatch-centers/${encodeURIComponent(centerDetailId)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error();
+    notify('Center mapping deleted', 'success');
+    closeCenterDetailView();
+  } catch (err) {
+    notify('Delete failed', 'error');
+  }
+});
 
 document.getElementById('addCenterBtn2')?.addEventListener('click', async () => {
   const name = document.getElementById('newCenterName').value.trim();
