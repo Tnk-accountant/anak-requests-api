@@ -551,6 +551,16 @@ button:active {
         <div class="flex items-center justify-between mb-1">
           <label class="block text-gray-700 font-semibold">Description</label>
 
+          <div class="flex items-center gap-3">
+
+            <button type="button" id="expandDescriptionBtn"
+              class="md:hidden flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/>
+              </svg>
+              Expand
+            </button>
+
           <div class="relative">
             <button type="button" id="templatesDropdownBtn"
               class="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
@@ -572,11 +582,27 @@ button:active {
 
             </div>
           </div>
+          </div>
         </div>
 
         <textarea id="description" rows="3" required
-         class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+         class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none transition-all duration-150"
+         style="max-height: 40vh; overflow-y: auto;"></textarea>
       </div>
+
+<!-- 📱 MOBILE : éditeur description plein écran -->
+<div id="descriptionFullscreenEditor" class="hidden fixed inset-0 bg-white z-50 flex flex-col md:hidden">
+  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
+    <h3 class="text-base font-semibold text-gray-800">Description</h3>
+    <button id="closeDescriptionFullscreen" type="button"
+      class="bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+      Done
+    </button>
+  </div>
+  <textarea id="descriptionFullscreenTextarea"
+    class="flex-1 min-h-0 w-full p-4 text-base focus:outline-none resize-none"
+    placeholder="Describe your request..."></textarea>
+</div>
 
         <button
           id="submitRequestBtn"
@@ -1319,7 +1345,9 @@ function renderTemplatesDropdown() {
       <div class="text-xs text-gray-400 truncate">${escapeHtml(text)}</div>
     `;
     item.addEventListener('click', () => {
-      document.getElementById('description').value = text;
+      const descField = document.getElementById('description');
+      descField.value = text;
+      descField.dispatchEvent(new Event('input'));
       document.getElementById('templatesDropdown')?.classList.add('hidden');
     });
     list.appendChild(item);
@@ -2215,6 +2243,35 @@ function setupRequestorName(profile) {
       modal.classList.add('flex');
     });
 
+    // =========================================================
+    // 📝 Description — auto-grandissement + éditeur plein écran mobile
+    // =========================================================
+    const descriptionTextarea = document.getElementById('description');
+    const descFullscreenEditor = document.getElementById('descriptionFullscreenEditor');
+    const descFullscreenTextarea = document.getElementById('descriptionFullscreenTextarea');
+    const expandDescriptionBtn = document.getElementById('expandDescriptionBtn');
+    const closeDescriptionFullscreenBtn = document.getElementById('closeDescriptionFullscreen');
+
+    function autoGrow(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, window.innerHeight * 0.4) + 'px';
+    }
+
+    descriptionTextarea?.addEventListener('input', () => autoGrow(descriptionTextarea));
+
+    expandDescriptionBtn?.addEventListener('click', () => {
+      descFullscreenTextarea.value = descriptionTextarea.value;
+      descFullscreenEditor.classList.remove('hidden');
+      // petit délai pour laisser le temps au clavier mobile de s'ouvrir
+      setTimeout(() => descFullscreenTextarea.focus(), 50);
+    });
+
+    closeDescriptionFullscreenBtn?.addEventListener('click', () => {
+      descriptionTextarea.value = descFullscreenTextarea.value;
+      autoGrow(descriptionTextarea);
+      descFullscreenEditor.classList.add('hidden');
+    });
+
     document.getElementById('closeTemplatesModal')?.addEventListener('click', () => {
       const modal = document.getElementById('templatesModal');
       modal.classList.add('hidden');
@@ -2428,7 +2485,7 @@ badge.className =
 
     if (draft.description) {
       const descInput = document.getElementById('description');
-      if (descInput) { descInput.value = draft.description; restoredSomething = true; }
+      if (descInput) { descInput.value = draft.description; descInput.dispatchEvent(new Event('input')); restoredSomething = true; }
     }
 
     if (draft.request_type) {
@@ -2589,6 +2646,7 @@ try {
 
     // 🔄 reset form
     form.reset();
+    document.getElementById('description').style.height = 'auto';
 
     selectedCenters.length = 0;
     renderSelectedCenters();

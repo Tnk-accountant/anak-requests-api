@@ -4095,14 +4095,8 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
     // ── Reset input ──
     input.value = '';
 
-    // ── Sync backend ──
-    await fetchRequests();
-
-  } catch (err) {
-    console.error(err);
-    notify('Error sending message', 'error');
-
-  } finally {
+    // ── Stop spinner immédiatement : le message est déjà affiché,
+    // pas besoin d'attendre le rechargement complet des demandes ──
     btn.disabled = false;
     btn.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
@@ -4112,6 +4106,22 @@ document.getElementById('sendFeedbackBtn').onclick = async () => {
       </svg>
     `;
     input.focus();
+
+    // ── Sync backend en arrière-plan (n'bloque plus l'UI) ──
+    fetchRequests();
+
+  } catch (err) {
+    console.error(err);
+    notify('Error sending message', 'error');
+
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
+        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    `;
   }
 };
 
