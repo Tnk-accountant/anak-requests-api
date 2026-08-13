@@ -2179,7 +2179,7 @@ app.patch('/requests/:request_id/reject-liquidation', authenticate, async (req, 
 
     const { data: existing, error: fetchError } = await supabaseService
       .from('Requests')
-      .select('status, liquidation_note')
+      .select('status, liquidation_note, conversation')
       .eq('request_id', request_id)
       .maybeSingle();
 
@@ -2194,14 +2194,20 @@ app.patch('/requests/:request_id/reject-liquidation', authenticate, async (req, 
       });
     }
 
-    const newNote =
-      `⚠️ Rejected by admin: ${reason.trim()}\n---\n${existing.liquidation_note || ''}`;
+    // Le motif de rejet part dans la conversation (comme un message admin),
+    // pas dans la note de liquidation du CC — on ne touche pas à sa note.
+    const conversation = existing.conversation || [];
+    conversation.push({
+      sender: 'admin',
+      message: `Liquidation sent back for correction: ${reason.trim()}`,
+      created_at: new Date().toISOString()
+    });
 
     const { data, error } = await supabaseService
       .from('Requests')
       .update({
         status: 'ToLiquidate',
-        liquidation_note: newNote
+        conversation
       })
       .eq('request_id', request_id)
       .select()
@@ -2210,6 +2216,13 @@ app.patch('/requests/:request_id/reject-liquidation', authenticate, async (req, 
     if (error) throw error;
 
     notifyAdmins(data);
+
+    sendPushToUser(data.created_by, {
+      title: 'Liquidation sent back for correction',
+      body: reason.trim().length > 120 ? reason.trim().slice(0, 117) + '…' : reason.trim(),
+      url: '/index.html',
+      tag: `request-${request_id}`
+    });
 
     res.json({
       message: 'Liquidation rejected, sent back to center',
