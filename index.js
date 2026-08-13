@@ -1622,7 +1622,11 @@ app.post('/requests/:id/respond', authenticate, async (req, res) => {
 
     if (error) throw error;
 
-    notifyAdmins(data);
+    notifyAdmins(data, {
+      title: 'Requester replied',
+      body: `${message.length > 100 ? message.slice(0, 97) + '…' : message}`,
+      excludeUserId: req.user.id
+    });
 
     res.json({ success: true, data });
 
@@ -1855,7 +1859,7 @@ app.get('/requests/:request_id', authenticate, async (req, res) => {
 // =========================================
 // NOTIFY CLIENTS (SSE BROADCAST)
 // =========================================
-function notifyAdmins(newRequest) {
+function notifyAdmins(newRequest, pushInfo) {
   const payload = `data: ${JSON.stringify(newRequest)}\n\n`;
 
   const reqCenter = (newRequest.center_name || '')
@@ -1895,6 +1899,60 @@ function notifyAdmins(newRequest) {
       sseClients = sseClients.filter(c => c !== client);
     }
   });
+
+  // 🔔 PUSH — même audience que le SSE ci-dessus (Admin + CC du centre
+  // concerné), mais ça arrive sur le téléphone/l'ordi même si personne
+  // n'a l'app ouverte. C'est ça qui manquait : avant, un CC ne voyait
+  // l'info QUE s'il avait déjà l'app ouverte (SSE = live seulement).
+  if (pushInfo) {
+    notifyAdminsPush(newRequest, pushInfo).catch(err => {
+      console.error('notifyAdminsPush error:', err);
+    });
+  }
+}
+
+// Envoie une vraie notif push (fonctionne app fermée) à l'audience
+// Admin + CC concerné — même logique de visibilité que le SSE.
+async function notifyAdminsPush(request, { title, body, excludeUserId } = {}) {
+  if (!title) return;
+
+  try {
+    const reqCenter = (request.center_name || '').toString().trim().toUpperCase();
+
+    const { data: profiles, error } = await supabaseService
+      .from('profiles')
+      .select('id, role, center_name, permissions')
+      .in('role', ['Admin', 'CC']);
+
+    if (error || !profiles) return;
+
+    const targets = profiles.filter(p => {
+      if (excludeUserId && p.id === excludeUserId) return false;
+
+      if (p.role === 'Admin') return true;
+
+      // CC : même règle que le SSE — pas de visibilité sur les
+      // demandes PRIVATE d'un autre, et seulement son/ses centre(s).
+      if (request.visibility_scope === 'PRIVATE' && request.created_by !== p.id) return false;
+
+      const allowedCenters = p.permissions?.allowed_centers;
+      const centers = (Array.isArray(allowedCenters) && allowedCenters.length > 0)
+        ? allowedCenters.map(c => (c || '').toUpperCase())
+        : [(p.center_name || '').toUpperCase()];
+
+      return centers.includes(reqCenter);
+    });
+
+    await Promise.all(targets.map(p => sendPushToUser(p.id, {
+      title,
+      body,
+      url: p.role === 'Admin' ? '/admin.html' : '/index.html',
+      tag: `request-${request.request_id}`
+    })));
+
+  } catch (err) {
+    console.error('notifyAdminsPush error:', err);
+  }
 }
 
 
@@ -2169,7 +2227,11 @@ app.post('/requests', authenticate, async (req, res) => {
     // 🔔 SSE + RESPONSE
     // ==============================
 
-    notifyAdmins(created);
+    notifyAdmins(created, {
+      title: 'New request submitted',
+      body: `${requestor_name} — ${center_name} — ${amount_requested} PHP`,
+      excludeUserId: req.user.id
+    });
 
     return res.status(201).json({
       message: "Demande ajoutée avec succès",
@@ -2362,7 +2424,12 @@ if (received_confirmed) {
 
     if (!data || !data.length) return res.status(404).json({ error: 'Request not found after update.' });
     // 🔥 TEMPS RÉEL
-    notifyAdmins(data[0]);
+    const pushInfo = received_confirmed ? {
+      title: statusToSet === 'Closed' ? 'Funds received — request closed' : 'Funds received — to liquidate',
+      body: `${data[0].requestor_name} — ${data[0].center_name}`,
+      excludeUserId: req.user.id
+    } : undefined;
+    notifyAdmins(data[0], pushInfo);
 
     console.log('Update successful:', data);
     res.json({ message: 'Receipt confirmed and status updated.', data });
@@ -2490,7 +2557,11 @@ const { data: existing, error: getError } = await supabaseService
     .single();
 
     if (updateError) throw updateError;
-    notifyAdmins(updated);
+    notifyAdmins(updated, {
+      title: 'Liquidation submitted',
+      body: `${updated.requestor_name} — ${updated.center_name} — awaiting validation`,
+      excludeUserId: req.user.id
+    });
 
     return res.json({
       success: true,
@@ -2640,7 +2711,11 @@ app.patch('/requests/:request_id/request-cancel', authenticate, async (req, res)
 
     if (error) throw error;
 
-    notifyAdmins(data);
+    notifyAdmins(data, {
+      title: 'Cancellation requested',
+      body: `${data.requestor_name} — ${data.center_name} — ${cancellation_note}`.slice(0, 150),
+      excludeUserId: req.user.id
+    });
 
     res.json({
       message: 'Cancellation requested',
@@ -2720,8 +2795,12 @@ app.patch('/requests/:request_id/request-cancel', authenticate, async (req, res)
 
         if (error) throw error;
 
-        // 🔔 notifier admin (SSE)
-        notifyAdmins(data);
+        // 🔔 notifier admin + CC (SSE + push, même app fermée)
+        notifyAdmins(data, {
+          title: 'Cancellation requested',
+          body: `${data.requestor_name} — ${data.center_name} — ${cancellation_note}`.slice(0, 150),
+          excludeUserId: req.user.id
+        });
 
         res.json({
           message: 'Cancellation requested',
