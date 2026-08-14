@@ -1423,6 +1423,11 @@ app.get('/admin/compta', authenticate, async (req, res) => {
     const { data: categories } = await supabaseService.from('dispatch_categories').select('code, category');
     const categoriesMap = new Map((categories || []).map(c => [c.code, c.category]));
 
+    // ✂️ Même nettoyage de description que l'export — appliqué dès
+    // l'onglet Accounting, pas seulement au moment d'exporter.
+    const { data: phraseRows } = await supabaseService.from('dispatch_filler_phrases').select('phrase');
+    const shorten = buildShortener((phraseRows || []).map(p => p.phrase).filter(Boolean));
+
     const enriched = await Promise.all((requests || []).map(async (r) => {
       const suggestions = r.cat_code ? [] : await computeCategorySuggestions(r.description);
 
@@ -1440,7 +1445,10 @@ app.get('/admin/compta', authenticate, async (req, res) => {
         category_name: r.cat_code ? (categoriesMap.get(r.cat_code) || '') : '',
         default_alloc: computeDefaultAlloc(r, allocFor),
         is_all_centers: isAllCenters,
-        centers_list: isAllCenters ? [] : involvedCenters
+        centers_list: isAllCenters ? [] : involvedCenters,
+        // 👉 ce que la carte doit afficher : l'override manuel s'il existe,
+        // sinon la version nettoyée automatiquement (sans les mots filtres)
+        clean_description: r.dispatch_description || shorten(r.description)
       };
     }));
 
@@ -1460,10 +1468,10 @@ app.patch('/requests/:request_id/cat', authenticate, async (req, res) => {
     if (req.profile.role !== 'Admin') return res.status(403).json({ error: 'Forbidden' });
 
     const { request_id } = req.params;
-    const { cat_code, dispatch_alloc } = req.body;
+    const { cat_code, dispatch_alloc, dispatch_description } = req.body;
 
-    if ((cat_code === undefined || cat_code === null) && dispatch_alloc === undefined) {
-      return res.status(400).json({ error: 'Provide at least cat_code or dispatch_alloc' });
+    if ((cat_code === undefined || cat_code === null) && dispatch_alloc === undefined && dispatch_description === undefined) {
+      return res.status(400).json({ error: 'Provide at least cat_code, dispatch_alloc or dispatch_description' });
     }
 
     const updateData = {};
@@ -1492,6 +1500,12 @@ app.patch('/requests/:request_id/cat', authenticate, async (req, res) => {
 
     if (dispatch_alloc !== undefined) {
       updateData.dispatch_alloc = (dispatch_alloc || '').trim() || null;
+    }
+
+    // ✍️ Description "propre" pour la compta/l'export — un override
+    // manuel (double-clic) prime sur le nettoyage automatique.
+    if (dispatch_description !== undefined) {
+      updateData.dispatch_description = (dispatch_description || '').trim() || null;
     }
 
     const { data, error } = await supabaseService
@@ -1572,7 +1586,7 @@ app.post('/admin/dispatch-export', authenticate, async (req, res) => {
       return {
         Date: formatDateMDY(r.timestamp),
         Category: categoriesMap.get(r.cat_code) || '',
-        Details: shorten(r.description),
+        Details: r.dispatch_description || shorten(r.description),
         '0': 0,
         CAT: r.cat_code,
         ALLOC: alloc,
@@ -2461,6 +2475,17 @@ if (received_confirmed) {
       received_confirmed: !!received_confirmed,
       status: statusToSet
     };
+
+    // 🏦 Fund Transfer → le code CAT est toujours le même pour un centre
+    // donné, peu importe la description (ex: BH → 1043, DIB → 1020...).
+    // Pas d'ambiguïté possible → on le remplit directement, pas besoin
+    // que l'admin clique dessus.
+    if (statusToSet === 'Closed' && existing.request_type === 'FundTransfer') {
+      const ftCode = FT_ALLOC_BY_CENTER[(existing.center_name || '').toString().trim().toUpperCase()];
+      if (ftCode) {
+        updateData.cat_code = ftCode;
+      }
+    }
 
     console.log('Update data:', updateData);
 

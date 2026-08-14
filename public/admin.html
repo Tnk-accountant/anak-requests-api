@@ -2271,7 +2271,7 @@ function renderComptaList() {
         <p class="text-xs text-gray-400 whitespace-nowrap">${metaLine}</p>
       </div>
 
-      <p class="text-xs text-gray-500 mt-1 truncate" title="${escapeHtml(req.description || '')}">${escapeHtml(req.description || '')}</p>
+      <p class="comptaDescription text-xs text-gray-500 mt-1 truncate cursor-text" title="Double-click to edit — ${escapeHtml(req.description || '')}">${escapeHtml(req.clean_description || req.description || '')}</p>
 
       <div class="border-t border-gray-100 pt-2 mt-2">
         ${catSection}
@@ -2316,7 +2316,99 @@ function renderComptaList() {
     allocInput?.addEventListener('change', () => {
       saveComptaAlloc(req.request_id, allocInput.value);
     });
+
+    // ✍️ Double-clic sur la description → édition inline
+    const descEl = card.querySelector('.comptaDescription');
+    descEl?.addEventListener('dblclick', () => {
+      startEditingComptaDescription(req, descEl);
+    });
   });
+}
+
+// Transforme le <p> description en textarea éditable. Entrée = valider,
+// Échap = annuler, clic ailleurs (blur) = valider.
+function startEditingComptaDescription(req, descEl) {
+  const currentValue = req.dispatch_description || req.clean_description || req.description || '';
+
+  const textarea = document.createElement('textarea');
+  textarea.className = 'comptaDescriptionEdit w-full text-xs text-gray-700 border border-indigo-300 rounded-lg px-2 py-1 mt-1 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400';
+  textarea.value = currentValue;
+  textarea.rows = 2;
+
+  descEl.replaceWith(textarea);
+  textarea.focus();
+  textarea.select();
+
+  let settled = false;
+
+  function commit() {
+    if (settled) return;
+    settled = true;
+    const newValue = textarea.value.trim();
+    textarea.replaceWith(descEl);
+    if (newValue !== currentValue) {
+      saveComptaDescription(req.request_id, newValue, descEl);
+    }
+  }
+
+  function cancel() {
+    if (settled) return;
+    settled = true;
+    textarea.replaceWith(descEl);
+  }
+
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      commit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancel();
+    }
+  });
+
+  textarea.addEventListener('blur', commit);
+}
+
+async function saveComptaDescription(requestId, newDescription, descEl) {
+  const req = comptaItems.find(r => r.request_id === requestId);
+  if (!req) return;
+
+  // ⚡ Mise à jour optimiste — l'écran réagit tout de suite
+  const prevDispatchDescription = req.dispatch_description;
+  const prevCleanDescription = req.clean_description;
+
+  req.dispatch_description = newDescription || null;
+  req.clean_description = newDescription || req.description || '';
+  if (descEl) {
+    descEl.textContent = req.clean_description;
+    descEl.title = `Double-click to edit — ${req.description || ''}`;
+  }
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/requests/${requestId}/cat`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dispatch_description: newDescription })
+    });
+
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.error || 'Could not save description');
+
+    notify('Description updated', 'success');
+
+  } catch (err) {
+    console.error(err);
+    notify(err.message || 'Error saving description', 'error');
+
+    // ↩️ rollback
+    req.dispatch_description = prevDispatchDescription;
+    req.clean_description = prevCleanDescription;
+    if (descEl) {
+      descEl.textContent = prevCleanDescription;
+      descEl.title = `Double-click to edit — ${req.description || ''}`;
+    }
+  }
 }
 
 function renderComptaLocalSearchResults(query, resultsBox, requestId) {
