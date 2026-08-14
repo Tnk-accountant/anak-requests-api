@@ -1050,9 +1050,12 @@ function buildAllocResolver(centersMap) {
   };
 }
 
-// 🏦 TRANSFERS OF CASH — code d'allocation par centre pour un Fund Transfer
-// (remplace l'ancienne règle générique "A0")
-const FT_ALLOC_BY_CENTER = {
+// 🏦 TRANSFERS OF CASH — code CAT (catégorie) par centre pour un Fund
+// Transfer. C'est déterministe : peu importe la description, un FT
+// vers ce centre est toujours cette catégorie. Utilisé pour l'auto-
+// remplissage du CAT code (PAS pour l'ALLOC — l'ALLOC d'un FT est
+// toujours A0, voir computeDefaultAlloc ci-dessous).
+const FT_CAT_CODE_BY_CENTER = {
   DIB: '1020',
   DIG: '1021',
   NURB: '1022',
@@ -1088,16 +1091,12 @@ const FT_ALLOC_BY_CENTER = {
   ELD: '1085'
 };
 
-function allocForFundTransfer(centerName) {
-  const c = (centerName || '').toString().trim().toUpperCase();
-  return FT_ALLOC_BY_CENTER[c] || 'A0'; // fallback si le centre n'est pas dans la table
-}
-
 function computeDefaultAlloc(request, allocFor) {
-  // 🏦 Règle métier : un Fund Transfer est alloué selon le centre
-  // (table TRANSFERS OF CASH), pas selon la catégorie choisie.
+  // 🏦 Règle métier : un Fund Transfer est TOUJOURS alloué en A0,
+  // quel que soit le centre (à ne pas confondre avec le CAT code,
+  // qui lui dépend du centre — voir FT_CAT_CODE_BY_CENTER).
   if (request.request_type === 'FundTransfer') {
-    return allocForFundTransfer(request.center_name);
+    return 'A0';
   }
 
   const hasOtherCenters = Array.isArray(request.other_centers) && request.other_centers.length > 0;
@@ -1575,7 +1574,7 @@ app.post('/admin/dispatch-export', authenticate, async (req, res) => {
       // TRANSFERS OF CASH), sauf override manuel explicite
       const alloc = (r.dispatch_alloc && r.dispatch_alloc.trim())
         ? r.dispatch_alloc.trim()
-        : (r.request_type === 'FundTransfer' ? allocForFundTransfer(r.center_name) : (hasMultipleCenters ? '-' : allocFor(r.center_name)));
+        : (r.request_type === 'FundTransfer' ? 'A0' : (hasMultipleCenters ? '-' : allocFor(r.center_name)));
 
       let centersBonus = '';
       if (hasMultipleCenters) {
@@ -2481,7 +2480,7 @@ if (received_confirmed) {
     // Pas d'ambiguïté possible → on le remplit directement, pas besoin
     // que l'admin clique dessus.
     if (statusToSet === 'Closed' && existing.request_type === 'FundTransfer') {
-      const ftCode = FT_ALLOC_BY_CENTER[(existing.center_name || '').toString().trim().toUpperCase()];
+      const ftCode = FT_CAT_CODE_BY_CENTER[(existing.center_name || '').toString().trim().toUpperCase()];
       if (ftCode) {
         updateData.cat_code = ftCode;
       }
