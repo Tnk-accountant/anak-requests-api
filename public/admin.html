@@ -2266,7 +2266,7 @@ function renderComptaList() {
     card.innerHTML = `
       <div class="flex flex-wrap items-baseline justify-between gap-2">
         <p class="text-sm font-medium text-gray-800 truncate">
-          ${escapeHtml(req.requestor_name)} — ${escapeHtml(req.center_name)} / <span class="text-black font-semibold">${formatAmount(amount)} PHP</span>
+          ${req.request_type === 'FundTransfer' ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 text-[10px] font-bold align-middle mr-1">FT</span>' : ''}${escapeHtml(req.requestor_name)} — ${escapeHtml(req.center_name)} / <span class="text-black font-semibold">${formatAmount(amount)} PHP</span>
         </p>
         <p class="text-xs text-gray-400 whitespace-nowrap">${metaLine}</p>
       </div>

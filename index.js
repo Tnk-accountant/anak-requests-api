@@ -1050,9 +1050,55 @@ function buildAllocResolver(centersMap) {
   };
 }
 
+// 🏦 TRANSFERS OF CASH — code d'allocation par centre pour un Fund Transfer
+// (remplace l'ancienne règle générique "A0")
+const FT_ALLOC_BY_CENTER = {
+  DIB: '1020',
+  DIG: '1021',
+  NURB: '1022',
+  NURG: '1028',
+  RHB1: '1031',
+  RHB2: '1032',
+  RHB3: '1033',
+  RHB4: '1034',
+  RHB5: '1035',
+  RHB6: '1036',
+  RHB7: '1037',
+  RHB8: '1038',
+  CARP: '1040',
+  BH: '1043',
+  SJE: '1044',
+  CFH: '1050',
+  RHG3: '1053',
+  RHG4: '1054',
+  RHG5: '1055',
+  RHG6: '1056',
+  JLH: '1060',
+  OLG: '1061',
+  SAH: '1062',
+  SJB: '1063',
+  OLMC: '1070',
+  SSK: '1071',
+  SMG: '1072',
+  NBBS: '1080',
+  MOB: '1081',
+  CLINIC: '1082',
+  SEDS: '1083',
+  CYDW: '1084',
+  ELD: '1085'
+};
+
+function allocForFundTransfer(centerName) {
+  const c = (centerName || '').toString().trim().toUpperCase();
+  return FT_ALLOC_BY_CENTER[c] || 'A0'; // fallback si le centre n'est pas dans la table
+}
+
 function computeDefaultAlloc(request, allocFor) {
-  // 🏦 Règle métier : un Fund Transfer est toujours alloué en A0
-  if (request.request_type === 'FundTransfer') return 'A0';
+  // 🏦 Règle métier : un Fund Transfer est alloué selon le centre
+  // (table TRANSFERS OF CASH), pas selon la catégorie choisie.
+  if (request.request_type === 'FundTransfer') {
+    return allocForFundTransfer(request.center_name);
+  }
 
   const hasOtherCenters = Array.isArray(request.other_centers) && request.other_centers.length > 0;
   if (hasOtherCenters) return '-';
@@ -1511,10 +1557,11 @@ app.post('/admin/dispatch-export', authenticate, async (req, res) => {
     const wsData = requests.map(r => {
       const hasMultipleCenters = Array.isArray(r.other_centers) && r.other_centers.length > 0;
 
-      // 🏦 Fund Transfer → toujours A0, sauf override manuel explicite
+      // 🏦 Fund Transfer → code d'allocation selon le centre (table
+      // TRANSFERS OF CASH), sauf override manuel explicite
       const alloc = (r.dispatch_alloc && r.dispatch_alloc.trim())
         ? r.dispatch_alloc.trim()
-        : (r.request_type === 'FundTransfer' ? 'A0' : (hasMultipleCenters ? '-' : allocFor(r.center_name)));
+        : (r.request_type === 'FundTransfer' ? allocForFundTransfer(r.center_name) : (hasMultipleCenters ? '-' : allocFor(r.center_name)));
 
       let centersBonus = '';
       if (hasMultipleCenters) {
@@ -1911,8 +1958,9 @@ function notifyAdmins(newRequest, pushInfo) {
   }
 }
 
-// Envoie une vraie notif push (fonctionne app fermée) à l'audience
-// Admin + CC concerné — même logique de visibilité que le SSE.
+// Envoie une vraie notif push (fonctionne app fermée) aux CC concernés —
+// même logique de visibilité que le SSE. L'Admin n'a pas besoin de push
+// (il n'a pas de bouton pour ça, pas nécessaire côté admin).
 async function notifyAdminsPush(request, { title, body, excludeUserId } = {}) {
   if (!title) return;
 
@@ -1922,17 +1970,15 @@ async function notifyAdminsPush(request, { title, body, excludeUserId } = {}) {
     const { data: profiles, error } = await supabaseService
       .from('profiles')
       .select('id, role, center_name, permissions')
-      .in('role', ['Admin', 'CC']);
+      .eq('role', 'CC');
 
     if (error || !profiles) return;
 
     const targets = profiles.filter(p => {
       if (excludeUserId && p.id === excludeUserId) return false;
 
-      if (p.role === 'Admin') return true;
-
-      // CC : même règle que le SSE — pas de visibilité sur les
-      // demandes PRIVATE d'un autre, et seulement son/ses centre(s).
+      // même règle que le SSE — pas de visibilité sur les demandes
+      // PRIVATE d'un autre, et seulement son/ses centre(s).
       if (request.visibility_scope === 'PRIVATE' && request.created_by !== p.id) return false;
 
       const allowedCenters = p.permissions?.allowed_centers;
@@ -1946,7 +1992,7 @@ async function notifyAdminsPush(request, { title, body, excludeUserId } = {}) {
     await Promise.all(targets.map(p => sendPushToUser(p.id, {
       title,
       body,
-      url: p.role === 'Admin' ? '/admin.html' : '/index.html',
+      url: '/index.html',
       tag: `request-${request.request_id}`
     })));
 
@@ -2080,6 +2126,13 @@ app.post('/requests', authenticate, async (req, res) => {
     const allowedTypes = ['CashAdvance', 'FundTransfer'];
     if (!allowedTypes.includes(request_type)) {
       return res.status(400).json({ error: 'Type de demande invalide.' });
+    }
+
+    // 🚫 Un Fund Transfer ne peut concerner qu'UN SEUL centre
+    if (request_type === 'FundTransfer' && other_centers.length > 0) {
+      return res.status(400).json({
+        error: 'A Fund Transfer can only target a single center.'
+      });
     }
 
     // ==============================

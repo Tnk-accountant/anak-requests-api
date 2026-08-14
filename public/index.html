@@ -2211,8 +2211,40 @@ function setupRequestorName(profile) {
               .forEach(b => b.classList.remove('payment-active'));
           btn.classList.add('payment-active');
           requestTypeInput.value = btn.dataset.value;
+
+          // 🚫 Un Fund Transfer ne peut concerner qu'UN SEUL centre —
+          // on verrouille et on vide la sélection "Additional centers".
+          applyFundTransferCenterLock(btn.dataset.value === 'FundTransfer');
         });
       });
+
+      // Verrouille/déverrouille la sélection multi-centres selon le type
+      // de demande. Appelée au clic sur le toggle, et aussi à la restauration
+      // d'un brouillon (voir plus bas).
+      function applyFundTransferCenterLock(isFundTransfer) {
+        const check = document.getElementById('multipleCentersCheck');
+        const box = document.getElementById('multipleCentersBox');
+        const label = document.getElementById('additionalCentersLabel');
+        if (!check) return;
+
+        if (isFundTransfer) {
+          check.checked = false;
+          check.disabled = true;
+          box?.classList.add('hidden');
+          label?.classList.add('opacity-50', 'cursor-not-allowed');
+          label?.setAttribute('title', 'Not available for Fund Transfer — one center only');
+
+          // vide toute sélection déjà en cours
+          if (typeof selectedCenters !== 'undefined') {
+            selectedCenters.length = 0;
+            if (typeof renderSelectedCenters === 'function') renderSelectedCenters();
+          }
+        } else {
+          check.disabled = false;
+          label?.classList.remove('opacity-50', 'cursor-not-allowed');
+          label?.removeAttribute('title');
+        }
+      }
 
 
     const profile = await displayUserProfile();
